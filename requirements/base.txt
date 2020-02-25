@@ -1,0 +1,4 @@
+# Core
+django==3.0.3  # https://github.com/django/django
+djangorestframework==3.11.0  # https://github.com/encode/django-rest-framework
+psycopg2==2.8.4  # https://github.com/psycopg/psycopg2
