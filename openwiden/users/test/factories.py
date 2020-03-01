@@ -1,4 +1,5 @@
 import factory
+from factory import fuzzy
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -8,7 +9,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     id = factory.Faker("uuid4")
     username = factory.Sequence(lambda n: f"testuser{n}")
-    github_token = "cd4c0fcbf9a0978d6edde9090fc694142b9f0259"
+    github_token = fuzzy.FuzzyText(length=40)
     email = factory.Faker("email")
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
