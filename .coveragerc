@@ -1,0 +1,22 @@
+[run]
+branch = True
+omit = *migrations*,
+       *urls*,
+       *test*,
+       *admin*,
+       ./manage.py,
+       ./openwiden/config/*,
+       ./openwiden/wsgi.py,
+       ./openwiden/asgi.py,
+       *__init__*
+
+[report]
+omit = *migrations*,
+       *urls*,
+       *test*,
+       *admin*,
+       ./manage.py,
+       ./openwiden/config/*,
+       ./openwiden/wsgi.py,
+       ./openwiden/asgi.py,
+       *__init__*

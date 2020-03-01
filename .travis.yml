@@ -1,0 +1,18 @@
+sudo: required
+language: python
+services:
+- docker
+python:
+- '3.6'
+before_script:
+- docker-compose build
+script:
+- docker-compose run --rm web bash -c "flake8 . && python wait_for_postgres.py &&
+  ./manage.py test"
+notifications:
+  email: false
+cache:
+  pip: true
+env:
+  global:
+    secure: AqMXVq0GcyA+IDraNF793jyDXD2J/dCbbykDXDW/eIkj+JH1944F8FvWkvG3wUzF8L87Y0VGXmbeErGUlnpcW4iuvLPJB3ngiRhj7nUGexBW2Bu2/e5IfW7u25A3Tw1aTFIQ4ns774tNLlMv0Gdz9IkUSVStn6yAnSJPO8FvYuW+5E4ueH2dUWbf3wfYBBwC1Hfy6J7fc5yz4Hr0JfpomK7hmior4hS+JChi+vKFMjj3jM3q64TSKY6MlOYfwYkiUfxXaaaL73QrXbBEiYwnMlwbyEDvDMQ40FT9VatMob/0NINjUwO/nAF8UQwc9zp5hzC6ICqbdPCEx+gFkNMZUWKPCa/LSuByz3oeSBbkZz9ceUj0tq7LkPcZ8biVnJmvZlasBazAYL2XU+AD/3SntCJ7zxIE9T5wXLuMGrcpAeqqzYci6SkPeahdB74Zb/0ho2NGIp1UQj37JWNCFjPEYc5F+KcGZmk4/Iy5VBqGzPdqCQ8nCxfJXtb5ozv3Hrt2eHhm9DxKsj3TohbvONa7oPLbFaMXkqXUec9s8Jm9xCZOx4076Zc4b0w20aWR1rOGXhxWAgemlXuRzTkLZafd1sAGdVSiusbKI2eLfC/YBiP+ck9gMM9UX1bgkpvTeVocpBRlpP2Vo0Vsb9bqR9JyjjSNLva0CdHtq6SScYeClyE=
