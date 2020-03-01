@@ -24,6 +24,17 @@ production_up:
 	@make up COMPOSE_FILES=PRODUCTION_COMPOSE_FILES
 
 
+# Django
+manage:
+	@make web c="python manage.py $(c)"
+
+### Migrations
+mm:
+	@make manage c=makemigrations
+migrate:
+	@make manage c=migrate
+
+
 # Code quality
 flake8:
 	$(WEB_CONTAINER) flake8
