@@ -88,8 +88,6 @@ class Common(Configuration):
                     "django.template.context_processors.request",
                     "django.contrib.auth.context_processors.auth",
                     "django.contrib.messages.context_processors.messages",
-                    "social_django.context_processors.backends",
-                    "social_django.context_processors.login_redirect",
                 ],
             },
         },
@@ -178,3 +176,4 @@ class Common(Configuration):
 
     GITHUB_KEY = os.getenv("GITHUB_KEY")
     GITHUB_SECRET = os.getenv("GITHUB_SECRET")
+    GITHUB_SCOPES = ["email"]

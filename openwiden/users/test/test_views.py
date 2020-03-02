@@ -1,5 +1,7 @@
+from unittest import mock
+
 import factory
-import mock
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -10,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
 from openwiden.users.test.factories import UserFactory
+from openwiden.users import github_oauth
 
 
 fake = Faker()
@@ -29,12 +32,15 @@ class TestUserListTestCase(APITestCase):
         response: Response = self.client.post(self.url, {})
         eq_(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.data)
 
-    def test_post_request_with_valid_data_succeeds(self):
+    @mock.patch("openwiden.users.views.github.fetch_token")
+    def test_post_request_with_valid_data_success(self, patched):
+        patched.return_value = fake.pystr(min_chars=40, max_chars=40)
         data = {"code": fake.pystr(min_chars=20, max_chars=20)}
         response = self.client.post(self.url, data=data)
-        eq_(response.status_code, status.HTTP_201_CREATED, msg=response.data)
-
         user = User.objects.get(id=response.data.get("id"))
+
+        eq_(patched.call_count, 1)
+        eq_(response.status_code, status.HTTP_201_CREATED, msg=response.data)
         eq_(user.username, self.user_data.get("username"))
         ok_(user.github_token)
 
@@ -59,22 +65,16 @@ class TestUserExtraActionTestCase(APITestCase):
     Tests user get_auth_url extra action.
     """
 
-    auth_url_mock = (
-        "https://github.com/login/oauth/authorize?"
-        "response_type=code&client_id=123456789&state=NiOoXabXHpWqJD6UhD5yQQlWYJvHro"
-    )
-
     def setUp(self) -> None:
-        self.url = reverse("user-auth_url")
+        self.url = reverse("user-auth")
 
-    @mock.patch(
-        "openwiden.users.views.UserViewSet.auth_url",
-        return_value=HttpResponseRedirect(auth_url_mock),
-    )
-    def test_get_auth_url_redirects_to_a_valid_url(self, auth_url_patched_func):
+    def test_get_auth_url_redirects_to_a_valid_url(self):
         response: HttpResponseRedirect = self.client.get(self.url)
+        github = github_oauth.GitHubOAuth(
+            settings.GITHUB_KEY, settings.GITHUB_SECRET, ["user:email"]
+        )
+        auth_url = github.authorization_url
 
-        self.assertEqual(auth_url_patched_func.call_count, 1)
         self.assertRedirects(
-            response, self.auth_url_mock, fetch_redirect_response=False,
+            response, auth_url, fetch_redirect_response=False,
         )
