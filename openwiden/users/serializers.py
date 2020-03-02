@@ -14,5 +14,10 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ("username",)
 
 
-class CreateUserSerializer(serializers.Serializer):
-    pass
+class GitHubOAuthCodeSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+
+class CreateUserSerializer(UserSerializer):
+    class Meta(UserSerializer.Meta):
+        fields = ("username", "first_name", "last_name", "github_token")
