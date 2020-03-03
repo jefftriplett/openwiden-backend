@@ -27,10 +27,7 @@ class GitHubOAuth(authentication.BaseAuthentication):
         try:
             token = auth[1].decode()
         except UnicodeError:
-            msg = _(
-                "Invalid token header. "
-                "Token string should not contain invalid characters."
-            )
+            msg = _("Invalid token header. " "Token string should not contain invalid characters.")
             raise exceptions.AuthenticationFailed(msg)
 
         return self.get_user(token)

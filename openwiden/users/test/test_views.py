@@ -41,9 +41,7 @@ class TestUserListTestCase(APITestCase):
 
     @mock.patch("openwiden.users.views.Github.get_user")
     @mock.patch("openwiden.users.views.oauth.fetch_token")
-    def test_post_request_with_valid_data_success(
-        self, fetch_token_patched, get_user_patched
-    ):
+    def test_post_request_with_valid_data_success(self, fetch_token_patched, get_user_patched):
         fetch_token_patched.return_value = fake.pystr(min_chars=40, max_chars=40)
         get_user_patched.return_value = MockUser()
         data = {"code": fake.pystr(min_chars=20, max_chars=20)}

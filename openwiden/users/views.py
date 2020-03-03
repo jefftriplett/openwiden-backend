@@ -35,9 +35,7 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = "id"
 
     def get_serializer_class(self):
-        return self.serializer_classes.get(
-            self.action, self.serializer_classes["default"]
-        )
+        return self.serializer_classes.get(self.action, self.serializer_classes["default"])
 
     def get_permissions(self):
         if self.action in ["create", "auth"]:
@@ -68,9 +66,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
 
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=False, methods=["GET"], url_name="auth")
     def auth(self, request, *args, **kwargs):

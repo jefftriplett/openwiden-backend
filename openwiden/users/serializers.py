@@ -19,7 +19,5 @@ class CreateUserSerializer(UserSerializer):
 
     def create(self, validated_data):
         login = validated_data.pop("login")
-        instance, created = User.objects.update_or_create(
-            login=login, defaults=validated_data
-        )
+        instance, created = User.objects.update_or_create(login=login, defaults=validated_data)
         return instance
