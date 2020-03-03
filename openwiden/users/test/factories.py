@@ -5,13 +5,10 @@ from factory import fuzzy
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "users.User"
-        django_get_or_create = ("username",)
+        django_get_or_create = ("login",)
 
     id = factory.Faker("uuid4")
-    username = factory.Sequence(lambda n: f"testuser{n}")
+    login = factory.Sequence(lambda n: f"testuser{n}")
     github_token = fuzzy.FuzzyText(length=40)
     email = factory.Faker("email")
-    first_name = factory.Faker("first_name")
-    last_name = factory.Faker("last_name")
-    is_active = True
-    is_staff = False
+    name = factory.Faker("first_name")

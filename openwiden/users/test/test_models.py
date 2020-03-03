@@ -9,4 +9,4 @@ class UserModelTestCase(TestCase):
         self.user = UserFactory()
 
     def test_model_str_returns_username(self):
-        eq_(str(self.user), self.user.username)
+        eq_(str(self.user), self.user.login)
