@@ -174,6 +174,8 @@ class Common(Configuration):
         ),
     }
 
-    GITHUB_KEY = os.getenv("GITHUB_KEY")
-    GITHUB_SECRET = os.getenv("GITHUB_SECRET")
-    GITHUB_SCOPES = ["email"]
+    GITHUB_OAUTH_SETTINGS = {
+        "client_id": os.getenv("GITHUB_CLIENT_ID"),
+        "secret_key": os.getenv("GITHUB_SECRET_KEY"),
+        "scopes": ["user:email"],
+    }

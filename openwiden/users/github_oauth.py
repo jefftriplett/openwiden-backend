@@ -1,10 +1,12 @@
 from urllib import parse
 
 import requests
-import json
 
 
 class Token:
+    """
+    Token model for data mapping.
+    """
     def __init__(self, access_token, scope, token_type):
         self.access_token = access_token
         self.scope = scope
@@ -16,6 +18,10 @@ class GitHubOAuthException(Exception):
 
 
 class GitHubOAuth:
+    """
+    GitHub OAuth basic implementation for retrieve auth url & code for token exchange.
+    """
+
     GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
     GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
@@ -25,19 +31,28 @@ class GitHubOAuth:
         self.scopes = scopes
 
     def fetch_token(self, code: str) -> Token:
+        """
+        Exchanges code for GitHub OAuth token.
+        """
         data = {
             "client_id": self.client_id,
             "client_secret": self.secret_key,
             "code": code
         }
+
         response = requests.post(url=self.GITHUB_TOKEN_URL, data=data)
         data = parse.parse_qs(response.text)
+
         if "error" in data:
             raise GitHubOAuthException(data)
+
         return Token(**data)
 
     @property
     def authorization_url(self) -> str:
+        """
+        Returns GitHub OAuth url.
+        """
         query_dict = {"client_id": self.client_id}
 
         if self.scopes:
