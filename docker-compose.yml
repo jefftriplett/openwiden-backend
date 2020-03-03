@@ -1,14 +1,16 @@
-version: '2'
+version: '3.7'
 
 services:
   postgres:
     image: postgres:11.6
   web:
     restart: always
-    env_file:
-      - .env
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      GITHUB_KEY: ${GITHUB_KEY}
+      GITHUB_SECRET: ${GITHUB_SECRET}
     image: web
-    build: ./
+    build: .
     command: >
       bash -c "python wait_for_postgres.py &&
                ./manage.py migrate &&
