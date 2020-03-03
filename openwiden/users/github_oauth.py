@@ -7,6 +7,7 @@ class Token:
     """
     Token model for data mapping.
     """
+
     def __init__(self, access_token, scope, token_type):
         self.access_token = access_token
         self.scope = scope
@@ -37,7 +38,7 @@ class GitHubOAuth:
         data = {
             "client_id": self.client_id,
             "client_secret": self.secret_key,
-            "code": code
+            "code": code,
         }
 
         response = requests.post(url=self.GITHUB_TOKEN_URL, data=data)
