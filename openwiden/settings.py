@@ -4,7 +4,7 @@ from distutils.util import strtobool
 import dj_database_url
 from configurations import Configuration
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class Common(Configuration):
@@ -152,4 +152,58 @@ class Common(Configuration):
         "client_id": os.getenv("GITHUB_CLIENT_ID"),
         "secret_key": os.getenv("GITHUB_SECRET_KEY"),
         "scopes": ["user:email"],
+    }
+
+
+class Local(Common):
+
+    DEBUG = True
+
+    # Testing
+    INSTALLED_APPS = Common.INSTALLED_APPS
+    INSTALLED_APPS += ("django_nose",)
+    TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
+    NOSE_ARGS = [
+        BASE_DIR,
+        "-s",
+        "--nologcapture",
+        "--with-coverage",
+        "--with-progressive",
+        "--cover-package=openwiden",
+    ]
+
+    # Mail
+    EMAIL_HOST = "localhost"
+    EMAIL_PORT = 1025
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+
+class Production(Common):
+
+    INSTALLED_APPS = Common.INSTALLED_APPS
+
+    # Site
+    # https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts
+    ALLOWED_HOSTS = ["*"]
+    INSTALLED_APPS += ("gunicorn",)
+
+    # Static files (CSS, JavaScript, Images)
+    # https://docs.djangoproject.com/en/2.0/howto/static-files/
+    # http://django-storages.readthedocs.org/en/latest/index.html
+    INSTALLED_APPS += ("storages",)
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_ACCESS_KEY_ID = os.getenv("DJANGO_AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("DJANGO_AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("DJANGO_AWS_STORAGE_BUCKET_NAME")
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_AUTO_CREATE_BUCKET = True
+    AWS_QUERYSTRING_AUTH = False
+    MEDIA_URL = f"https://s3.amazonaws.com/{AWS_STORAGE_BUCKET_NAME}/"
+
+    # https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching#cache-control
+    # Response can be cached by browser and any intermediary caches (i.e. it is "public") for up to 1 day
+    # 86400 = (60 seconds x 60 minutes x 24 hours)
+    AWS_HEADERS = {
+        "Cache-Control": "max-age=86400, s-maxage=86400, must-revalidate",
     }

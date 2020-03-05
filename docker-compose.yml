@@ -5,12 +5,16 @@ services:
     image: postgres:11.6
   web:
     restart: always
-    environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
-      GITHUB_KEY: ${GITHUB_CLIENT_ID}
-      GITHUB_SECRET: ${GITHUB_SECRET_KEY}
     image: web
     build: .
+    environment:
+      - DJANGO_SECRET_KEY
+      - DJANGO_CONFIGURATION
+      - GITHUB_CLIENT_ID
+      - GITHUB_SECRET_KEY
+      - DJANGO_AWS_ACCESS_KEY_ID
+      - DJANGO_AWS_SECRET_ACCESS_KEY
+      - DJANGO_AWS_STORAGE_BUCKET_NAME
     command: >
       bash -c "python wait_for_postgres.py &&
                ./manage.py migrate &&
