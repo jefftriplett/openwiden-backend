@@ -5,7 +5,7 @@ import sys
 
 
 def main():
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "openwiden.config")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "openwiden.settings")
     os.environ.setdefault("DJANGO_CONFIGURATION", "Production")
 
     try:
