@@ -5,7 +5,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Local(Common):
+
     DEBUG = True
+    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
     # Testing
     INSTALLED_APPS = Common.INSTALLED_APPS
