@@ -207,3 +207,6 @@ class Production(Common):
     AWS_HEADERS = {
         "Cache-Control": "max-age=86400, s-maxage=86400, must-revalidate",
     }
+
+    REST_FRAMEWORK = Common.REST_FRAMEWORK
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = ["rest_framework.renderers.JSONRenderer"]
