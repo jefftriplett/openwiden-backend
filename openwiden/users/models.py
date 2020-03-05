@@ -24,10 +24,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    login = models.CharField(max_length=255, unique=True)
-    name = models.CharField(max_length=255)
-    email = models.EmailField()
-    github_token = models.CharField(max_length=40)
+    login = models.CharField(max_length=255, unique=True, verbose_name=_("login"))
+    name = models.CharField(max_length=255, verbose_name=_("name"))
+    email = models.EmailField(verbose_name=_("e-mail"))
+    github_token = models.CharField(max_length=40, verbose_name=_("GitHub token"))
 
     USERNAME_FIELD = "login"
     REQUIRED_FIELDS = []
@@ -36,3 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.login
+
+    class Meta:
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
