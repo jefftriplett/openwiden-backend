@@ -13,6 +13,9 @@ class VersionControlService(models.Model):
         verbose_name = _("version control service")
         verbose_name_plural = _("version control services")
 
+    def __str__(self):
+        return self.name
+
 
 class Repository(SoftDeletableModel, UUIDModel):
     version_control_service = models.ForeignKey(
@@ -34,6 +37,9 @@ class Repository(SoftDeletableModel, UUIDModel):
         constraints = (
             models.UniqueConstraint(fields=["version_control_service", "remote_id"], name="unique_repository",),
         )
+
+    def __str__(self):
+        return self.name
 
 
 class Issue(UUIDModel):
@@ -60,3 +66,6 @@ class Issue(UUIDModel):
         verbose_name = _("issue")
         verbose_name_plural = _("issues")
         constraints = (models.UniqueConstraint(fields=["repository", "remote_id"], name="unique_issue"),)
+
+    def __str__(self):
+        return self.title
