@@ -181,7 +181,7 @@ class Local(Common):
         "--nologcapture",
         "--with-coverage",
         "--with-progressive",
-        "--cover-package=openwiden,users",
+        "--cover-package=openwiden,users,repositories",
         "--cover-html",
     ]
 

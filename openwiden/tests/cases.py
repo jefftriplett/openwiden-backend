@@ -10,7 +10,7 @@ class ModelTestCase(TestCase):
     factory = None
 
     def setUp(self) -> None:
-        self.user = self.factory.build()
+        self.instance = self.factory.build()
         self.model = self.factory._meta.model
         self.meta = self.model._meta
 
