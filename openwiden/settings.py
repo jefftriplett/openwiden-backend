@@ -25,6 +25,7 @@ class Common(Configuration):
         "rest_framework_social_oauth2",
         # Local apps
         "users",
+        "repositories",
     )
 
     # https://docs.djangoproject.com/en/2.0/topics/http/middleware/
