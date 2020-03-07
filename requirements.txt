@@ -11,6 +11,7 @@ djangorestframework==3.11.0
 django-filter==2.2.0
 requests==2.23.0
 PyGithub==1.46
+django-rest-framework-social-oauth2==1.1.0
 
 # Developer Tools
 ipdb==0.12.3
@@ -21,6 +22,7 @@ black==19.10b0
 # Testing
 mock==3.0.5
 factory-boy==2.12.0
+Faker==4.0.1
 django-nose==1.4.6
 nose-progressive==1.5.2
 coverage==5.0.3

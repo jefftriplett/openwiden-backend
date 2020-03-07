@@ -4,7 +4,8 @@ from distutils.util import strtobool
 import dj_database_url
 from configurations import Configuration
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Common(Configuration):
@@ -19,8 +20,11 @@ class Common(Configuration):
         # Third party apps
         "rest_framework",
         "django_filters",
+        "oauth2_provider",
+        "social_django",
+        "rest_framework_social_oauth2",
         # Local apps
-        "openwiden.users",
+        "users",
     )
 
     # https://docs.djangoproject.com/en/2.0/topics/http/middleware/
@@ -88,6 +92,8 @@ class Common(Configuration):
                     "django.template.context_processors.request",
                     "django.contrib.auth.context_processors.auth",
                     "django.contrib.messages.context_processors.messages",
+                    "social_django.context_processors.backends",
+                    "social_django.context_processors.login_redirect",
                 ],
             },
         },
@@ -129,30 +135,35 @@ class Common(Configuration):
         },
     }
 
-    # Custom user app
+    # Custom user model
     AUTH_USER_MODEL = "users.User"
+
+    # Auth backends
+    AUTHENTICATION_BACKENDS = (
+        "social_core.backends.github.GithubOAuth2",
+        "rest_framework_social_oauth2.backends.DjangoOAuth2",
+        "django.contrib.auth.backends.ModelBackend",
+    )
 
     # Django Rest Framework
     REST_FRAMEWORK = {
         "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
         "PAGE_SIZE": int(os.getenv("DJANGO_PAGINATION_LIMIT", 10)),
         "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
-        "DEFAULT_RENDERER_CLASSES": (
-            "rest_framework.renderers.JSONRenderer",
-            "rest_framework.renderers.BrowsableAPIRenderer",
-        ),
-        "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+        "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.BrowsableAPIRenderer",),
+        "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
         "DEFAULT_AUTHENTICATION_CLASSES": (
-            "rest_framework.authentication.SessionAuthentication",
-            "openwiden.users.authentication.GitHubOAuth",
+            "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+            "rest_framework_social_oauth2.authentication.SocialAuthentication",
         ),
     }
 
-    GITHUB_OAUTH_SETTINGS = {
-        "client_id": os.getenv("GITHUB_CLIENT_ID"),
-        "secret_key": os.getenv("GITHUB_SECRET_KEY"),
-        "scopes": ["user:email"],
-    }
+    # Social Auth
+    SOCIAL_AUTH_POSTGRES_JSONFIELD = True
+    SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
+    SOCIAL_AUTH_GITHUB_KEY = os.getenv("GITHUB_CLIENT_ID")
+    SOCIAL_AUTH_GITHUB_SECRET = os.getenv("GITHUB_SECRET_KEY")
+    SOCIAL_AUTH_GITHUB_SCOPE = ["user:email"]
 
 
 class Local(Common):
@@ -169,7 +180,8 @@ class Local(Common):
         "--nologcapture",
         "--with-coverage",
         "--with-progressive",
-        "--cover-package=openwiden",
+        "--cover-package=openwiden,users",
+        "--cover-html",
     ]
 
     # Mail
