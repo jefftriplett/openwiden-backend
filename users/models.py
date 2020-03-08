@@ -21,7 +21,7 @@ class OAuth2Token(models.Model):
     token_type = models.CharField(_("token type"), blank=True, max_length=40)
     access_token = models.CharField(_("access token"), max_length=200)
     refresh_token = models.CharField(_("refresh token"), blank=True, max_length=200)
-    expires_at = models.PositiveIntegerField(_("expiration date in seconds"))
+    expires_at = models.PositiveIntegerField(_("expiration date in seconds"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("oauth2 token")

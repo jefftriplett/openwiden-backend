@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from .exceptions import OAuthProviderNotFound
 from .filters import OAuthCompleteFilter
-from .utils import get_or_create_user
+from .utils import create_or_update_user
 
 oauth = OAuth()
 oauth.register("github")
@@ -40,7 +40,7 @@ class OAuthCompleteView(views.APIView):
             user = self.request.user
 
             if user.is_anonymous:
-                user = get_or_create_user(provider, client, token)
+                user = create_or_update_user(provider, client, token)
 
             msg, code = user.id, status.HTTP_200_OK
         except AuthlibBaseError as e:

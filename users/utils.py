@@ -1,11 +1,12 @@
 from .models import User, OAuth2Token
 
 
-def get_or_create_user(provider: str, client, token):
+def create_or_update_user(provider: str, client, token):
     user = None
 
     if provider == "github":
         profile = client.get("user", token=token).json()
+        token.pop("scope")
         remote_id = profile["id"]
         login = profile["login"]
         email = profile["email"]
@@ -21,7 +22,14 @@ def get_or_create_user(provider: str, client, token):
             user = oauth2_token.user
 
         except OAuth2Token.DoesNotExist:
-            user = User.objects.create(username=login, first_name=first_name, last_name=last_name, email=email)
+            user, created = User.objects.get_or_create(username=login)
+
+            if created:
+                user.email = email
+                user.first_name = first_name
+                user.last_name = last_name
+                user.save()
+
             OAuth2Token.objects.create(user=user, provider=provider, remote_id=remote_id, login=login, **token)
 
     return user

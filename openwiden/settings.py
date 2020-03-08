@@ -135,11 +135,7 @@ class Common(Configuration):
     AUTH_USER_MODEL = "users.User"
 
     # Auth backends
-    AUTHENTICATION_BACKENDS = (
-        "social_core.backends.github.GithubOAuth2",
-        "social_core.backends.gitlab.GitLabOAuth2",
-        "django.contrib.auth.backends.ModelBackend",
-    )
+    AUTHENTICATION_BACKENDS = ("django.contrib.auth.backends.ModelBackend",)
 
     # Django Rest Framework
     REST_FRAMEWORK = {
