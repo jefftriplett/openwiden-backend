@@ -20,9 +20,6 @@ class Common(Configuration):
         # Third party apps
         "rest_framework",
         "django_filters",
-        "oauth2_provider",
-        "social_django",
-        "rest_framework_social_oauth2",
         # Local apps
         "users",
         "repositories",
@@ -93,8 +90,6 @@ class Common(Configuration):
                     "django.template.context_processors.request",
                     "django.contrib.auth.context_processors.auth",
                     "django.contrib.messages.context_processors.messages",
-                    "social_django.context_processors.backends",
-                    "social_django.context_processors.login_redirect",
                 ],
             },
         },
@@ -142,7 +137,7 @@ class Common(Configuration):
     # Auth backends
     AUTHENTICATION_BACKENDS = (
         "social_core.backends.github.GithubOAuth2",
-        "rest_framework_social_oauth2.backends.DjangoOAuth2",
+        "social_core.backends.gitlab.GitLabOAuth2",
         "django.contrib.auth.backends.ModelBackend",
     )
 
@@ -151,20 +146,31 @@ class Common(Configuration):
         "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
         "PAGE_SIZE": int(os.getenv("DJANGO_PAGINATION_LIMIT", 10)),
         "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
-        "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.BrowsableAPIRenderer",),
-        "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-        "DEFAULT_AUTHENTICATION_CLASSES": (
-            "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
-            "rest_framework_social_oauth2.authentication.SocialAuthentication",
+        "DEFAULT_RENDERER_CLASSES": (
+            "rest_framework.renderers.BrowsableAPIRenderer",
+            "rest_framework.renderers.JSONRenderer",
         ),
+        "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+        "DEFAULT_AUTHENTICATION_CLASSES": (),
     }
 
-    # Social Auth
-    SOCIAL_AUTH_POSTGRES_JSONFIELD = True
-    SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
-    SOCIAL_AUTH_GITHUB_KEY = os.getenv("GITHUB_CLIENT_ID")
-    SOCIAL_AUTH_GITHUB_SECRET = os.getenv("GITHUB_SECRET_KEY")
-    SOCIAL_AUTH_GITHUB_SCOPE = ["user:email"]
+    AUTHLIB_OAUTH_CLIENTS = {
+        "github": {
+            "client_id": os.getenv("GITHUB_CLIENT_ID"),
+            "client_secret": os.getenv("GITHUB_SECRET_KEY"),
+            "access_token_url": "https://github.com/login/oauth/access_token",
+            "access_token_params": None,
+            "authorize_url": "https://github.com/login/oauth/authorize",
+            "authorize_params": None,
+            "api_base_url": "https://api.github.com/",
+            "client_kwargs": {"scope": "user:email"},
+        },
+        # "gitlab": {
+        #     "client_id": os.getenv("GITLAB_APP_ID"),
+        #     "client_secret": os.getenv("GITLAB_SECRET"),
+        #     "authorize_url": "https://gitlab.com/oauth/authorize"
+        # }
+    }
 
 
 class Local(Common):
