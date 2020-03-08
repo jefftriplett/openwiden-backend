@@ -4,11 +4,11 @@ from rest_framework import views, permissions, status
 from rest_framework.response import Response
 
 from .exceptions import OAuthProviderNotFound
+from .filters import OAuthCompleteFilter
 
 
 oauth = OAuth()
 oauth.register("github")
-# oauth.register("gitlab")
 
 
 class OAuthLoginView(views.APIView):
@@ -25,7 +25,8 @@ class OAuthLoginView(views.APIView):
 
 
 class OAuthCompleteView(views.APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (permissions.AllowAny,)
+    filter_backends = (OAuthCompleteFilter,)
 
     def get(self, request, *args, **kwargs):
         provider = kwargs["provider"]
