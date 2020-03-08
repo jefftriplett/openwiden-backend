@@ -18,6 +18,8 @@ class UserFactory(factory.django.DjangoModelFactory):
 class OAuth2TokenFactory(factory.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     provider = fuzzy.FuzzyChoice(["github", "gitlab"])
+    remote_id = fuzzy.FuzzyInteger(1)
+    login = factory.Faker("first_name")
     token_type = factory.Faker("pystr")
     access_token = factory.Faker("pystr")
     refresh_token = factory.Faker("pystr")

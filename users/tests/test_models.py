@@ -4,10 +4,6 @@ from model_utils.models import UUIDModel
 
 from openwiden.tests.cases import ModelTestCase
 from .factories import UserFactory, OAuth2TokenFactory
-from faker import Faker
-
-
-fake = Faker()
 
 
 class UserModelTestCase(ModelTestCase):
@@ -40,6 +36,13 @@ class OAuth2TokenModelTestCase(ModelTestCase):
     def test_provider_field(self):
         self.assertFieldMaxLength("provider", 40)
         self.assertFieldVerboseNameEqual("provider", _("provider name"))
+
+    def test_remote_id_field(self):
+        self.assertFieldVerboseNameEqual("remote_id", _("user id from provider site"))
+
+    def test_login_field(self):
+        self.assertFieldMaxLength("login", 150)
+        self.assertFieldVerboseNameEqual("login", _("login"))
 
     def test_token_type_field(self):
         self.assertFieldMaxLength("token_type", 40)

@@ -16,6 +16,8 @@ class OAuth2Token(models.Model):
     )
     # Fields
     provider = models.CharField(_("provider name"), max_length=40)
+    remote_id = models.IntegerField(_("user id from provider site"))
+    login = models.CharField(_("login"), max_length=150)
     token_type = models.CharField(_("token type"), blank=True, max_length=40)
     access_token = models.CharField(_("access token"), max_length=200)
     refresh_token = models.CharField(_("refresh token"), blank=True, max_length=200)
@@ -24,6 +26,7 @@ class OAuth2Token(models.Model):
     class Meta:
         verbose_name = _("oauth2 token")
         verbose_name_plural = _("oauth2 tokens")
+        constraints = (models.UniqueConstraint(fields=("provider", "remote_id"), name="unique_oauth"),)
 
     def __str__(self):
         return self.access_token
