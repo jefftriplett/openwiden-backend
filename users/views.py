@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from .exceptions import OAuthProviderNotFound
 from .filters import OAuthCompleteFilter
-
+from .utils import get_or_create_user
 
 oauth = OAuth()
 oauth.register("github")
@@ -37,8 +37,12 @@ class OAuthCompleteView(views.APIView):
 
         try:
             token = client.authorize_access_token(request)
-            # TODO: create / find user & create token model
-            msg, code = token, status.HTTP_200_OK
+            user = self.request.user
+
+            if user.is_anonymous:
+                user = get_or_create_user(provider, client, token)
+
+            msg, code = user.id, status.HTTP_200_OK
         except AuthlibBaseError as e:
             msg, code = e.description, status.HTTP_400_BAD_REQUEST
 
