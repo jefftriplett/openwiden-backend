@@ -4,8 +4,11 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from users.exceptions import OAuthProviderNotFound
 
+from .factories import UserFactory
 
 fake = Faker()
 
@@ -46,7 +49,7 @@ class ProviderNotFoundTestMixin:
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
 class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
-    url_path = "auth:login"
+    url_path = "users:login"
 
     def test_github_provider(self):
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
@@ -56,7 +59,14 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
 class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
-    url_path = "auth:complete"
+    url_path = "users:complete"
+
+    def get_user_data(self, access_token) -> dict:
+        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+        response = self.client.get(reverse_lazy("users:users-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.client.credentials(HTTP_AUTHORIZATION="")
+        return response.data
 
     @mock.patch("authlib.integrations.base_client.base_app.BaseApp.get")
     @mock.patch("authlib.integrations.django_client.integration.DjangoRemoteApp.authorize_access_token")
@@ -64,18 +74,64 @@ class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
         profile = Profile()
         patched_authorize_access_token.return_value = {
             "access_token": "12345",
-            "token_type": "simple_type",
-            "refresh_token": "67890",
-            "expires_at": 36000,
+            "token_type": "bearer",
+            "scope": "user:email",
         }
         get_patched.return_value = profile
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
-        create_user_id = response.data["detail"]
+
+        access_token = response.data["detail"]["access"]
 
         self.assertTrue(patched_authorize_access_token.call_count, 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
 
-        # Try to create user again
+        # Get current user by retrieved tokens
+        user_data = self.get_user_data(access_token)
+        self.assertEqual(user_data["username"], profile.login)
+        self.assertEqual(user_data["email"], profile.email)
+        user_id = user_data["id"]
+
+        # Try to create user again with anonymous user
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
-        self.assertEqual(response.data["detail"], create_user_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
+        access_token = response.data["detail"]["access"]
+
+        # Check that returned user is the same as created before
+        user_data = self.get_user_data(access_token)
+        self.assertEqual(user_data["id"], user_id)
+        self.assertEqual(user_data["username"], profile.login)
+        self.assertEqual(user_data["email"], profile.email)
+
+
+class UsersViewSetTestCase(APITestCase):
+    def setUp(self) -> None:
+        self.user = UserFactory.create()
+        access_token = str(RefreshToken.for_user(self.user).access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+
+    def test_list_view(self):
+        response = self.client.get(reverse_lazy("users:users-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.user.id)
+        self.assertEqual(response.data["username"], self.user.username)
+
+    def test_detail_view(self):
+        response = self.client.get(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.user.id)
+        self.assertEqual(response.data["username"], self.user.username)
+
+    def test_update_view(self):
+        first_name = fake.first_name()
+        data = {"first_name": first_name}
+        response = self.client.patch(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}), data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["first_name"], first_name)
+
+    def test_delete_view(self):
+        response = self.client.delete(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_create_view(self):
+        response = self.client.post(reverse_lazy("users:users-list"))
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

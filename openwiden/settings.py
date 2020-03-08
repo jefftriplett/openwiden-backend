@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from os.path import join
 from distutils.util import strtobool
 import dj_database_url
@@ -147,7 +148,7 @@ class Common(Configuration):
             "rest_framework.renderers.JSONRenderer",
         ),
         "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-        "DEFAULT_AUTHENTICATION_CLASSES": (),
+        "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     }
 
     AUTHLIB_OAUTH_CLIENTS = {
@@ -166,6 +167,13 @@ class Common(Configuration):
         #     "client_secret": os.getenv("GITLAB_SECRET"),
         #     "authorize_url": "https://gitlab.com/oauth/authorize"
         # }
+    }
+
+    # JWT
+    SIMPLE_JWT = {
+        "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+        "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+        "AUTH_HEADER_TYPES": ("JWT",),
     }
 
 

@@ -14,6 +14,7 @@ PyGithub==1.46
 authlib==0.14.1
 pyyaml==5.3
 uritemplate==3.0.1
+djangorestframework-simplejwt==4.4.0
 
 # Developer Tools
 ipdb==0.12.3

@@ -6,7 +6,6 @@ def create_or_update_user(provider: str, client, token):
 
     if provider == "github":
         profile = client.get("user", token=token).json()
-        token.pop("scope")
         remote_id = profile["id"]
         login = profile["login"]
         email = profile["email"]
@@ -30,6 +29,13 @@ def create_or_update_user(provider: str, client, token):
                 user.last_name = last_name
                 user.save()
 
-            OAuth2Token.objects.create(user=user, provider=provider, remote_id=remote_id, login=login, **token)
+            OAuth2Token.objects.create(
+                user=user,
+                provider=provider,
+                remote_id=remote_id,
+                login=login,
+                access_token=token["access_token"],
+                token_type=token["token_type"],
+            )
 
     return user

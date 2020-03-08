@@ -1,10 +1,12 @@
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth
-from rest_framework import views, permissions, status
+from rest_framework import views, permissions, status, viewsets
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .exceptions import OAuthProviderNotFound
 from .filters import OAuthCompleteFilter
+from .serializers import UserSerializer
 from .utils import create_or_update_user
 
 oauth = OAuth()
@@ -42,8 +44,28 @@ class OAuthCompleteView(views.APIView):
             if user.is_anonymous:
                 user = create_or_update_user(provider, client, token)
 
-            msg, code = user.id, status.HTTP_200_OK
+            refresh = RefreshToken.for_user(user)
+            jwt = {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            }
+
+            msg, code = jwt, status.HTTP_200_OK
         except AuthlibBaseError as e:
             msg, code = e.description, status.HTTP_400_BAD_REQUEST
 
         return Response({"detail": msg}, code)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    lookup_field = "id"
+
+    def get_object(self):
+        return self.request.user
+
+    def list(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
