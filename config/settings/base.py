@@ -25,6 +25,7 @@ class Base(Configuration):
         "rest_framework",
         "django_filters",
         "drf_yasg",
+        "corsheaders",
     )
     LOCAL_APPS = (
         "users",
@@ -38,6 +39,7 @@ class Base(Configuration):
     MIDDLEWARE = (
         "django.middleware.security.SecurityMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
+        "corsheaders.middleware.CorsMiddleware",
         "django.middleware.common.CommonMiddleware",
         "django.middleware.csrf.CsrfViewMiddleware",
         "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -163,3 +165,6 @@ class Base(Configuration):
         "USE_SESSION_AUTH": False,
         "SECURITY_DEFINITIONS": {"JWT": {"type": "apiKey", "name": "Authorization", "in": "header"},},
     }
+
+    # Cors headers
+    CORS_ORIGIN_ALLOW_ALL = True
