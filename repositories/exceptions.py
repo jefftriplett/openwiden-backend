@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class RepositoryURLParse(exceptions.ParseError):
-    default_detail = _("{url} is nov a valid URL.")
+    default_detail = _("{url} is not a valid URL.")
 
     def __init__(self, url):
         detail = force_str(self.default_detail).format(url=url)
