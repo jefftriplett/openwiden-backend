@@ -9,7 +9,7 @@ class Test(Base):
     INSTALLED_APPS += ("django_nose",)
     TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
     NOSE_ARGS = [
-        Base.ROOT_DIR,
+        Base.ROOT_DIR.root,
         "-s",
         "--nologcapture",
         "--with-coverage",

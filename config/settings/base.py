@@ -8,7 +8,6 @@ class Base(Configuration):
     # Path configurations
     # /openwiden/settings/base.py - 3 = /
     ROOT_DIR = environ.Path(__file__) - 3
-    APPS_DIR = ROOT_DIR.path("api")
 
     # Environment
     env = environ.Env()
@@ -75,7 +74,7 @@ class Base(Configuration):
     # Static files (CSS, JavaScript, Images)
     # https://docs.djangoproject.com/en/2.0/howto/static-files/
     STATIC_ROOT = str(ROOT_DIR.path("staticfiles"))
-    STATICFILES_DIRS = [str(APPS_DIR.path("static"))]
+    STATICFILES_DIRS = []
     STATIC_URL = "/static/"
     STATICFILES_FINDERS = (
         "django.contrib.staticfiles.finders.FileSystemFinder",
@@ -89,7 +88,7 @@ class Base(Configuration):
     TEMPLATES = [
         {
             "BACKEND": "django.template.backends.django.DjangoTemplates",
-            "DIRS": [str(APPS_DIR.path("templates"))],
+            "DIRS": [],
             "APP_DIRS": True,
             "OPTIONS": {
                 "context_processors": [
