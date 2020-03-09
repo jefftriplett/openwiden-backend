@@ -8,6 +8,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from .exceptions import RepositoryURLParse, PrivateRepository
+from .filters import RepositoryFilter
 from .models import Repository, VersionControlService
 from .serializers import RepositorySerializer
 from .utils import parse_repo_url
@@ -21,6 +22,7 @@ class RepositoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
     queryset = Repository.objects.all()
     lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
+    filterset_class = RepositoryFilter
 
     @action(detail=False, methods=["POST"])
     def add(self, request, *args, **kwargs):
