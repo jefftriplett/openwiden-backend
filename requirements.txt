@@ -2,6 +2,7 @@
 pytz==2019.3
 Django==3.0.2
 django-configurations==2.2
+django-environ==0.4.5
 gunicorn==20.0.4
 newrelic==5.4.1.134
 django-model-utils==4.0.0
@@ -11,6 +12,10 @@ djangorestframework==3.11.0
 django-filter==2.2.0
 requests==2.23.0
 PyGithub==1.46
+authlib==0.14.1
+djangorestframework-simplejwt==4.4.0
+drf-yasg==1.17.1
+django-cors-headers==3.2.1
 
 # Developer Tools
 ipdb==0.12.3
@@ -21,6 +26,7 @@ black==19.10b0
 # Testing
 mock==3.0.5
 factory-boy==2.12.0
+Faker==4.0.1
 django-nose==1.4.6
 nose-progressive==1.5.2
 coverage==5.0.3
