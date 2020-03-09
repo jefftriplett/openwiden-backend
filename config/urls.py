@@ -6,13 +6,15 @@ from django.views.generic.base import RedirectView
 from rest_framework.routers import DefaultRouter
 
 from openwiden.views import schema_view
-
+from repositories.views import RepositoryViewSet
 
 router = DefaultRouter()
+router.register("repositories", RepositoryViewSet)
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # path("api/v1/", include((router.urls, "api-v1"), namespace="api-v1")),
     path("api/v1/", include(router.urls)),
     path("users/", include("users.urls", namespace="users")),
     # The 'api-root' from django rest-frameworks default router
