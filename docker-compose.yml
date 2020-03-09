@@ -8,8 +8,11 @@ services:
     image: web
     build: .
     environment:
+      - USING_DOCKER
       - DJANGO_SECRET_KEY
+      - DJANGO_SETTINGS_MODULE
       - DJANGO_CONFIGURATION
+      - DJANGO_ALLOWED_HOSTS
       - GITHUB_CLIENT_ID
       - GITHUB_SECRET_KEY
       - GITLAB_APP_ID

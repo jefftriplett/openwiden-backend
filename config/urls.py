@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.views.generic.base import RedirectView
 from rest_framework.routers import DefaultRouter
 
-from .views import schema_view
+from openwiden.views import schema_view
 
 
 router = DefaultRouter()
