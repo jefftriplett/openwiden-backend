@@ -1,9 +1,31 @@
+from datetime import datetime
+
+import mock
 from django.core import management
+from faker import Faker
 from rest_framework import status
 from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 
 from repositories.tests.factories import RepositoryFactory
+
+
+fake = Faker()
+datetime_format = "%m/%d/%Y %I:%M %p"
+
+
+class Repository:
+    def __init__(self, url: str, private: bool = False):
+        self.id = fake.pyint()
+        self.name = fake.name()
+        self.description = fake.text()
+        self.html_url = url
+        self.forks_count = fake.pyint()
+        self.stargazers_count = fake.pyint()
+        self.created_at = datetime.strptime(fake.date(datetime_format), datetime_format)
+        self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
+        self.open_issues_count = fake.pyint()
+        self.private = private
 
 
 class RepositoryViewSetTestCase(APITestCase):
@@ -19,7 +41,8 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], str(repository.id))
 
-    def test_add_view(self):
+    @mock.patch("repositories.views.github.get_repo")
+    def test_add_view(self, patched_get_repo):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
         git_urls = (
             # "https://gitlab.com/inkscape/inkscape",
@@ -30,6 +53,7 @@ class RepositoryViewSetTestCase(APITestCase):
             "https://github.com/sveltejs/svelte",
         )
         for url in git_urls:
+            patched_get_repo.return_value = Repository(url=url)
             response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
             self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
             self.assertEqual(response.data["url"], url)
