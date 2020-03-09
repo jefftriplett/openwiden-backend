@@ -27,7 +27,7 @@ GITHUB_PROVIDER = {
 
 class Profile:
     id = fake.pyint()
-    login = fake.first_name()
+    login = f"{fake.first_name()} {fake.last_name()}"  # fix: name() can return not a valid " " (space) separated string
     name = fake.name()
     email = fake.email()
 
@@ -117,9 +117,7 @@ class UsersViewSetTestCase(APITestCase):
 
     def test_detail_view(self):
         response = self.client.get(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.user.id)
-        self.assertEqual(response.data["username"], self.user.username)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_view(self):
         first_name = fake.first_name()

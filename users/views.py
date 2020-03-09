@@ -1,6 +1,6 @@
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth
-from rest_framework import views, permissions, status, viewsets
+from rest_framework import views, permissions, status, viewsets, mixins
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -57,7 +57,7 @@ class OAuthCompleteView(views.APIView):
         return Response({"detail": msg}, code)
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = UserSerializer
     lookup_field = "id"
 
@@ -65,7 +65,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return self.request.user
 
     def list(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
