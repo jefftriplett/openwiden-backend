@@ -26,11 +26,13 @@ class Repository(SoftDeletableModel, UUIDModel):
     name = models.CharField(_("name"), max_length=255)
     description = models.TextField(_("description"), blank=True)
     url = models.URLField(_("url"))
-    forks_count = models.PositiveSmallIntegerField(_("forks count"), default=0)
+
     star_count = models.PositiveIntegerField(_("star count"), default=0)
+    open_issues_count = models.PositiveSmallIntegerField(_("open issues count"), default=0)
+    forks_count = models.PositiveSmallIntegerField(_("forks count"), default=0)
+
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
-    open_issues_count = models.PositiveSmallIntegerField(_("open issues count"), default=0)
 
     class Meta:
         verbose_name = _("repository")
