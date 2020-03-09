@@ -5,7 +5,8 @@ from django.contrib import admin
 from django.views.generic.base import RedirectView
 from rest_framework.routers import DefaultRouter
 
-from .views import schema_view, swagger_view
+from .views import schema_view
+
 
 router = DefaultRouter()
 
@@ -21,8 +22,7 @@ urlpatterns = [
 
 
 # API documentation
-
 urlpatterns += [
-    path("openapi/", schema_view, name="openapi-schema"),
-    path("docs/", swagger_view, name="docs"),
+    re_path(r"^swagger(?P<format>\.json|\.yaml)$", schema_view.without_ui(cache_timeout=0), name="schema-json"),
+    re_path(r"^docs/$", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
 ]

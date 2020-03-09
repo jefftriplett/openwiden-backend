@@ -21,6 +21,7 @@ class Common(Configuration):
         # Third party apps
         "rest_framework",
         "django_filters",
+        "drf_yasg",
         # Local apps
         "users",
         "repositories",
@@ -61,7 +62,7 @@ class Common(Configuration):
     LANGUAGE_CODE = "en-us"
     # If you set this to False, Django will make some optimizations so as not
     # to load the internationalization machinery.
-    USE_I18N = False
+    USE_I18N = True
     USE_L10N = True
     USE_TZ = True
     LOGIN_REDIRECT_URL = "/"
@@ -83,7 +84,7 @@ class Common(Configuration):
     TEMPLATES = [
         {
             "BACKEND": "django.template.backends.django.DjangoTemplates",
-            "DIRS": ["templates"],
+            "DIRS": [],
             "APP_DIRS": True,
             "OPTIONS": {
                 "context_processors": [
@@ -143,6 +144,7 @@ class Common(Configuration):
         "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
         "PAGE_SIZE": int(os.getenv("DJANGO_PAGINATION_LIMIT", 10)),
         "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
+        "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
         "DEFAULT_RENDERER_CLASSES": (
             "rest_framework.renderers.BrowsableAPIRenderer",
             "rest_framework.renderers.JSONRenderer",
@@ -174,6 +176,12 @@ class Common(Configuration):
         "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
         "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
         "AUTH_HEADER_TYPES": ("JWT",),
+    }
+
+    # Swagger
+    SWAGGER_SETTINGS = {
+        "USE_SESSION_AUTH": False,
+        "SECURITY_DEFINITIONS": {"JWT": {"type": "apiKey", "name": "Authorization", "in": "header"},},
     }
 
 
