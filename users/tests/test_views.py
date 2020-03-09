@@ -128,7 +128,8 @@ class UsersViewSetTestCase(APITestCase):
 
     def test_delete_view(self):
         response = self.client.delete(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(self.user._meta.model.objects.filter(id=self.user.id).exists())
 
     def test_create_view(self):
         response = self.client.post(reverse_lazy("users:users-list"))
