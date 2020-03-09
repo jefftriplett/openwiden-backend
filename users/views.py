@@ -16,8 +16,7 @@ oauth.register("github")
 class OAuthLoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
-    def get(self, request, *args, **kwargs):
-        provider = kwargs["provider"]
+    def get(self, request, provider):
         client = oauth.create_client(provider)
 
         if client is None:
@@ -30,8 +29,7 @@ class OAuthCompleteView(views.APIView):
     permission_classes = (permissions.AllowAny,)
     filter_backends = (OAuthCompleteFilter,)
 
-    def get(self, request, *args, **kwargs):
-        provider = kwargs["provider"]
+    def get(self, request, provider: str):
         client = oauth.create_client(provider)
 
         if client is None:
