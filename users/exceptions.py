@@ -10,5 +10,5 @@ class OAuthProviderNotFound(APIException):
     default_code = "invalid"
 
     def __init__(self, provider: str):
-        self.detail = force_str(self.default_detail).format(provider=provider)
-        super().__init__(self.detail)
+        detail = force_str(self.default_detail).format(provider=provider)
+        super().__init__(detail)

@@ -110,8 +110,6 @@ class Base(Configuration):
         {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
     ]
 
-    PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher"]
-
     # Custom user model
     AUTH_USER_MODEL = "users.User"
 
@@ -132,10 +130,13 @@ class Base(Configuration):
         "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     }
 
+    GITHUB_CLIENT_ID = env("GITHUB_CLIENT_ID")
+    GITHUB_SECRET_KEY = env("GITHUB_SECRET_KEY")
+
     AUTHLIB_OAUTH_CLIENTS = {
         "github": {
-            "client_id": env("GITHUB_CLIENT_ID"),
-            "client_secret": env("GITHUB_SECRET_KEY"),
+            "client_id": GITHUB_CLIENT_ID,
+            "client_secret": GITHUB_SECRET_KEY,
             "access_token_url": "https://github.com/login/oauth/access_token",
             "access_token_params": None,
             "authorize_url": "https://github.com/login/oauth/authorize",

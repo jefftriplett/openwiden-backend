@@ -1,0 +1,20 @@
+[
+{
+  "model": "repositories.versioncontrolservice",
+  "pk": 1,
+  "fields": {
+    "name": "GitHub",
+    "label": "github",
+    "url": "https://github.com/"
+  }
+},
+{
+  "model": "repositories.versioncontrolservice",
+  "pk": 2,
+  "fields": {
+    "name": "GitLab",
+    "label": "gitlab",
+    "url": "https://gitlab.com/"
+  }
+}
+]
