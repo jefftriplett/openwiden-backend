@@ -22,7 +22,9 @@ class OAuthLoginView(views.APIView):
         if client is None:
             raise OAuthProviderNotFound(provider)
 
-        return client.authorize_redirect(request)
+        redirect_uri = request.GET.get("redirect_uri")
+
+        return client.authorize_redirect(request, redirect_uri)
 
 
 class OAuthCompleteView(views.APIView):

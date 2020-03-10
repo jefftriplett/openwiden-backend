@@ -47,7 +47,7 @@ black_check:
 
 # Tests
 test:
-	$(WEB_CONTAINER) python manage.py test
+	DJANGO_CONFIGURATION=Test $(WEB_CONTAINER) python manage.py test --settings=config.settings.test
 
 run_tests:
 	@make test

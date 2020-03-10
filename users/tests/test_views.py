@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 import mock
 from faker import Faker
 from django.test import override_settings
@@ -54,6 +56,14 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
     def test_github_provider(self):
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_github_provider_redirect_uri_is_correct(self):
+        redirect_uri = "http://localhost:3000/repositories/"
+        query_params = urlencode({"redirect_uri": redirect_uri})
+        url = reverse_lazy(self.url_path, kwargs={"provider": "github"}) + f"?{query_params}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertIn(query_params, response.url)
 
 
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
