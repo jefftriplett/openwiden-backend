@@ -5,8 +5,7 @@ services:
     image: postgres:11.6
   web:
     restart: always
-    image: web
-    build: .
+    image: stefanitsky/openwiden-backend:latest
     environment:
       - USING_DOCKER
       - DJANGO_SECRET_KEY

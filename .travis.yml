@@ -4,14 +4,33 @@ services:
   - docker
 python:
   - "3.8"
-before_script:
-  - docker-compose build
-script:
-  - make run_tests
 notifications:
   email: false
 cache:
   pip: true
-env:
-  global:
-    secure: AqMXVq0GcyA+IDraNF793jyDXD2J/dCbbykDXDW/eIkj+JH1944F8FvWkvG3wUzF8L87Y0VGXmbeErGUlnpcW4iuvLPJB3ngiRhj7nUGexBW2Bu2/e5IfW7u25A3Tw1aTFIQ4ns774tNLlMv0Gdz9IkUSVStn6yAnSJPO8FvYuW+5E4ueH2dUWbf3wfYBBwC1Hfy6J7fc5yz4Hr0JfpomK7hmior4hS+JChi+vKFMjj3jM3q64TSKY6MlOYfwYkiUfxXaaaL73QrXbBEiYwnMlwbyEDvDMQ40FT9VatMob/0NINjUwO/nAF8UQwc9zp5hzC6ICqbdPCEx+gFkNMZUWKPCa/LSuByz3oeSBbkZz9ceUj0tq7LkPcZ8biVnJmvZlasBazAYL2XU+AD/3SntCJ7zxIE9T5wXLuMGrcpAeqqzYci6SkPeahdB74Zb/0ho2NGIp1UQj37JWNCFjPEYc5F+KcGZmk4/Iy5VBqGzPdqCQ8nCxfJXtb5ozv3Hrt2eHhm9DxKsj3TohbvONa7oPLbFaMXkqXUec9s8Jm9xCZOx4076Zc4b0w20aWR1rOGXhxWAgemlXuRzTkLZafd1sAGdVSiusbKI2eLfC/YBiP+ck9gMM9UX1bgkpvTeVocpBRlpP2Vo0Vsb9bqR9JyjjSNLva0CdHtq6SScYeClyE=
+
+
+jobs:
+  include:
+    - stage: build-docker-image
+      name: "Build docker image"
+      script:
+        - VERSION=$(python -c "import openwiden; print(openwiden.get_version())")
+        - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER" --password-stdin
+        - docker build -t stefanitsky/openwiden-backend:"$VERSION" .
+        - docker push stefanitsky/openwiden-backend:"$VERSION"
+    - stage: test
+      name: "Run all tests"
+      script:
+        - docker-compose build
+        - make run_tests
+    - stage: deploy-stage
+      name: "Deploy staging version"
+      if: branch = develop
+      script:
+        - echo "wip"
+    - stage: deploy-production
+      name: "Deploy production version"
+      if: branch = master
+      script:
+        - echo "wip"
