@@ -12,25 +12,15 @@ cache:
 
 jobs:
   include:
-    - stage: build-docker-image
-      name: "Build docker image"
-      script:
-        - VERSION=$(python -c "import openwiden; print(openwiden.get_version())")
-        - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER" --password-stdin
-        - docker build -t stefanitsky/openwiden-backend:"$VERSION" .
-        - docker push stefanitsky/openwiden-backend:"$VERSION"
-    - stage: test
-      name: "Run all tests"
-      script:
-        - docker-compose build
-        - make run_tests
-    - stage: deploy-stage
-      name: "Deploy staging version"
+    - stage: build-stage-image
       if: branch = develop
       script:
-        - echo "wip"
-    - stage: deploy-production
-      name: "Deploy production version"
+        - ./devops/docker_push_stage.sh
+    - stage: test
+      script:
+        - docker-compose -f docker-compose.yml -f docker-compose.test.yml build
+        - make run_tests
+    - stage: build-production-image
       if: branch = master
       script:
-        - echo "wip"
+        - ./devops/docker_push_production.sh

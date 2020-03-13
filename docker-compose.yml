@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 
 services:
   postgres:
@@ -19,12 +19,9 @@ services:
       - DJANGO_AWS_ACCESS_KEY_ID
       - DJANGO_AWS_SECRET_ACCESS_KEY
       - DJANGO_AWS_STORAGE_BUCKET_NAME
-    command: >
-      bash -c "python wait_for_postgres.py &&
-               ./manage.py migrate &&
-               ./manage.py runserver 0.0.0.0:8000"
+    command: ./devops/run_server.sh
     volumes:
-      - ./:/code
+      - "./:/code"
     ports:
       - "8000:8000"
     depends_on:
