@@ -18,8 +18,8 @@ jobs:
         - ./devops/docker_push_stage.sh
     - stage: test
       script:
-        - docker-compose -f docker-compose.yml -f docker-compose.test.yml build
-        - make run_tests
+        - make COMPOSE_FILES=TEST_COMPOSE_FILES docker-compose command="build"
+        - make COMPOSE_FILES=TEST_COMPOSE_FILES run_tests
     - stage: build-production-image
       if: branch = master
       script:

@@ -12,4 +12,4 @@ WORKDIR code
 EXPOSE 8000
 
 # Run the production server
-CMD gunicorn gunicorn config.wsgi --bind 0.0.0.0:5000
+CMD gunicorn config.wsgi --bind 0.0.0.0:5000

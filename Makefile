@@ -1,21 +1,26 @@
-WEB_CONTAINER=docker-compose run --rm web
 BASE_COMPOSE_FILES=docker-compose.yml
-LOCAL_COMPOSE_FILES=$(BASE_COMPOSE_FILES)
-PRODUCTION_COMPOSE_FILES=$(BASE_COMPOSE_FILES)
+LOCAL_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.develop.yml
+TEST_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.test.yml
+PRODUCTION_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.production.yml
+
+COMPOSE_FILES=BASE_COMPOSE_FILES
+
+WEB_CONTAINER=docker-compose $(foreach file, $($(COMPOSE_FILES)), -f $(file)) run --rm web
 
 
 # Containers
 web:
 	$(WEB_CONTAINER) $(c)
 
-
 # Docker
+docker-compose:
+	docker-compose $(foreach file, $($(COMPOSE_FILES)), -f $(file)) $(command)
+
 down:
 	@docker-compose down --remove-orphans
 
 up:
-	@make down && \
-		docker-compose $(foreach file, $($(COMPOSE_FILES)), -f $(file)) up -d --build
+	@make down && @make docker-compose command="up -d --build"
 
 local_up:
 	@make up COMPOSE_FILES=LOCAL_COMPOSE_FILES
@@ -23,6 +28,8 @@ local_up:
 production_up:
 	@make up COMPOSE_FILES=PRODUCTION_COMPOSE_FILES
 
+build:
+	@make build
 
 # Django
 manage:
