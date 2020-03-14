@@ -29,7 +29,7 @@ GITHUB_PROVIDER = {
 
 class Profile:
     id = fake.pyint()
-    login = f"{fake.first_name()} {fake.last_name()}"  # fix: name() can return not a valid " " (space) separated string
+    login = f"{fake.first_name()} {fake.last_name()}"
     name = fake.name()
     email = fake.email()
 
