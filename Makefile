@@ -1,8 +1,8 @@
 BASE_COMPOSE_FILES=docker-compose.yml
-LOCAL_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.develop.yml
-TEST_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.test.yml
-STAGING_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.staging.yml
-PRODUCTION_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.production.yml
+#LOCAL_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.develop.yml
+#TEST_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.test.yml
+#STAGING_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.staging.yml
+#PRODUCTION_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.production.yml
 
 COMPOSE_FILES=BASE_COMPOSE_FILES
 
@@ -21,9 +21,6 @@ up:
 
 down:
 	@make docker-compose command="down --remove-orphans"
-
-pull:
-	@make docker-compose command="pull"
 
 # Django
 manage:
