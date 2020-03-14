@@ -71,7 +71,7 @@ class Base(Configuration):
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
     # Postgres
-    DATABASES = {"default": env.db(default="postgres://postgres:@postgres:5432/postgres")}
+    DATABASES = {"default": env.db(default="postgresql://postgres:@db:5432/postgres")}
 
     # Static files (CSS, JavaScript, Images)
     # https://docs.djangoproject.com/en/2.0/howto/static-files/
