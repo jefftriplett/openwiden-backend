@@ -4,18 +4,16 @@ Django==3.0.3
 django-configurations==2.2
 django-environ==0.4.5
 gunicorn==20.0.4
-newrelic==5.4.1.134
 django-model-utils==4.0.0
 psycopg2-binary==2.8.4
-dj-database-url==0.5.0
 djangorestframework==3.11.0
 django-filter==2.2.0
-requests==2.23.0
 PyGithub==1.46
 authlib==0.14.1
 djangorestframework-simplejwt==4.4.0
 drf-yasg==1.17.1
 django-cors-headers==3.2.1
+whitenoise==5.0.1
 
 # Developer Tools
 ipdb==0.12.3
@@ -30,7 +28,3 @@ Faker==4.0.1
 django-nose==1.4.6
 nose-progressive==1.5.2
 coverage==5.0.3
-
-# Static and Media Storage
-django-storages==1.8.0
-boto3==1.11.1

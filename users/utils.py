@@ -9,7 +9,7 @@ def create_or_update_user(provider: str, client, token):
         remote_id = profile["id"]
         login = profile["login"]
         email = profile["email"]
-        first_name, last_name = profile["name"].split(" ")
+        first_name, sep, last_name = profile["name"].partition(" ")
 
         try:
             oauth2_token = OAuth2Token.objects.get(provider=provider, remote_id=remote_id)
