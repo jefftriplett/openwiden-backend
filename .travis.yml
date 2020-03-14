@@ -7,8 +7,8 @@ python:
   - "3.8"
 notifications:
   email: false
-#cache:
-#  pip: true
+cache:
+  pip: true
 
 
 stages:
@@ -18,9 +18,10 @@ stages:
     if: branch = develop
   - name: build-production-image
     if: branch = master
-  - name: before_deploy
   - name: deploy-staging
     if: branch = develop
+  - name: deploy-production
+    if: branch = master
 
 
 jobs:
@@ -36,14 +37,17 @@ jobs:
     script:
       - "./devops/docker_push_production.sh"
   - stage: deploy-staging
-    before_deploy:
-    - openssl aes-256-cbc -K $encrypted_189e52c2c347_key -iv $encrypted_189e52c2c347_iv -in deploy_key.enc -out deploy_key -d
-    - eval "$(ssh-agent -s)"
-    - chmod 600 ./deploy_key
-    - echo -e "Host $DEPLOY_IP\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    - ssh-add ./deploy_key
-    deploy:
-      provider: script
-      script: "./devops/deploy_staging.sh"
+    script: skip
+    deploy: &heroku
+      provider: heroku
+      app: openwiden-staging
+      api_key: $HEROKU_AUTH_TOKEN
       on:
         branch: develop
+  - stage: deploy-production
+    script: skip
+    deploy:
+      <<: *heroku
+      app: openwiden-production
+      on:
+        branch: master
