@@ -5,9 +5,10 @@ services:
     image: postgres:11.6
   web:
     restart: always
-    image: stefanitsky/openwiden-backend:latest
+    image: web
+    build: .
+    command: bash run_server.sh
     environment:
-      - USING_DOCKER
       - DJANGO_SECRET_KEY
       - DJANGO_SETTINGS_MODULE
       - DJANGO_CONFIGURATION
@@ -16,10 +17,6 @@ services:
       - GITHUB_SECRET_KEY
       - GITLAB_APP_ID
       - GITLAB_SECRET
-      - DJANGO_AWS_ACCESS_KEY_ID
-      - DJANGO_AWS_SECRET_ACCESS_KEY
-      - DJANGO_AWS_STORAGE_BUCKET_NAME
-    command: ./devops/run_server.sh
     volumes:
       - "./:/code"
     ports:
