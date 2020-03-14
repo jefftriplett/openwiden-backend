@@ -19,6 +19,9 @@ docker-compose:
 up:
 	@make docker-compose command="up -d --build"
 
+down:
+	@make docker-compose command="down --remove-orphans"
+
 pull:
 	@make docker-compose command="pull"
 

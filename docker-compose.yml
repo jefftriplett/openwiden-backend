@@ -1,7 +1,7 @@
 version: "3.7"
 
 services:
-  postgres:
+  db:
     image: postgres:11.6
   web:
     restart: always
@@ -25,4 +25,4 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      - db

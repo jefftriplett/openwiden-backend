@@ -1,4 +1,5 @@
-sudo: required
+os: linux
+dist: xenial
 language: python
 services:
   - docker
@@ -6,14 +7,25 @@ python:
   - "3.8"
 notifications:
   email: false
-cache:
-  pip: true
+#cache:
+#  pip: true
+
+
+stages:
+  - name: build-stage-image
+    if: branch = develop
+  - name: test
+    if: branch = develop
+  - name: build-production-image
+    if: branch = master
+  - name: before_deploy
+  - name: deploy-staging
+    if: branch = develop
 
 
 jobs:
   include:
   - stage: build-stage-image
-    if: branch = develop
     script:
       - "./devops/docker_push_staging.sh"
   - stage: test
@@ -21,22 +33,15 @@ jobs:
       - make COMPOSE_FILES=TEST_COMPOSE_FILES docker-compose command="build"
       - make COMPOSE_FILES=TEST_COMPOSE_FILES run_tests
   - stage: build-production-image
-    if: branch = master
     script:
       - "./devops/docker_push_production.sh"
-
-
-before_deploy:
-  - openssl aes-256-cbc -K $encrypted_189e52c2c347_key -iv $encrypted_189e52c2c347_iv -in deploy_key.enc -out deploy_key -d
-  - eval "$(ssh-agent -s)"
-  - chmod 600 ./deploy_key
-  - echo -e "Host $DEPLOY_IP\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-  - ssh-add ./deploy_key
-  - ssh -i ./deploy_key $DEPLOY_USER@$DEPLOY_IP "ls && echo WTF?"
-
-
-deploy:
-- provider: script
-  script: "./devops/deploy_staging.sh"
-  on:
-    branch: develop
+  - stage: before_deploy
+    script:
+      - openssl aes-256-cbc -K $encrypted_189e52c2c347_key -iv $encrypted_189e52c2c347_iv -in deploy_key.enc -out deploy_key -d
+      - eval "$(ssh-agent -s)"
+      - chmod 600 ./deploy_key
+      - echo -e "Host $DEPLOY_IP\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+      - ssh-add ./deploy_key
+  - stage: deploy-staging
+    script:
+      - "./devops/deploy_staging.sh"
