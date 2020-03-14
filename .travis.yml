@@ -12,10 +12,7 @@ cache:
 
 
 stages:
-  - name: build-stage-image
-    if: branch = develop
   - name: test
-    if: branch = develop
   - name: build-production-image
     if: branch = master
   - name: deploy-staging
@@ -26,16 +23,11 @@ stages:
 
 jobs:
   include:
-  - stage: build-stage-image
-    script:
-      - "./devops/docker_push_staging.sh"
   - stage: test
+    before_script:
+      - docker-compose build
     script:
-      - make COMPOSE_FILES=TEST_COMPOSE_FILES docker-compose command="build"
-      - make COMPOSE_FILES=TEST_COMPOSE_FILES run_tests
-  - stage: build-production-image
-    script:
-      - "./devops/docker_push_production.sh"
+      - make run_tests
   - stage: deploy-staging
     script: skip
     deploy: &heroku
