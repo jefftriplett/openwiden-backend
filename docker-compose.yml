@@ -9,10 +9,12 @@ services:
     build: .
     command: bash run_server.sh
     environment:
+      - DJANGO_DEBUG
       - DJANGO_SECRET_KEY
       - DJANGO_SETTINGS_MODULE
       - DJANGO_CONFIGURATION
       - DJANGO_ALLOWED_HOSTS
+      - SENTRY_DSN
       - GITHUB_CLIENT_ID
       - GITHUB_SECRET_KEY
       - GITLAB_APP_ID
