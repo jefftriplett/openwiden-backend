@@ -24,19 +24,24 @@ class Production(Base):
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
     REST_FRAMEWORK = Base.REST_FRAMEWORK
-    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = ["rest_framework.renderers.JSONRenderer"]
 
-    sentry_init_kwargs = {
+    SENTRY_INIT_KWARGS = {
         "dsn": Base.env("SENTRY_DSN"),
         "integrations": [DjangoIntegration()],
         "send_default_pii": True,
     }
-    if not DEBUG:
-        sentry_init_kwargs.update(
-            {"release": f"openwiden-backend@{get_version()}", "environment": "production",}
-        )
-    else:
-        sentry_init_kwargs.update(
+    DEFAULT_RENDERER_CLASSES = ("rest_framework.renderers.JSONRenderer",)
+
+    if DEBUG:
+        DEFAULT_RENDERER_CLASSES += ("rest_framework.renderers.BrowsableAPIRenderer",)
+        SENTRY_INIT_KWARGS.update(
             {"debug": True, "environment": "staging",}
         )
-    sentry_sdk.init(**sentry_init_kwargs)
+    else:
+        SENTRY_INIT_KWARGS.update(
+            {"release": f"openwiden-backend@{get_version()}", "environment": "production",}
+        )
+
+    sentry_sdk.init(**SENTRY_INIT_KWARGS)
+
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = DEFAULT_RENDERER_CLASSES
