@@ -138,6 +138,12 @@ class Base(Configuration):
     GITHUB_CLIENT_ID = env("GITHUB_CLIENT_ID")
     GITHUB_SECRET_KEY = env("GITHUB_SECRET_KEY")
 
+    GITLAB_APP_ID = env("GITLAB_APP_ID")
+    GITLAB_SECRET = env("GITLAB_SECRET")
+    GITLAB_DEFAULT_REDIRECT_URI = env(
+        "GITLAB_DEFAULT_REDIRECT_URI", default="http://0.0.0.0:8000/users/complete/gitlab/"
+    )
+
     AUTHLIB_OAUTH_CLIENTS = {
         "github": {
             "client_id": GITHUB_CLIENT_ID,
@@ -149,11 +155,16 @@ class Base(Configuration):
             "api_base_url": "https://api.github.com/",
             "client_kwargs": {"scope": "user:email"},
         },
-        # "gitlab": {
-        #     "client_id": os.getenv("GITLAB_APP_ID"),
-        #     "client_secret": os.getenv("GITLAB_SECRET"),
-        #     "authorize_url": "https://gitlab.com/oauth/authorize"
-        # }
+        "gitlab": {
+            "client_id": GITLAB_APP_ID,
+            "client_secret": GITLAB_SECRET,
+            "access_token_url": "https://gitlab.com/oauth/token",
+            "access_token_params": None,
+            "authorize_url": "https://gitlab.com/oauth/authorize",
+            "authorize_params": {"redirect_uri": GITLAB_DEFAULT_REDIRECT_URI},
+            "api_base_url": "https://gitlab.com/api/v4/",
+            "client_kwargs": None,
+        },
     }
 
     # JWT

@@ -4,7 +4,7 @@ from rest_framework import views, permissions, status, viewsets, mixins
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .exceptions import OAuthProviderNotFound
+from .exceptions import OAuthProviderNotFound, CreateOrUpdateUserReturnedNone
 from .filters import OAuthCompleteFilter
 from .serializers import UserSerializer
 from .utils import create_or_update_user
@@ -12,6 +12,7 @@ from .utils import create_or_update_user
 
 oauth = OAuth()
 oauth.register("github")
+oauth.register("gitlab")
 
 
 class OAuthLoginView(views.APIView):
@@ -55,6 +56,9 @@ class OAuthCompleteView(views.APIView):
             # If user from request is not authorized (registration or re-auth)
             if user.is_anonymous:
                 user = create_or_update_user(provider, client, token)
+
+            if user is None:
+                raise CreateOrUpdateUserReturnedNone()
 
             # Create JWT tokens for created / updated user
             refresh = RefreshToken.for_user(user)

@@ -26,6 +26,17 @@ GITHUB_PROVIDER = {
     "client_kwargs": {"scope": "user:email"},
 }
 
+GITLAB_PROVIDER = {
+    "client_id": "GITHUB_CLIENT_ID",
+    "client_secret": "GITHUB_SECRET_KEY",
+    "access_token_url": "http://gitlab.example.com/oauth/token",
+    "access_token_params": None,
+    "authorize_url": "https://gitlab.example.com/oauth/authorize",
+    "authorize_params": None,
+    "api_base_url": "https://gitlab.example.com/api/v4/",
+    "client_kwargs": None,
+}
+
 
 class Profile:
     id = fake.pyint()
@@ -48,7 +59,9 @@ class ProviderNotFoundTestMixin:
         self.assertEqual({"detail": detail}, response.data)
 
 
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
+@override_settings(
+    AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER,}
+)
 class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
     url_path = "users:login"
@@ -66,7 +79,9 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
         self.assertIn(query_params, response.url)
 
 
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
+@override_settings(
+    AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER,}
+)
 class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
     url_path = "users:complete"
