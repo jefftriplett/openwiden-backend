@@ -9,11 +9,16 @@ from .filters import OAuthCompleteFilter
 from .serializers import UserSerializer
 from .utils import create_or_update_user
 
+
 oauth = OAuth()
 oauth.register("github")
 
 
 class OAuthLoginView(views.APIView):
+    """
+    Redirects user for auth via available provider.
+    """
+
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, provider):
@@ -28,29 +33,37 @@ class OAuthLoginView(views.APIView):
 
 
 class OAuthCompleteView(views.APIView):
+    """
+    Creates or updates user for specified provider.
+    """
+
     permission_classes = (permissions.AllowAny,)
     filter_backends = (OAuthCompleteFilter,)
 
     def get(self, request, provider: str):
         client = oauth.create_client(provider)
 
+        # If no specified provider found
         if client is None:
             raise OAuthProviderNotFound(provider)
 
+        # Try to retrieve token from provider
         try:
             token = client.authorize_access_token(request)
             user = self.request.user
 
+            # If user from request is not authorized (registration or re-auth)
             if user.is_anonymous:
                 user = create_or_update_user(provider, client, token)
 
+            # Create JWT tokens for created / updated user
             refresh = RefreshToken.for_user(user)
-            jwt = {
+            jwt_tokens = {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
             }
 
-            msg, code = jwt, status.HTTP_200_OK
+            msg, code = jwt_tokens, status.HTTP_200_OK
         except AuthlibBaseError as e:
             msg, code = e.description, status.HTTP_400_BAD_REQUEST
 
@@ -58,6 +71,10 @@ class OAuthCompleteView(views.APIView):
 
 
 class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """
+    User view set.
+    """
+
     serializer_class = UserSerializer
     lookup_field = "id"
 
