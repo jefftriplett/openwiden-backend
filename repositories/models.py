@@ -7,8 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 class VersionControlService(models.Model):
     name = models.CharField(_("name"), max_length=100)
-    label = models.CharField(_("label"), max_length=30, unique=True)
-    url = models.URLField(_("url"))
+    host = models.CharField(_("host"), max_length=50, unique=True)
 
     class Meta:
         verbose_name = _("version control service")
