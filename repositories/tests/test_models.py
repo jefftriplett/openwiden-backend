@@ -10,8 +10,9 @@ class VersionControlServiceModelTestCase(ModelTestCase):
         self.assertFieldMaxLength("name", 100)
         self.assertFieldVerboseNameEqual("name", _("name"))
 
-    def test_url_field(self):
-        self.assertFieldVerboseNameEqual("url", _("url"))
+    def test_host_field(self):
+        self.assertFieldMaxLength("host", 50)
+        self.assertFieldVerboseNameEqual("host", _("host"))
 
     def test_meta(self):
         self.assertEqual(self.meta.verbose_name, _("version control service"))

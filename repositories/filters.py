@@ -4,7 +4,7 @@ from .models import Repository
 
 
 class RepositoryFilter(filters.FilterSet):
-    version_control_service_label = filters.CharFilter(field_name="version_control_service", lookup_expr="label")
+    version_control_service = filters.CharFilter(field_name="version_control_service", lookup_expr="host")
 
     star_count_gte = filters.NumberFilter(field_name="star_count", lookup_expr="gte")
     open_issues_count_gte = filters.NumberFilter(field_name="open_issues_count", lookup_expr="gte")
@@ -16,7 +16,7 @@ class RepositoryFilter(filters.FilterSet):
     class Meta:
         model = Repository
         fields = (
-            "version_control_service_label",
+            "version_control_service",
             "star_count_gte",
             "open_issues_count_gte",
             "forks_count_gte",

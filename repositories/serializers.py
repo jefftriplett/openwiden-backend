@@ -4,13 +4,13 @@ from .models import Repository
 
 
 class RepositorySerializer(serializers.ModelSerializer):
-    version_control_service_label = serializers.CharField(source="version_control_service.label")
+    version_control_service = serializers.CharField(source="version_control_service.host")
 
     class Meta:
         model = Repository
         fields = (
             "id",
-            "version_control_service_label",
+            "version_control_service",
             "name",
             "description",
             "url",
