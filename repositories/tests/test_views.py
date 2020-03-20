@@ -45,12 +45,8 @@ class RepositoryViewSetTestCase(APITestCase):
     def test_add_view(self, patched_get_repo):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
         git_urls = (
-            # "https://gitlab.com/inkscape/inkscape",
-            # "https://gitlab.com/gnachman/iterm2",
             # "https://gitlab.com/pgjones/quart",
             "https://github.com/golang/go",
-            "https://github.com/getsentry/sentry",
-            "https://github.com/sveltejs/svelte",
         )
         for url in git_urls:
             patched_get_repo.return_value = Repository(url=url)
