@@ -13,12 +13,12 @@ cache:
 
 stages:
   - name: test
-  - name: build-production-image
-    if: branch = master
+#  - name: build-production-image
+#    if: branch = master
   - name: deploy-staging
     if: branch = develop
-  - name: deploy-production
-    if: branch = master
+#  - name: deploy-production
+#    if: branch = master
 
 
 jobs:
@@ -36,10 +36,10 @@ jobs:
       api_key: $HEROKU_AUTH_TOKEN
       on:
         branch: develop
-  - stage: deploy-production
-    script: skip
-    deploy:
-      <<: *heroku
-      app: openwiden-production
-      on:
-        branch: master
+#  - stage: deploy-production
+#    script: skip
+#    deploy:
+#      <<: *heroku
+#      app: openwiden-production
+#      on:
+#        branch: master
