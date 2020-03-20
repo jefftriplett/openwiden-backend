@@ -1,14 +1,22 @@
-from typing import Tuple
+import collections
+import re
+from typing import Optional
 
 
-github_url = "https://github.com/"
+PATTERN = re.compile(r"(?P<protocol>https|http)://(?P<host>\w*.\w*)/(?P<owner>[\w-]*)/(?P<repo>[\w-]*)")
+
+ParsedUrl = collections.namedtuple("ParsedUrl", ["protocol", "host", "owner", "repo"])
 
 
-def parse_repo_url(url: str) -> Tuple[str, str]:
-    service_label, repo_name = None, None
+def parse_repo_url(url: str) -> Optional[ParsedUrl]:
+    """
+    Parses repo by regex or returns None if no match found.
+    """
+    match = re.match(PATTERN, url)
 
-    if url.startswith(github_url):
-        i = len(github_url)
-        service_label, repo_name = "github", url[i:]
+    if match:
+        parsed_url = ParsedUrl(**match.groupdict())
+        if parsed_url.owner and parsed_url.repo:
+            return parsed_url
 
-    return service_label, repo_name
+    return None

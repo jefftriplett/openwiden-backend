@@ -20,7 +20,7 @@ fail_test_cases = (
     "https://github.com/",
     "http://github.com",
     "https://gitlab.com/pgjones//",
-    "https://bitbucket.org/owner/repo",
+    "https://bitbucket.org/owner/~/repo",
 )
 
 
