@@ -8,7 +8,7 @@ from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.exceptions import OAuthProviderNotFound
+from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI
 
 from .factories import UserFactory
 
@@ -69,6 +69,16 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
     def test_github_provider(self):
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_gitlab_provider(self):
+        url = reverse_lazy(self.url_path, kwargs={"provider": "gitlab"})
+        response = self.client.get(f"{url}?redirect_uri=http://example.com/")
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_gitlab_provider_no_redirect_uri(self):
+        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "gitlab"}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"detail": GitLabOAuthMissedRedirectURI().detail})
 
     def test_github_provider_redirect_uri_is_correct(self):
         redirect_uri = "http://localhost:3000/repositories/"
