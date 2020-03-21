@@ -98,7 +98,7 @@ class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
     def get_user_data(self, access_token) -> dict:
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
-        response = self.client.get(reverse_lazy("users:users-list"))
+        response = self.client.get(reverse_lazy("user"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.client.credentials(HTTP_AUTHORIZATION="")
         return response.data
@@ -145,27 +145,28 @@ class UsersViewSetTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
 
     def test_list_view(self):
-        response = self.client.get(reverse_lazy("users:users-list"))
+        response = self.client.get(reverse_lazy("users:user-list"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.user.id)
-        self.assertEqual(response.data["username"], self.user.username)
+        first_result = response.data["results"][0]
+        self.assertEqual(first_result["id"], self.user.id)
+        self.assertEqual(first_result["username"], self.user.username)
 
     def test_detail_view(self):
-        response = self.client.get(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
+        response = self.client.get(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_view(self):
         first_name = fake.first_name()
         data = {"first_name": first_name}
-        response = self.client.patch(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}), data=data)
+        response = self.client.patch(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}), data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["first_name"], first_name)
 
     def test_delete_view(self):
-        response = self.client.delete(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
+        response = self.client.delete(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(self.user._meta.model.objects.filter(id=self.user.id).exists())
 
     def test_create_view(self):
-        response = self.client.post(reverse_lazy("users:users-list"))
+        response = self.client.post(reverse_lazy("users:user-list"))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

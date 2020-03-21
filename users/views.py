@@ -9,7 +9,6 @@ from .filters import OAuthCompleteFilter
 from .serializers import UserSerializer
 from .utils import create_or_update_user
 
-
 oauth = OAuth()
 oauth.register("github")
 oauth.register("gitlab")
@@ -95,11 +94,14 @@ class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.Destroy
 
     serializer_class = UserSerializer
     lookup_field = "id"
+    queryset = UserSerializer.Meta.model.objects.all()
 
-    def get_object(self):
-        return self.request.user
 
-    def list(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+class UserRetrieveByTokenView(views.APIView):
+    """
+    Returns user by provided JWT tokens.
+    """
+
+    def get(self, request, *args, **kwargs):
+        data = UserSerializer(instance=request.user).data
+        return Response(data=data)
