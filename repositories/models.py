@@ -34,6 +34,7 @@ class Repository(SoftDeletableModel, UUIDModel):
     updated_at = models.DateTimeField(_("updated at"))
 
     class Meta:
+        ordering = ["-open_issues_count"]
         verbose_name = _("repository")
         verbose_name_plural = _("repositories")
         constraints = (
