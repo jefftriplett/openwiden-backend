@@ -62,7 +62,7 @@ class Issue(UUIDModel):
     url = models.URLField(_("url"))
 
     created_at = models.DateTimeField(_("crated at"))
-    closed_at = models.DateTimeField(_("closed at"), blank=True)
+    closed_at = models.DateTimeField(_("closed at"), blank=True, null=True)
     updated_at = models.DateTimeField(_("updated at"))
 
     class Meta:
