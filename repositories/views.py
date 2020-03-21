@@ -4,10 +4,9 @@ from github import Github
 
 from rest_framework import viewsets, mixins, permissions
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
-from .exceptions import RepositoryURLParse, PrivateRepository
+from .exceptions import RepositoryURLParse, PrivateRepository, VersionControlServiceNotFound
 from .filters import RepositoryFilter
 from .models import Repository, VersionControlService
 from .serializers import RepositorySerializer
@@ -32,7 +31,11 @@ class RepositoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
         if parsed_url is None:
             raise RepositoryURLParse(url)
 
-        service = get_object_or_404(VersionControlService.objects.all(), host=parsed_url.host)
+        try:
+            service = VersionControlService.objects.get(host=parsed_url.host)
+        except VersionControlService.DoesNotExist:
+            raise VersionControlServiceNotFound(parsed_url.host)
+
         data = None
 
         if parsed_url.host.startswith("github"):
