@@ -8,6 +8,7 @@ from rest_framework.routers import DefaultRouter
 from openwiden.views import schema_view
 from repositories.views import RepositoryViewSet
 from users.views import UserRetrieveByTokenView
+from users.urls import users_urls, auth_urls
 
 router = DefaultRouter()
 router.register("repositories", RepositoryViewSet)
@@ -16,8 +17,9 @@ router.register("repositories", RepositoryViewSet)
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include(router.urls)),
+    path("auth/", include((auth_urls, "auth"), namespace="auth")),
     path("user/", UserRetrieveByTokenView.as_view(), name="user"),
-    path("users/", include("users.urls", namespace="users")),
+    path("users/", include((users_urls, "users"), namespace="users")),
     # The 'api-root' from django rest-frameworks default router
     # http://www.django-rest-framework.org/api-guide/routers/#defaultrouter
     re_path(r"^$", RedirectView.as_view(url=reverse_lazy("api-root"), permanent=False)),

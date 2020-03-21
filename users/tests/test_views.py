@@ -64,7 +64,7 @@ class ProviderNotFoundTestMixin:
 )
 class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
-    url_path = "users:login"
+    url_path = "auth:login"
 
     def test_github_provider(self):
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
@@ -94,7 +94,7 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 )
 class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
-    url_path = "users:complete"
+    url_path = "auth:complete"
 
     def get_user_data(self, access_token) -> dict:
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
