@@ -6,6 +6,7 @@ from model_utils.models import UUIDModel
 
 class User(AbstractUser, UUIDModel):
     class Meta:
+        ordering = ["-date_joined"]
         verbose_name = _("user")
         verbose_name_plural = _("users")
 

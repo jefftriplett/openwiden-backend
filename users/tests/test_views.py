@@ -8,7 +8,7 @@ from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.exceptions import OAuthProviderNotFound
+from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI
 
 from .factories import UserFactory
 
@@ -24,6 +24,17 @@ GITHUB_PROVIDER = {
     "authorize_params": None,
     "api_base_url": "https://api.github.com/",
     "client_kwargs": {"scope": "user:email"},
+}
+
+GITLAB_PROVIDER = {
+    "client_id": "GITHUB_CLIENT_ID",
+    "client_secret": "GITHUB_SECRET_KEY",
+    "access_token_url": "http://gitlab.example.com/oauth/token",
+    "access_token_params": None,
+    "authorize_url": "https://gitlab.example.com/oauth/authorize",
+    "authorize_params": None,
+    "api_base_url": "https://gitlab.example.com/api/v4/",
+    "client_kwargs": None,
 }
 
 
@@ -48,14 +59,26 @@ class ProviderNotFoundTestMixin:
         self.assertEqual({"detail": detail}, response.data)
 
 
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
+@override_settings(
+    AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER,}
+)
 class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
-    url_path = "users:login"
+    url_path = "auth:login"
 
     def test_github_provider(self):
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_gitlab_provider(self):
+        url = reverse_lazy(self.url_path, kwargs={"provider": "gitlab"})
+        response = self.client.get(f"{url}?redirect_uri=http://example.com/")
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_gitlab_provider_no_redirect_uri(self):
+        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "gitlab"}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"detail": GitLabOAuthMissedRedirectURI().detail})
 
     def test_github_provider_redirect_uri_is_correct(self):
         redirect_uri = "http://localhost:3000/repositories/"
@@ -66,14 +89,16 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
         self.assertIn(query_params, response.url)
 
 
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER})
+@override_settings(
+    AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER,}
+)
 class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
-    url_path = "users:complete"
+    url_path = "auth:complete"
 
     def get_user_data(self, access_token) -> dict:
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
-        response = self.client.get(reverse_lazy("users:users-list"))
+        response = self.client.get(reverse_lazy("user"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.client.credentials(HTTP_AUTHORIZATION="")
         return response.data
@@ -120,27 +145,28 @@ class UsersViewSetTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
 
     def test_list_view(self):
-        response = self.client.get(reverse_lazy("users:users-list"))
+        response = self.client.get(reverse_lazy("users:user-list"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.user.id)
-        self.assertEqual(response.data["username"], self.user.username)
+        first_result = response.data["results"][0]
+        self.assertEqual(first_result["id"], self.user.id)
+        self.assertEqual(first_result["username"], self.user.username)
 
     def test_detail_view(self):
-        response = self.client.get(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
+        response = self.client.get(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_view(self):
         first_name = fake.first_name()
         data = {"first_name": first_name}
-        response = self.client.patch(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}), data=data)
+        response = self.client.patch(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}), data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["first_name"], first_name)
 
     def test_delete_view(self):
-        response = self.client.delete(reverse_lazy("users:users-detail", kwargs={"id": self.user.id}))
+        response = self.client.delete(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(self.user._meta.model.objects.filter(id=self.user.id).exists())
 
     def test_create_view(self):
-        response = self.client.post(reverse_lazy("users:users-list"))
+        response = self.client.post(reverse_lazy("users:user-list"))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

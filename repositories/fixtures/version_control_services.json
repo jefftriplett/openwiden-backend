@@ -4,8 +4,7 @@
   "pk": 1,
   "fields": {
     "name": "GitHub",
-    "label": "github",
-    "url": "https://github.com/"
+    "host": "github.com"
   }
 },
 {
@@ -13,8 +12,7 @@
   "pk": 2,
   "fields": {
     "name": "GitLab",
-    "label": "gitlab",
-    "url": "https://gitlab.com/"
+    "host": "gitlab.com"
   }
 }
 ]

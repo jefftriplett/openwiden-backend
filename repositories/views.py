@@ -27,16 +27,16 @@ class RepositoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
     @action(detail=False, methods=["POST"])
     def add(self, request, *args, **kwargs):
         url = request.data["url"]
-        service_label, repo_name = parse_repo_url(url)
+        parsed_url = parse_repo_url(url)
 
-        if service_label is None or repo_name is None:
+        if parsed_url is None:
             raise RepositoryURLParse(url)
 
-        service = get_object_or_404(VersionControlService.objects.all(), label=service_label)
+        service = get_object_or_404(VersionControlService.objects.all(), host=parsed_url.host)
         data = None
 
-        if service_label == "github":
-            repo = github.get_repo(repo_name)
+        if parsed_url.host.startswith("github"):
+            repo = github.get_repo(f"{parsed_url.owner}/{parsed_url.repo}")
 
             if repo.private:
                 raise PrivateRepository()

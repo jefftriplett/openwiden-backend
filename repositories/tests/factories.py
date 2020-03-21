@@ -7,11 +7,11 @@ from repositories.models import VersionControlService, Repository, Issue
 
 class VersionControlServiceFactory(factory.DjangoModelFactory):
     name = factory.Faker("text", max_nb_chars=100)
-    url = factory.Faker("url")
+    host = factory.Iterator(["github.com", "gitlab.com"])
 
     class Meta:
         model = VersionControlService
-        django_get_or_create = ("name",)
+        django_get_or_create = ("host",)
 
 
 class RepositoryFactory(factory.DjangoModelFactory):
