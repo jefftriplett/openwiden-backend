@@ -61,14 +61,9 @@ class OAuthCompleteView(views.APIView):
         if client is None:
             raise OAuthProviderNotFound(provider)
 
-        # Try to retrieve token from provider
+        # Create or update user by specified provider and user type (anonymous or authenticated)
         try:
-            token = client.authorize_access_token(request)
-            user = self.request.user
-
-            # If user from request is not authorized (registration or re-auth)
-            if user.is_anonymous:
-                user = create_or_update_user(provider, client, token)
+            user = create_or_update_user(provider, client, request)
 
             if user is None:
                 raise CreateOrUpdateUserReturnedNone()
