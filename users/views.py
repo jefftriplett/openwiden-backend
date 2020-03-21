@@ -4,7 +4,7 @@ from rest_framework import views, permissions, status, viewsets, mixins
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .exceptions import OAuthProviderNotFound, CreateOrUpdateUserReturnedNone
+from .exceptions import OAuthProviderNotFound, CreateOrUpdateUserReturnedNone, GitLabOAuthMissedRedirectURI
 from .filters import OAuthCompleteFilter
 from .serializers import UserSerializer
 from .utils import create_or_update_user
@@ -18,6 +18,14 @@ oauth.register("gitlab")
 class OAuthLoginView(views.APIView):
     """
     Redirects user for auth via available provider.
+
+    # GitLab
+    For GitLab `redirect_uri` is required.
+    GitLab tries to find redirect_uri from the list, specified in the app `Callback URL` settings.
+    This is why if redirect_uri was not specified in the query parameters, an error will occur from GitLab.
+
+    For example:
+    ### http://0.0.0.0:8000/users/login/gitlab/?redirect_uri=http://0.0.0.0:8000/users/complete/gitlab/
     """
 
     permission_classes = [permissions.AllowAny]
@@ -29,6 +37,12 @@ class OAuthLoginView(views.APIView):
             raise OAuthProviderNotFound(provider)
 
         redirect_uri = request.GET.get("redirect_uri")
+
+        # GitLab OAuth requires redirect_uri,
+        # that's why additional check should be passed
+        if provider == "gitlab":
+            if redirect_uri is None:
+                raise GitLabOAuthMissedRedirectURI()
 
         return client.authorize_redirect(request, redirect_uri)
 
@@ -76,7 +90,7 @@ class OAuthCompleteView(views.APIView):
 
 class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """
-    User view set.
+    User view set for retrieve, update or delete user.
     """
 
     serializer_class = UserSerializer
