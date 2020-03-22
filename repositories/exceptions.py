@@ -28,3 +28,9 @@ class VersionControlServiceNotFound(exceptions.APIException):
         available_services = ", ".join(VersionControlService.objects.values_list("host", flat=True))
         detail = force_str(self.default_detail).format(host=host, available_services=available_services)
         super().__init__(detail)
+
+
+class RepositoryAlreadyExists(exceptions.APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = _("Repository already exists.")
+    default_code = "invalid"
