@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .exceptions import OAuthProviderNotFound, CreateOrUpdateUserReturnedNone, GitLabOAuthMissedRedirectURI
 from .filters import OAuthCompleteFilter
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserWithOAuthTokensSerializer
 from .utils import create_or_update_user
 
 oauth = OAuth()
@@ -94,9 +94,9 @@ class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, mixins.Destroy
 
 class UserRetrieveByTokenView(views.APIView):
     """
-    Returns user by provided JWT tokens.
+    Returns user with oauth tokens by provided JWT tokens.
     """
 
     def get(self, request, *args, **kwargs):
-        data = UserSerializer(instance=request.user).data
+        data = UserWithOAuthTokensSerializer(instance=request.user).data
         return Response(data=data)
