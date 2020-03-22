@@ -156,16 +156,13 @@ class UsersViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_view(self):
+        username = fake.user_name()
         first_name = fake.first_name()
-        data = {"first_name": first_name}
+        last_name = fake.last_name()
+        data = {"username": username, "first_name": first_name, "last_name": last_name}
         response = self.client.patch(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}), data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["first_name"], first_name)
-
-    def test_delete_view(self):
-        response = self.client.delete(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(self.user._meta.model.objects.filter(id=self.user.id).exists())
 
     def test_create_view(self):
         response = self.client.post(reverse_lazy("users:user-list"))
