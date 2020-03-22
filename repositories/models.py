@@ -4,6 +4,8 @@ from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
 
+from .managers import RepositoryManager
+
 
 class VersionControlService(models.Model):
     name = models.CharField(_("name"), max_length=100)
@@ -32,6 +34,8 @@ class Repository(SoftDeletableModel, UUIDModel):
 
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
+
+    objects = RepositoryManager()
 
     class Meta:
         ordering = ["-open_issues_count"]
