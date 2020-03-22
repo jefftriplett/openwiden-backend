@@ -26,7 +26,7 @@ class IssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
         fields = (
-            "remote_id",
+            "id",
             "title",
             "description",
             "state",

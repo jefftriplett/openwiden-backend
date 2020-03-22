@@ -8,8 +8,7 @@ from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 
 from repositories.exceptions import RepositoryURLParse, VersionControlServiceNotFound
-from repositories.tests.factories import RepositoryFactory
-
+from repositories.tests.factories import RepositoryFactory, IssueFactory
 
 fake = Faker()
 datetime_format = "%m/%d/%Y %I:%M %p"
@@ -56,7 +55,7 @@ class RepositoryViewSetTestCase(APITestCase):
         repositories = RepositoryFactory.create_batch(5)
         response = self.client.get(reverse_lazy("repository-list"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), len(repositories))
+        self.assertEqual(response.data["count"], len(repositories))
 
     def test_retrieve_view(self):
         repository = RepositoryFactory.create()
@@ -91,3 +90,21 @@ class RepositoryViewSetTestCase(APITestCase):
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"detail": VersionControlServiceNotFound("example.com").detail})
+
+
+class IssueViewSetTestCase(APITestCase):
+    def test_list_action(self):
+        repository = RepositoryFactory.create()
+        issues = IssueFactory.create_batch(repository=repository, size=3)
+        response = self.client.get(reverse_lazy("issue-list", kwargs={"repository_id": str(repository.id)}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], len(issues))
+
+    def test_retrieve_action(self):
+        issue = IssueFactory.create()
+        repository = issue.repository
+        issue_id = str(issue.id)
+        kwargs = {"repository_id": str(repository.id), "id": issue_id}
+        response = self.client.get(reverse_lazy("issue-detail", kwargs=kwargs))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], issue_id)
