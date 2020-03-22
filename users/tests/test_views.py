@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI
 
-from .factories import UserFactory
+from .factories import UserFactory, OAuth2TokenFactory
 
 fake = Faker()
 
@@ -170,3 +170,14 @@ class UsersViewSetTestCase(APITestCase):
     def test_create_view(self):
         response = self.client.post(reverse_lazy("users:user-list"))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class UserRetrieveByTokenViewTestCase(APITestCase):
+    def test_get_action(self):
+        user = UserFactory.create()
+        OAuth2TokenFactory.create_batch(user=user, size=3)
+        access_token = str(RefreshToken.for_user(user).access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+        response = self.client.get(reverse_lazy("user"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["oauth2_tokens"]), 3)
