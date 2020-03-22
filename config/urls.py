@@ -3,20 +3,24 @@ from django.urls import path, re_path, include, reverse_lazy
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic.base import RedirectView
-from rest_framework.routers import DefaultRouter
+from rest_framework_nested import routers
 
 from openwiden.views import schema_view
-from repositories.views import RepositoryViewSet
+from repositories.views import RepositoryViewSet, IssueViewSet
 from users.views import UserRetrieveByTokenView
 from users.urls import users_urls, auth_urls
 
-router = DefaultRouter()
-router.register("repositories", RepositoryViewSet)
+router = routers.DefaultRouter()
+router.register("repositories", RepositoryViewSet, basename="repository")
+
+repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
+repository_router.register("issues", IssueViewSet, basename="issue")
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include(router.urls)),
+    path("api/v1/", include(repository_router.urls)),
     path("auth/", include((auth_urls, "auth"), namespace="auth")),
     path("user/", UserRetrieveByTokenView.as_view(), name="user"),
     path("users/", include((users_urls, "users"), namespace="users")),

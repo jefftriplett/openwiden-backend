@@ -2,21 +2,21 @@ from django.conf import settings
 from django.utils.timezone import make_aware
 from github import Github
 
-from rest_framework import viewsets, mixins, permissions
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .exceptions import RepositoryURLParse, PrivateRepository, VersionControlServiceNotFound, RepositoryAlreadyExists
 from .filters import RepositoryFilter
-from .models import Repository, VersionControlService
-from .serializers import RepositorySerializer
+from .models import VersionControlService, Repository, Issue
+from .serializers import RepositorySerializer, IssueSerializer
 from .utils import parse_repo_url
 
 
 github = Github(client_id=settings.GITHUB_CLIENT_ID, client_secret=settings.GITHUB_SECRET_KEY)
 
 
-class RepositoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = RepositorySerializer
     queryset = Repository.objects.all()
     lookup_field = "id"
@@ -85,3 +85,12 @@ class RepositoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
             data = self.serializer_class(repository).data
 
         return Response(data)
+
+
+class IssueViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = IssueSerializer
+    lookup_field = "id"
+    permission_classes = (permissions.AllowAny,)
+
+    def get_queryset(self):
+        return Issue.objects.filter(repository=self.kwargs["repository_id"])

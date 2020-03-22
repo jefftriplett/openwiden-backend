@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Repository
+from .models import Repository, Issue
 
 
 class RepositorySerializer(serializers.ModelSerializer):
@@ -18,5 +18,21 @@ class RepositorySerializer(serializers.ModelSerializer):
             "open_issues_count",
             "forks_count",
             "created_at",
+            "updated_at",
+        )
+
+
+class IssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Issue
+        fields = (
+            "remote_id",
+            "title",
+            "description",
+            "state",
+            "labels",
+            "url",
+            "created_at",
+            "closed_at",
             "updated_at",
         )
