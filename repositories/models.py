@@ -70,6 +70,7 @@ class Issue(UUIDModel):
     updated_at = models.DateTimeField(_("updated at"))
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = _("issue")
         verbose_name_plural = _("issues")
         constraints = (models.UniqueConstraint(fields=["repository", "remote_id"], name="unique_issue"),)
