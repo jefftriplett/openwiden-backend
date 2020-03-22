@@ -10,8 +10,27 @@ from rest_framework.test import APITestCase
 from repositories.exceptions import RepositoryURLParse, VersionControlServiceNotFound
 from repositories.tests.factories import RepositoryFactory
 
+
 fake = Faker()
 datetime_format = "%m/%d/%Y %I:%M %p"
+
+
+class Label:
+    def __init__(self):
+        self.name = fake.word()
+
+
+class Issue:
+    def __init__(self):
+        self.id = fake.pyint()
+        self.title = fake.word()
+        self.body = fake.text()
+        self.state = "open"
+        self.labels = [Label() for _ in range(3)]
+        self.html_url = fake.url()
+        self.created_at = datetime.strptime(fake.date(datetime_format), datetime_format)
+        self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
+        self.closed_at = datetime.strptime(fake.date(datetime_format), datetime_format)
 
 
 class Repository:
@@ -26,6 +45,10 @@ class Repository:
         self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
         self.open_issues_count = fake.pyint()
         self.private = private
+
+    @staticmethod
+    def get_issues():
+        return [Issue() for _ in range(3)]
 
 
 class RepositoryViewSetTestCase(APITestCase):
