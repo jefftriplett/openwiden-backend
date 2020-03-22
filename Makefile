@@ -32,6 +32,11 @@ mm:
 migrate:
 	@make manage c=migrate
 
+### Fixtures
+_load_fixture:
+	@make manage c="loaddata $(fixture)"
+load_fixtures:
+	@make _load_fixture fixture="version_control_services.json"
 
 # Code quality
 flake8:
