@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI
+from users.serializers import UserWithOAuthTokensSerializer
 
 from .factories import UserFactory, OAuth2TokenFactory
 
@@ -172,9 +173,15 @@ class UsersViewSetTestCase(APITestCase):
 class UserRetrieveByTokenViewTestCase(APITestCase):
     def test_get_action(self):
         user = UserFactory.create()
-        OAuth2TokenFactory.create_batch(user=user, size=3)
+        OAuth2TokenFactory.create(user=user, provider="github")
+        OAuth2TokenFactory.create(user=user, provider="gitlab")
         access_token = str(RefreshToken.for_user(user).access_token)
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+        expected_data = UserWithOAuthTokensSerializer(user).data
+        mock_get = mock.MagicMock("users.views.UserWithOAuthTokensSerializer.data")
+        mock_get.return_value = expected_data
         response = self.client.get(reverse_lazy("user"))
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["oauth2_tokens"]), 3)
+        self.assertEqual(response.data, expected_data)
+        self.assertEqual(len(response.data["oauth2_tokens"]), 2)
