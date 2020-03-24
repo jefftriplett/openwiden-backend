@@ -172,9 +172,14 @@ class UsersViewSetTestCase(APITestCase):
 class UserRetrieveByTokenViewTestCase(APITestCase):
     def test_get_action(self):
         user = UserFactory.create()
-        OAuth2TokenFactory.create_batch(user=user, size=3)
+        OAuth2TokenFactory.create(user=user, provider="github")
+        OAuth2TokenFactory.create(user=user, provider="gitlab")
         access_token = str(RefreshToken.for_user(user).access_token)
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
         response = self.client.get(reverse_lazy("user"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["oauth2_tokens"]), 3)
+        self.assertEqual(len(response.data["oauth2_tokens"]), 2)
+        self.assertEqual(response.data["id"], str(user.id))
+        self.assertEqual(response.data["username"], user.username)
+        self.assertEqual(response.data["first_name"], user.first_name)
+        self.assertEqual(response.data["last_name"], user.last_name)
