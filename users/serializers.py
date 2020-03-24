@@ -19,6 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         fields = (
+            "id",
             "username",
             "first_name",
             "last_name",
