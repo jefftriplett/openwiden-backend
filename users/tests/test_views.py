@@ -9,8 +9,9 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI
+from users.serializers import UserWithOAuthTokensSerializer
 
-from .factories import UserFactory
+from .factories import UserFactory, OAuth2TokenFactory
 
 fake = Faker()
 
@@ -156,17 +157,31 @@ class UsersViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_view(self):
+        username = fake.user_name()
         first_name = fake.first_name()
-        data = {"first_name": first_name}
+        last_name = fake.last_name()
+        data = {"username": username, "first_name": first_name, "last_name": last_name}
         response = self.client.patch(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}), data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["first_name"], first_name)
 
-    def test_delete_view(self):
-        response = self.client.delete(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(self.user._meta.model.objects.filter(id=self.user.id).exists())
-
     def test_create_view(self):
         response = self.client.post(reverse_lazy("users:user-list"))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class UserRetrieveByTokenViewTestCase(APITestCase):
+    def test_get_action(self):
+        user = UserFactory.create()
+        OAuth2TokenFactory.create(user=user, provider="github")
+        OAuth2TokenFactory.create(user=user, provider="gitlab")
+        access_token = str(RefreshToken.for_user(user).access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+        expected_data = UserWithOAuthTokensSerializer(user).data
+        mock_get = mock.MagicMock("users.views.UserWithOAuthTokensSerializer.data")
+        mock_get.return_value = expected_data
+        response = self.client.get(reverse_lazy("user"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, expected_data)
+        self.assertEqual(len(response.data["oauth2_tokens"]), 2)

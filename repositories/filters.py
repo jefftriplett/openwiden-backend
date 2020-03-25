@@ -20,4 +20,6 @@ class RepositoryFilter(filters.FilterSet):
             "star_count_gte",
             "open_issues_count_gte",
             "forks_count_gte",
+            "created_at",
+            "updated_at",
         )

@@ -13,7 +13,7 @@ class User(AbstractUser, UUIDModel):
 
 class OAuth2Token(models.Model):
     user = models.ForeignKey(
-        User, models.CASCADE, related_name="tokens", related_query_name="token", verbose_name=_("user")
+        User, models.CASCADE, related_name="oauth2_tokens", related_query_name="oauth2_token", verbose_name=_("user")
     )
     # Fields
     provider = models.CharField(_("provider name"), max_length=40)

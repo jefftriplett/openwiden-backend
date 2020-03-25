@@ -4,6 +4,8 @@ from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
 
+from .managers import RepositoryManager
+
 
 class VersionControlService(models.Model):
     name = models.CharField(_("name"), max_length=100)
@@ -32,6 +34,8 @@ class Repository(SoftDeletableModel, UUIDModel):
 
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
+
+    objects = RepositoryManager()
 
     class Meta:
         ordering = ["-open_issues_count"]
@@ -62,10 +66,11 @@ class Issue(UUIDModel):
     url = models.URLField(_("url"))
 
     created_at = models.DateTimeField(_("crated at"))
-    closed_at = models.DateTimeField(_("closed at"), blank=True)
+    closed_at = models.DateTimeField(_("closed at"), blank=True, null=True)
     updated_at = models.DateTimeField(_("updated at"))
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = _("issue")
         verbose_name_plural = _("issues")
         constraints = (models.UniqueConstraint(fields=["repository", "remote_id"], name="unique_issue"),)
