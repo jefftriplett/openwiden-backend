@@ -9,6 +9,7 @@ services:
     build: .
     command: bash run_server.sh
     environment:
+      - CODECOV_TOKEN
       - DJANGO_DEBUG
       - DJANGO_SECRET_KEY
       - DJANGO_SETTINGS_MODULE

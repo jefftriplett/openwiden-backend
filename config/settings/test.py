@@ -12,10 +12,7 @@ class Test(Base):
         Base.ROOT_DIR.root,
         "-s",
         "--nologcapture",
-        "--with-coverage",
         "--with-progressive",
-        "--cover-package=openwiden,users,repositories",
-        "--cover-html",
     ]
 
     # Mail

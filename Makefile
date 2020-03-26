@@ -49,10 +49,17 @@ black_check:
 	$(WEB_CONTAINER) black --check .
 
 # Tests
+with_test_settings:
+	DJANGO_CONFIGURATION=Test $(WEB_CONTAINER) $(c)
 test:
-	DJANGO_CONFIGURATION=Test $(WEB_CONTAINER) python manage.py test --settings=config.settings.test
+	@make with_test_settings c="coverage erase"
+	@make with_test_settings c="coverage run manage.py test --settings=config.settings.test"
+	@make with_test_settings c="coverage report -m"
+	@make with_test_settings c="coverage html"
 
 run_tests:
 	@make test
 	@make black_check
 	@make flake8
+	@make with_test_settings c="coverage xml"
+	@make with_test_settings c="codecov"
