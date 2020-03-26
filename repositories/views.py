@@ -51,7 +51,7 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
                 raise PrivateRepository()
 
             # Get repo issues
-            issues_data = repo.get_issues()
+            issues_data = repo.get_issues(state="all")
             issues = [
                 dict(
                     remote_id=i.id,
@@ -61,10 +61,11 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
                     labels=[label.name for label in i.labels],
                     url=i.html_url,
                     created_at=make_aware(i.created_at),
-                    closed_at=make_aware(i.closed_at),
+                    closed_at=make_aware(i.closed_at) if i.closed_at else None,
                     updated_at=make_aware(i.updated_at),
                 )
                 for i in issues_data
+                if not i.pull_request  # exclude pull requests
             ]
 
             # Create repository with nested data

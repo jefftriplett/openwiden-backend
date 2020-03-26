@@ -29,11 +29,23 @@ class Issue:
         self.html_url = fake.url()
         self.created_at = datetime.strptime(fake.date(datetime_format), datetime_format)
         self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
-        self.closed_at = datetime.strptime(fake.date(datetime_format), datetime_format)
+        self.closed_at = None
+        self.pull_request = None
+
+
+class PullRequest(Issue):
+    def __init__(self):
+        super().__init__()
+        self.pull_request = {
+            "url": "https://api.github.com/repos/octocat/Hello-World/pulls/1347",
+            "html_url": "https://github.com/octocat/Hello-World/pull/1347",
+            "diff_url": "https://github.com/octocat/Hello-World/pull/1347.diff",
+            "patch_url": "https://github.com/octocat/Hello-World/pull/1347.patch",
+        }
 
 
 class Repository:
-    def __init__(self, url: str, private: bool = False):
+    def __init__(self, url: str, private: bool = False, issues_count: int = 5, pull_requests_count: int = 3):
         self.id = fake.pyint()
         self.name = fake.name()
         self.description = fake.text()
@@ -42,12 +54,13 @@ class Repository:
         self.stargazers_count = fake.pyint()
         self.created_at = datetime.strptime(fake.date(datetime_format), datetime_format)
         self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
-        self.open_issues_count = fake.pyint()
+        self.open_issues_count = issues_count + pull_requests_count
         self.private = private
+        self._issues_count = issues_count
+        self._pull_requests_count = pull_requests_count
 
-    @staticmethod
-    def get_issues():
-        return [Issue() for _ in range(3)]
+    def get_issues(self, *args, **kwargs):
+        return [Issue() for _ in range(self._issues_count)] + [PullRequest() for _ in range(self._pull_requests_count)]
 
 
 class RepositoryViewSetTestCase(APITestCase):
@@ -64,18 +77,19 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.data["id"], str(repository.id))
 
     @mock.patch("repositories.views.github.get_repo")
-    def test_add_view(self, patched_get_repo):
+    def test_add_view_wih_github(self, patched_get_repo):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
-        git_urls = (
-            # "https://gitlab.com/pgjones/quart",
-            "https://github.com/golang/go",
-        )
-        for url in git_urls:
-            patched_get_repo.return_value = Repository(url=url)
-            response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
-            self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
-            self.assertEqual(response.data["url"], url)
-        self.assertEqual(RepositoryFactory._meta.model.objects.count(), len(git_urls))
+        url = "https://github.com/golang/go"
+        mock_repo = Repository(url=url)
+        patched_get_repo.return_value = mock_repo
+        response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
+        self.assertEqual(response.data["url"], url)
+        self.assertEqual(response.data["open_issues_count"], mock_repo._issues_count)
+
+    def test_add_view_with_gitlab(self):
+        # "https://gitlab.com/pgjones/quart"
+        self.skipTest("todo")
 
     @mock.patch("repositories.views.parse_repo_url")
     def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):
