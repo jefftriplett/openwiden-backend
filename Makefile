@@ -61,4 +61,3 @@ run_tests:
 	@make test
 	@make black_check
 	@make flake8
-	@make with_test_settings c="codecov"
