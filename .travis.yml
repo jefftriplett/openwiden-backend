@@ -25,12 +25,9 @@ jobs:
   include:
   - stage: test
     before_script:
-      - pip install codecov
       - docker-compose build
     script:
       - make run_tests
-    after_success:
-      - codecov
   - stage: deploy-staging
     script: skip
     deploy: &heroku
