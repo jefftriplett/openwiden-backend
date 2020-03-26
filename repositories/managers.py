@@ -17,7 +17,6 @@ class RepositoryManager(Manager):
         star_count,
         created_at,
         updated_at,
-        open_issues_count,
         issues: List[dict] = None,
     ):
         repository = self.create(
@@ -30,10 +29,11 @@ class RepositoryManager(Manager):
             star_count=star_count,
             created_at=created_at,
             updated_at=updated_at,
-            open_issues_count=open_issues_count,
         )
 
         if issues:
             models.Issue.objects.bulk_create([models.Issue(repository=repository, **i) for i in issues])
+            repository.open_issues_count = repository.issues.filter(state=models.Issue.STATE_CHOICES.open).count()
+            repository.save()
 
         return repository

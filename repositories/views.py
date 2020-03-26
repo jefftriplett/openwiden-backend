@@ -79,7 +79,6 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
                 star_count=repo.stargazers_count,
                 created_at=make_aware(repo.created_at),
                 updated_at=make_aware(repo.updated_at),
-                open_issues_count=repo.open_issues_count,
                 issues=issues,
             )
 
