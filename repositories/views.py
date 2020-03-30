@@ -1,19 +1,16 @@
-from django.conf import settings
-from django.utils.timezone import make_aware
-from github import Github
-
+from django.utils.translation import gettext_lazy as _
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .exceptions import RepositoryURLParse, PrivateRepository, VersionControlServiceNotFound, RepositoryAlreadyExists
+from django_q.tasks import async_task
+
+from .exceptions import RepositoryURLParse, VersionControlServiceNotFound
 from .filters import RepositoryFilter
 from .models import VersionControlService, Repository, Issue
 from .serializers import RepositorySerializer, IssueSerializer
 from .utils import parse_repo_url
-
-
-github = Github(client_id=settings.GITHUB_CLIENT_ID, client_secret=settings.GITHUB_SECRET_KEY)
+from .tasks import add_github_repository
 
 
 class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -36,55 +33,10 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
         except VersionControlService.DoesNotExist:
             raise VersionControlServiceNotFound(parsed_url.host)
 
-        data = None
-
         if parsed_url.host.startswith("github"):
-            repo = github.get_repo(f"{parsed_url.owner}/{parsed_url.repo}")
+            async_task(add_github_repository, self.request.user, parsed_url, service)
 
-            # Check if repository already exists
-            qs = Repository.objects.filter(version_control_service=service, remote_id=repo.id)
-            if qs.exists():
-                raise RepositoryAlreadyExists()
-
-            # Check if repo is private
-            if repo.private:
-                raise PrivateRepository()
-
-            # Get repo issues
-            issues_data = repo.get_issues(state="all")
-            issues = [
-                dict(
-                    remote_id=i.id,
-                    title=i.title,
-                    description=i.body,
-                    state=i.state,
-                    labels=[label.name for label in i.labels],
-                    url=i.html_url,
-                    created_at=make_aware(i.created_at),
-                    closed_at=make_aware(i.closed_at) if i.closed_at else None,
-                    updated_at=make_aware(i.updated_at),
-                )
-                for i in issues_data
-                if not i.pull_request  # exclude pull requests
-            ]
-
-            # Create repository with nested data
-            repository = Repository.objects.nested_create(
-                version_control_service=service,
-                remote_id=repo.id,
-                name=repo.name,
-                description=repo.description,
-                url=repo.html_url,
-                forks_count=repo.forks_count,
-                star_count=repo.stargazers_count,
-                created_at=make_aware(repo.created_at),
-                updated_at=make_aware(repo.updated_at),
-                issues=issues,
-            )
-
-            data = self.serializer_class(repository).data
-
-        return Response(data)
+        return Response({"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")})
 
 
 class IssueViewSet(viewsets.ReadOnlyModelViewSet):
