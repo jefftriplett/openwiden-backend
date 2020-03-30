@@ -5,6 +5,8 @@ from model_utils.models import UUIDModel
 
 
 class User(AbstractUser, UUIDModel):
+    avatar = models.ImageField(_("user avatar"), blank=True, upload_to="avatar")
+
     class Meta:
         ordering = ["-date_joined"]
         verbose_name = _("user")

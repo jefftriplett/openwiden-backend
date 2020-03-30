@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .exceptions import OAuthProviderNotFound, CreateOrUpdateUserReturnedNone, GitLabOAuthMissedRedirectURI
 from .filters import OAuthCompleteFilter
 from .models import User
+from .permissions import IsUserOrReadOnly
 from .serializers import UserSerializer, UserUpdateSerializer, UserWithOAuthTokensSerializer
 from .utils import create_or_update_user
 
@@ -83,7 +84,7 @@ class OAuthCompleteView(views.APIView):
         return Response({"detail": msg}, code)
 
 
-class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """
     User view set for list, retrieve or update actions for user.
     """
@@ -91,6 +92,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.Gener
     serializer_class = UserSerializer
     lookup_field = "id"
     queryset = User.objects.all()
+    permission_classes = (IsUserOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ["update", "partial_update"]:

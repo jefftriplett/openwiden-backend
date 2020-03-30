@@ -44,9 +44,16 @@ class Profile:
     login = f"{fake.first_name()} {fake.last_name()}"
     name = fake.name()
     email = fake.email()
+    avatar_url = "https://test.com/avatar.jpg"
 
     def json(self):
-        return {"id": self.id, "login": self.login, "name": self.name, "email": self.email}
+        return {
+            "id": self.id,
+            "login": self.login,
+            "name": self.name,
+            "email": self.email,
+            "avatar_url": self.avatar_url,
+        }
 
 
 class ProviderNotFoundTestMixin:
@@ -67,11 +74,15 @@ class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
 
     url_path = "auth:login"
 
-    def test_github_provider(self):
+    @mock.patch("users.utils.requests.get")
+    def test_github_provider(self, p):
+        p.return_value = "test"
         response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
 
-    def test_gitlab_provider(self):
+    @mock.patch("users.utils.requests.get")
+    def test_gitlab_provider(self, p):
+        p.return_value = "test"
         url = reverse_lazy(self.url_path, kwargs={"provider": "gitlab"})
         response = self.client.get(f"{url}?redirect_uri=http://example.com/")
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
@@ -154,7 +165,7 @@ class UsersViewSetTestCase(APITestCase):
 
     def test_detail_view(self):
         response = self.client.get(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_view(self):
         username = fake.user_name()

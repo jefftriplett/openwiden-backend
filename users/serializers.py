@@ -13,6 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "date_joined",
+            "avatar",
         )
 
 
@@ -22,6 +23,7 @@ class UserUpdateSerializer(UserSerializer):
             "username",
             "first_name",
             "last_name",
+            "avatar",
         )
 
 

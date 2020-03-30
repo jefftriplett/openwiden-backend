@@ -14,6 +14,7 @@ class UserSerializerTestCase(TestCase):
             "last_name",
             "email",
             "date_joined",
+            "avatar",
         )
         self.assertEqual(UserSerializer.Meta.model, User)
         self.assertEqual(UserSerializer.Meta.fields, expected_fields)
@@ -21,7 +22,7 @@ class UserSerializerTestCase(TestCase):
 
 class UserUpdateSerializerTestCase(TestCase):
     def test_meta(self):
-        expected_fields = ("username", "first_name", "last_name")
+        expected_fields = ("username", "first_name", "last_name", "avatar")
         self.assertTrue(issubclass(UserUpdateSerializer, UserSerializer))
         self.assertTrue(issubclass(UserUpdateSerializer.Meta, UserSerializer.Meta))
         self.assertEqual(UserUpdateSerializer.Meta.fields, expected_fields)
