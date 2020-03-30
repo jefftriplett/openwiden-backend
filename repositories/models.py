@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, HStoreField
 from django.db import models
 from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
@@ -34,6 +34,8 @@ class Repository(SoftDeletableModel, UUIDModel):
 
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
+
+    programming_languages = HStoreField(_("repository languages"))
 
     objects = RepositoryManager()
 

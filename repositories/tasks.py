@@ -42,6 +42,8 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
         if not i.pull_request  # exclude pull requests
     ]
 
+    programming_languages = repo.get_languages()
+
     # Create repository with nested data
     repository = Repository.objects.nested_create(
         version_control_service=service,
@@ -53,6 +55,7 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
         star_count=repo.stargazers_count,
         created_at=make_aware(repo.created_at),
         updated_at=make_aware(repo.updated_at),
+        programming_languages=programming_languages,
         issues=issues,
     )
 

@@ -17,8 +17,12 @@ class RepositoryManager(Manager):
         star_count,
         created_at,
         updated_at,
+        programming_languages: dict = None,
         issues: List[dict] = None,
     ):
+        if programming_languages is None:
+            programming_languages = {}
+
         repository = self.create(
             version_control_service=version_control_service,
             remote_id=remote_id,
@@ -29,6 +33,7 @@ class RepositoryManager(Manager):
             star_count=star_count,
             created_at=created_at,
             updated_at=updated_at,
+            programming_languages=programming_languages,
         )
 
         if issues:

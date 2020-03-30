@@ -25,6 +25,7 @@ class RepositoryFactory(factory.DjangoModelFactory):
     created_at = fuzzy.FuzzyDateTime(now())
     updated_at = fuzzy.FuzzyDateTime(now())
     open_issues_count = fuzzy.FuzzyInteger(1, 1000)
+    programming_languages = {"Shell": "94", "Python": "79298", "Makefile": "1569", "Dockerfile": "334"}
 
     class Meta:
         model = Repository

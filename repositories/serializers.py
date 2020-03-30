@@ -19,6 +19,7 @@ class RepositorySerializer(serializers.ModelSerializer):
             "forks_count",
             "created_at",
             "updated_at",
+            "programming_languages",
         )
 
 
