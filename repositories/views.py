@@ -23,7 +23,7 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.AllowAny,)
     filterset_class = RepositoryFilter
 
-    @action(detail=False, methods=["POST"])
+    @action(detail=False, methods=["POST"], permission_classes=(permissions.IsAuthenticated,))
     def add(self, request, *args, **kwargs):
         url = request.data["url"]
         parsed_url = parse_repo_url(url)
