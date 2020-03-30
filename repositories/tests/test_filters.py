@@ -34,7 +34,7 @@ class RepositoryFilterTestCase(TestCase):
                 "forks_count_gte",
                 "created_at",
                 "updated_at",
-                "programming_languages",
+                "programming_language",
             ),
         )
 
@@ -78,7 +78,7 @@ class RepositoryFilterTestCase(TestCase):
         r = Repository.objects.first()
         r.programming_languages = {"TEST": 1}
         r.save()
-        query = {"programming_languages": "TEST"}
+        query = {"programming_language": "TEST"}
         f = RepositoryFilter(query, Repository.objects.all())
         self.assertEqual(f.qs.count(), 1)
         self.assertEqual(f.qs.first().name, r.name)

@@ -13,7 +13,7 @@ class RepositoryFilter(filters.FilterSet):
     created_at = filters.DateFromToRangeFilter()
     updated_at = filters.DateFromToRangeFilter()
 
-    programming_languages = filters.CharFilter(lookup_expr="has_key")
+    programming_language = filters.CharFilter(field_name="programming_languages", lookup_expr="has_key")
 
     class Meta:
         model = Repository
@@ -24,5 +24,5 @@ class RepositoryFilter(filters.FilterSet):
             "forks_count_gte",
             "created_at",
             "updated_at",
-            "programming_languages",
+            "programming_language",
         )
