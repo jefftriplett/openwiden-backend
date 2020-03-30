@@ -26,6 +26,7 @@ class Base(Configuration):
         "django_filters",
         "drf_yasg",
         "corsheaders",
+        "django_q",
     )
     LOCAL_APPS = (
         "users",
@@ -182,3 +183,16 @@ class Base(Configuration):
 
     # Cors headers
     CORS_ORIGIN_ALLOW_ALL = True
+
+    Q_CLUSTER = {
+        "name": "openwiden",
+        "workers": 8,
+        "recycle": 500,
+        "timeout": 60,
+        "compress": True,
+        "save_limit": 250,
+        "queue_limit": 500,
+        "cpu_affinity": 1,
+        "label": "Django Q",
+        "redis": {"host": "cache", "port": 6379, "db": 0,},
+    }

@@ -3,12 +3,14 @@ version: "3.7"
 services:
   db:
     image: postgres:11.6
+  cache:
+    image: redis:5.0
   web:
     restart: always
-    image: web
+    image: &web web
     build: .
     command: bash run_server.sh
-    environment:
+    environment: &env
       - CODECOV_TOKEN
       - DJANGO_DEBUG
       - DJANGO_SECRET_KEY
@@ -26,3 +28,10 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - cache
+      - tasks
+  tasks:
+    restart: always
+    image: *web
+    environment: *env
+    command: bash -c "python manage.py qcluster"
