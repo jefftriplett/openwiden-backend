@@ -2,6 +2,7 @@ from datetime import datetime
 
 import mock
 from django.core import management
+from django.utils.translation import gettext_lazy as _
 from faker import Faker
 from rest_framework import status
 from rest_framework.reverse import reverse_lazy
@@ -85,9 +86,9 @@ class RepositoryViewSetTestCase(APITestCase):
 
     def test_add_view_not_authenticated(self):
         response = self.client.post(reverse_lazy("repository-add"), data={"url": "test"})
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @mock.patch("repositories.views.github.get_repo")
+    @mock.patch("repositories.tasks.github.get_repo")
     def test_add_view_wih_github(self, patched_get_repo):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
         url = "https://github.com/golang/go"
@@ -96,8 +97,9 @@ class RepositoryViewSetTestCase(APITestCase):
         self.add_auth_header()
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
-        self.assertEqual(response.data["url"], url)
-        self.assertEqual(response.data["open_issues_count"], mock_repo._issues_count)
+        self.assertEqual(
+            response.data, {"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")}
+        )
 
     def test_add_view_with_gitlab(self):
         # "https://gitlab.com/pgjones/quart"
