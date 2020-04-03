@@ -88,22 +88,25 @@ class RepositoryViewSetTestCase(APITestCase):
         response = self.client.post(reverse_lazy("repository-add"), data={"url": "test"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @mock.patch("repositories.tasks.github.get_repo")
-    def test_add_view_wih_github(self, patched_get_repo):
+    @mock.patch("repositories.views.async_task")
+    def test_add_view_wih_github(self, patched_task):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
         url = "https://github.com/golang/go"
-        mock_repo = Repository(url=url)
-        patched_get_repo.return_value = mock_repo
         self.add_auth_header()
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+        self.assertEqual(patched_task.call_count, 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
         self.assertEqual(
             response.data, {"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")}
         )
 
     def test_add_view_with_gitlab(self):
-        # "https://gitlab.com/pgjones/quart"
-        self.skipTest("todo")
+        management.call_command("loaddata", "version_control_services.json", verbosity=0)
+        url = "https://gitlab.com/pgjones/quart"
+        self.add_auth_header()
+        response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
+        self.assertEqual(response.data, {"detail": _(f"Not implemented yet.")})
 
     @mock.patch("repositories.views.parse_repo_url")
     def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):

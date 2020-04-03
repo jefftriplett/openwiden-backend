@@ -1,5 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -33,8 +33,10 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
         except VersionControlService.DoesNotExist:
             raise VersionControlServiceNotFound(parsed_url.host)
 
-        if parsed_url.host.startswith("github"):
+        if service.host == "github.com":
             async_task(add_github_repository, self.request.user, parsed_url, service)
+        else:
+            return Response({"detail": _(f"Not implemented yet.")}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
         return Response({"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")})
 
