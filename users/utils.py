@@ -51,7 +51,7 @@ def create_or_update_user(provider: str, client, request: Request):
         oauth2_token = models.OAuth2Token.objects.get(provider=provider, remote_id=profile.id)
 
         if request.user.is_authenticated:
-            if oauth2_token.user != request.user:
+            if oauth2_token.user.username != request.user.username:
                 oauth2_token.user = request.user
 
         if oauth2_token.login != profile.login:
