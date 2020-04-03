@@ -148,6 +148,7 @@ class Base(Configuration):
 
     GITLAB_APP_ID = env("GITLAB_APP_ID")
     GITLAB_SECRET = env("GITLAB_SECRET")
+    GITLAB_PRIVATE_TOKEN = env("GITLAB_PRIVATE_TOKEN")
     GITLAB_DEFAULT_REDIRECT_URI = env(
         "GITLAB_DEFAULT_REDIRECT_URI", default="http://0.0.0.0:8000/users/complete/gitlab/"
     )
