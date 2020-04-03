@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 
 import mock
+from authlib.common.errors import AuthlibBaseError
 from faker import Faker
 from django.test import override_settings
 from rest_framework import status
@@ -8,7 +9,7 @@ from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI
+from users.exceptions import OAuthProviderNotFound, GitLabOAuthMissedRedirectURI, CreateOrUpdateUserReturnedNone
 from users.serializers import UserWithOAuthTokensSerializer
 
 from .factories import UserFactory, OAuth2TokenFactory
@@ -114,6 +115,24 @@ class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.client.credentials(HTTP_AUTHORIZATION="")
         return response.data
+
+    @mock.patch("users.views.create_or_update_user")
+    @mock.patch("users.views.oauth.create_client")
+    def test_raises_error_when_user_is_none(self, patched_create_client, patched_create_or_update_user):
+        patched_create_client.return_value = "test"
+        patched_create_or_update_user.return_value = None
+        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test"}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"detail": CreateOrUpdateUserReturnedNone().detail})
+
+    @mock.patch("users.views.create_or_update_user")
+    @mock.patch("users.views.oauth.create_client")
+    def test_raises_authlib_error(self, patched_create_client, patched_create_or_update_user):
+        patched_create_client.return_value = "test"
+        patched_create_or_update_user.side_effect = AuthlibBaseError(description="test error")
+        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test"}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"detail": "test error"})
 
     @mock.patch("authlib.integrations.base_client.base_app.BaseApp.get")
     @mock.patch("authlib.integrations.django_client.integration.DjangoRemoteApp.authorize_access_token")
