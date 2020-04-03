@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from repositories.exceptions import RepositoryURLParse, VersionControlServiceNotFound
-from repositories.tests.factories import RepositoryFactory, IssueFactory
+from repositories.tests.factories import RepositoryFactory, IssueFactory, VersionControlServiceFactory
 from users.tests.factories import UserFactory
 
 
@@ -35,20 +35,22 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @mock.patch("repositories.views.async_task")
-    def test_add_view_wih_github(self, patched_task):
+    def test_add_view_success(self, patched_task):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
-        url = "https://github.com/golang/go"
+        urls = ("https://github.com/golang/go", "https://gitlab.com/pgjones/quart")
         self.add_auth_header()
-        response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
-        self.assertEqual(patched_task.call_count, 1)
-        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
-        self.assertEqual(
-            response.data, {"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")}
-        )
+        for url in urls:
+            response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+            self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
+            self.assertEqual(
+                response.data,
+                {"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")},
+            )
+        self.assertEqual(patched_task.call_count, 2)
 
-    def test_add_view_with_gitlab(self):
-        management.call_command("loaddata", "version_control_services.json", verbosity=0)
-        url = "https://gitlab.com/pgjones/quart"
+    def test_not_implemented_service(self):
+        VersionControlServiceFactory.create(host="not.implemented")
+        url = "https://not.implemented/owner/repo"
         self.add_auth_header()
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
         self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)

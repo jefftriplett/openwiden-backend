@@ -10,7 +10,7 @@ from .filters import RepositoryFilter
 from .models import VersionControlService, Repository, Issue
 from .serializers import RepositorySerializer, IssueSerializer
 from .utils import parse_repo_url
-from .tasks import add_github_repository
+from .tasks import add_github_repository, add_gitlab_repository
 
 
 class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -35,6 +35,8 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
 
         if service.host == "github.com":
             async_task(add_github_repository, self.request.user, parsed_url, service)
+        elif service.host == "gitlab.com":
+            async_task(add_gitlab_repository, self.request.user, parsed_url, service)
         else:
             return Response({"detail": _(f"Not implemented yet.")}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
