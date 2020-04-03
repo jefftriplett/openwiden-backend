@@ -138,3 +138,37 @@ class CreateOrUpdateUserTokenDoesNotExistsTestCase(CreateOrUpdateUserTestCase):
         patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
         qs = models.OAuth2Token.objects.filter(user=user)
         self.assertEqual(qs.count(), 2)
+
+
+class GetProfile(TestCase):
+    @staticmethod
+    def get_random_profile_data():
+        return {
+            "id": fake.pyint(),
+            "login": fake.user_name(),
+            "name": fake.name(),
+            "email": fake.email(),
+            "avatar_url": fake.url(),
+        }
+
+    def test_github(self):
+        mock_client = mock.MagicMock()
+        mock_profile = mock.MagicMock()
+        mock_profile.json.return_value = self.get_random_profile_data()
+        mock_client.get.return_value = mock_profile
+        utils.get_profile("github", mock_client, "token")
+
+    def test_gitlab(self):
+        mock_client = mock.MagicMock()
+        mock_profile = mock.MagicMock()
+        fake_profile_data = self.get_random_profile_data()
+        username = fake_profile_data.pop("login")
+        fake_profile_data["username"] = username
+        mock_profile.json.return_value = fake_profile_data
+        mock_client.get.return_value = mock_profile
+        profile = utils.get_profile("gitlab", mock_client, "token")
+        self.assertEqual(profile.login, username)
+
+    def test_none(self):
+        mock_client = mock.MagicMock()
+        utils.get_profile("none", mock_client, "token")
