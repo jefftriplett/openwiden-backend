@@ -22,6 +22,7 @@ services:
       - GITHUB_SECRET_KEY
       - GITLAB_APP_ID
       - GITLAB_SECRET
+      - REDIS_URL
     volumes:
       - "./:/code"
     ports:

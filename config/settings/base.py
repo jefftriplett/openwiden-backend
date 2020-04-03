@@ -189,6 +189,7 @@ class Base(Configuration):
     # Cors headers
     CORS_ORIGIN_ALLOW_ALL = True
 
+    # Django-Q
     Q_CLUSTER = {
         "name": "openwiden",
         "workers": 8,
@@ -199,5 +200,5 @@ class Base(Configuration):
         "queue_limit": 500,
         "cpu_affinity": 1,
         "label": "Django Q",
-        "redis": {"host": "cache", "port": 6379, "db": 0,},
+        "redis": env("REDIS_URL"),
     }
