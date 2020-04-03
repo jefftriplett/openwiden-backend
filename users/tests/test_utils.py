@@ -11,12 +11,7 @@ fake = Faker()
 
 
 def create_random_profile(
-    id=str(fake.pyint()),
-    login=fake.pystr(),
-    name=fake.name(),
-    email=fake.email(),
-    avatar_url=fake.url(),
-    split_name=True,
+    id=fake.pyint(), login=fake.pystr(), name=fake.name(), email=fake.email(), avatar_url=fake.url(), split_name=True,
 ) -> utils.Profile:
     return utils.Profile(id=id, login=login, name=name, email=email, avatar_url=avatar_url, split_name=split_name)
 
@@ -39,6 +34,9 @@ class CreateOrUpdateUserTestCase(TestCase):
         cls.mock_request = mock.MagicMock()
         cls.mock_request.user = AnonymousUser()
 
+    def create_or_update_user(self):
+        return utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
+
 
 @mock.patch("users.utils.get_profile")
 class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
@@ -57,7 +55,7 @@ class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
         self.oauth2_token.save()
         patched_get_profile.return_value = self.fake_profile
 
-        user = utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
+        user = self.create_or_update_user()
 
         patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
         self.assertEqual(models.OAuth2Token.objects.get(id=self.oauth2_token.id).login, login)
@@ -67,13 +65,16 @@ class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
         """
         Test that nothing happens (request user equals oauth token user).
         """
-        factory_user = UserFactory.create()
+        login = "the_same"
+        factory_user = UserFactory.create(username="the_same")
+        self.fake_profile.login = login
+        self.oauth2_token.login = login
         self.mock_request.user = factory_user
         self.oauth2_token.user = factory_user
         self.oauth2_token.save()
         patched_get_profile.return_value = self.fake_profile
 
-        user = utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
+        user = self.create_or_update_user()
         oauth2_token = models.OAuth2Token.objects.get(id=self.oauth2_token.id)
 
         patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
@@ -90,7 +91,7 @@ class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
         self.oauth2_token.save()
         patched_get_profile.return_value = self.fake_profile
 
-        user = utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
+        user = self.create_or_update_user()
         oauth2_token = models.OAuth2Token.objects.get(id=self.oauth2_token.id)
 
         patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
@@ -103,17 +104,37 @@ class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
 class CreateOrUpdateUserTokenDoesNotExistsTestCase(CreateOrUpdateUserTestCase):
     @mock.patch("users.utils.ContentFile")
     @mock.patch("users.utils.requests.get")
-    def test_anonymous_user(
-        self, patched_requests_get, patched_content_file, patched_get_profile,
-    ):
+    def test_anonymous_user(self, patched_requests_get, patched_content_file, patched_get_profile):
         """
         Test that creates new User & OAuth2Token for that user.
         """
         patched_get_profile.return_value = self.fake_profile
         patched_requests_get.return_value = mock.MagicMock()
         patched_content_file.return_value = ContentFile(b"12345")
-        user = utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
+        user = self.create_or_update_user()
         patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
         self.assertEqual(models.User.objects.count(), 1)
         self.assertEqual(str(user.id), str(models.User.objects.first().id))
         self.assertEqual(models.OAuth2Token.objects.count(), 1)
+
+    @mock.patch("users.utils.ContentFile")
+    @mock.patch("users.utils.requests.get")
+    def test_anonymous_user_login_exists(self, patched_requests_get, patched_content_file, patched_get_profile):
+        UserFactory.create(username=self.fake_profile.login)
+        patched_get_profile.return_value = self.fake_profile
+        patched_requests_get.return_value = mock.MagicMock()
+        patched_content_file.return_value = ContentFile(b"12345")
+        user = self.create_or_update_user()
+        patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
+        qs = models.OAuth2Token.objects.filter(user=user)
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs.first().login, self.fake_profile.login)
+
+    def test_auth_user_create_new_oauth_token(self, patched_get_profile):
+        factory_token = OAuth2TokenFactory.create()
+        patched_get_profile.return_value = self.fake_profile
+        self.mock_request.user = factory_token.user
+        user = self.create_or_update_user()
+        patched_get_profile.assert_called_once_with(self.provider, self.mock_client, self.token)
+        qs = models.OAuth2Token.objects.filter(user=user)
+        self.assertEqual(qs.count(), 2)
