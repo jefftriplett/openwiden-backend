@@ -134,39 +134,17 @@ class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"detail": "test error"})
 
-    @mock.patch("authlib.integrations.base_client.base_app.BaseApp.get")
-    @mock.patch("authlib.integrations.django_client.integration.DjangoRemoteApp.authorize_access_token")
-    def test_github_provider(self, patched_authorize_access_token, get_patched):
-        profile = Profile()
-        patched_authorize_access_token.return_value = {
-            "access_token": "12345",
-            "token_type": "bearer",
-            "scope": "user:email",
-        }
-        get_patched.return_value = profile
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
+    @mock.patch("users.views.create_or_update_user")
+    @mock.patch("users.views.oauth.create_client")
+    def test_returns_tokens(self, patched_create_client, patched_create_or_update_user):
+        user = UserFactory.create()
+        patched_create_client.return_value = "test"
+        patched_create_or_update_user.return_value = user
+        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test"}))
 
-        access_token = response.data["detail"]["access"]
-
-        self.assertTrue(patched_authorize_access_token.call_count, 1)
-        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
-
-        # Get current user by retrieved tokens
-        user_data = self.get_user_data(access_token)
-        self.assertEqual(user_data["username"], profile.login)
-        self.assertEqual(user_data["email"], profile.email)
-        user_id = user_data["id"]
-
-        # Try to create user again with anonymous user
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
-        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
-        access_token = response.data["detail"]["access"]
-
-        # Check that returned user is the same as created before
-        user_data = self.get_user_data(access_token)
-        self.assertEqual(user_data["id"], user_id)
-        self.assertEqual(user_data["username"], profile.login)
-        self.assertEqual(user_data["email"], profile.email)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data["detail"])
+        self.assertIn("refresh", response.data["detail"])
 
 
 class UsersViewSetTestCase(APITestCase):
