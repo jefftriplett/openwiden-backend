@@ -19,6 +19,7 @@ drf-nested-routers==0.91
 django-q==1.2.1
 redis==3.4.1
 Pillow==7.0.0
+django-anymail==7.0.0
 
 # Developer Tools
 ipdb==0.12.3

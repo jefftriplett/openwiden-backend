@@ -28,6 +28,7 @@ class Base(Configuration):
         "drf_yasg",
         "corsheaders",
         "django_q",
+        "anymail",
     )
     LOCAL_APPS = (
         "users",
@@ -73,7 +74,8 @@ class Base(Configuration):
     ADMINS = (("Author", "stefanitsky.mozdor@gmail.com"),)
 
     # Email
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+    DEFAULT_FROM_EMAIL = "info@openwiden.com"
 
     # Postgres
     DATABASES = {"default": env.db(default="postgresql://postgres:@db:5432/postgres")}
@@ -201,4 +203,9 @@ class Base(Configuration):
         "cpu_affinity": 1,
         "label": "Django Q",
         "redis": env("REDIS_URL"),
+    }
+
+    # Anymail
+    ANYMAIL = {
+        "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
     }

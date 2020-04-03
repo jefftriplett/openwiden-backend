@@ -23,6 +23,7 @@ services:
       - GITLAB_APP_ID
       - GITLAB_SECRET
       - REDIS_URL
+      - MAILGUN_API_KEY
     volumes:
       - "./:/code"
     ports:
