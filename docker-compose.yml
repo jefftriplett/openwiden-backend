@@ -24,6 +24,8 @@ services:
       - GITLAB_SECRET
       - REDIS_URL
       - MAILGUN_API_KEY
+      - MAILGUN_DOMAIN
+      - MAILGUN_API_URL
     volumes:
       - "./:/code"
     ports:
