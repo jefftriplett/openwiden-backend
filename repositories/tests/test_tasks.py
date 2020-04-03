@@ -6,7 +6,8 @@ from faker import Faker
 from django.test import TestCase
 
 from repositories import tasks
-from repositories.tests.factories import RepositoryFactory
+from repositories import models
+from repositories.tests.factories import RepositoryFactory, VersionControlServiceFactory
 from users.tests.factories import UserFactory
 
 fake = Faker()
@@ -49,11 +50,11 @@ class PullRequest(Issue):
 
 
 class Repository:
-    def __init__(self, url: str, private: bool = False, issues_count: int = 5, pull_requests_count: int = 3):
+    def __init__(self, url: str = None, private: bool = False, issues_count: int = 5, pull_requests_count: int = 3):
         self.id = fake.pyint()
         self.name = fake.name()
         self.description = fake.text()
-        self.html_url = url
+        self.html_url = url or fake.url()
         self.forks_count = fake.pyint()
         self.stargazers_count = fake.pyint()
         self.created_at = random_datetime()
@@ -63,22 +64,51 @@ class Repository:
         self._issues_count = issues_count
         self._pull_requests_count = pull_requests_count
 
-    def get_issues(self):
+    def get_issues(self, state):
         return [Issue() for _ in range(self._issues_count)] + [PullRequest() for _ in range(self._pull_requests_count)]
 
+    @staticmethod
+    def get_languages():
+        return {"Shell": "94", "Python": "79298", "Makefile": "1569", "Dockerfile": "334"}
 
+
+@mock.patch("repositories.tasks.github.get_repo", return_value=Repository())
+@mock.patch("repositories.tasks.async_task")
 class AddGitHubRepositoryTask(TestCase):
-    def test_already_exists(self):
-        pass
+    @classmethod
+    def setUpTestData(cls):
+        parsed_url = mock.MagicMock()
+        parsed_url.owner = "owner_test"
+        parsed_url.repo = "repo_test"
+        cls.user = UserFactory.create()
+        cls.parsed_url = parsed_url
+        cls.service = VersionControlServiceFactory.create()
 
-    def test_is_private(self):
-        pass
+    def test_already_exists(self, patched_async_task, patched_get_repo):
+        fake_repo = Repository()
+        RepositoryFactory.create(version_control_service=self.service, remote_id=str(fake_repo.id))
+        patched_get_repo.return_value = fake_repo
+        tasks.add_github_repository(self.user, self.parsed_url, self.service)
+        self.assertEqual(patched_get_repo.call_count, 1)
+        patched_async_task.assert_called_once_with(tasks.add_github_repository_send_email, "exists", self.user)
 
-    def test_excludes_pull_requests(self):
-        pass
+    def test_is_private(self, patched_async_task, patched_get_repo):
+        patched_get_repo.return_value = Repository(private=True)
+        tasks.add_github_repository(self.user, self.parsed_url, self.service)
+        self.assertEqual(patched_get_repo.call_count, 1)
+        patched_async_task.assert_called_once_with(tasks.add_github_repository_send_email, "private", self.user)
 
-    def test_sets_programming_languages(self):
-        pass
+    def test_excludes_pull_requests_and_adds_repository_successfully(self, patched_async_task, patched_get_repo):
+        issues_count = 5
+        fake_repo = Repository(issues_count=issues_count, pull_requests_count=3)
+        patched_get_repo.return_value = fake_repo
+        tasks.add_github_repository(self.user, self.parsed_url, self.service)
+        created_repository = models.Repository.objects.get(remote_id=str(fake_repo.id))
+        self.assertEqual(patched_get_repo.call_count, 1)
+        self.assertEqual(created_repository.issues.count(), issues_count)
+        patched_async_task.assert_called_once_with(
+            tasks.add_github_repository_send_email, "added", self.user, created_repository
+        )
 
 
 @mock.patch("repositories.tasks.send_mail")
