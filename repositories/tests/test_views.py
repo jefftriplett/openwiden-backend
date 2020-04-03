@@ -1,9 +1,7 @@
-from datetime import datetime
-
 import mock
 from django.core import management
 from django.utils.translation import gettext_lazy as _
-from faker import Faker
+
 from rest_framework import status
 from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
@@ -12,58 +10,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from repositories.exceptions import RepositoryURLParse, VersionControlServiceNotFound
 from repositories.tests.factories import RepositoryFactory, IssueFactory
 from users.tests.factories import UserFactory
-
-fake = Faker()
-datetime_format = "%m/%d/%Y %I:%M %p"
-
-
-class Label:
-    def __init__(self):
-        self.name = fake.word()
-
-
-class Issue:
-    def __init__(self):
-        self.id = fake.pyint()
-        self.title = fake.word()
-        self.body = fake.text()
-        self.state = "open"
-        self.labels = [Label() for _ in range(3)]
-        self.html_url = fake.url()
-        self.created_at = datetime.strptime(fake.date(datetime_format), datetime_format)
-        self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
-        self.closed_at = None
-        self.pull_request = None
-
-
-class PullRequest(Issue):
-    def __init__(self):
-        super().__init__()
-        self.pull_request = {
-            "url": "https://api.github.com/repos/octocat/Hello-World/pulls/1347",
-            "html_url": "https://github.com/octocat/Hello-World/pull/1347",
-            "diff_url": "https://github.com/octocat/Hello-World/pull/1347.diff",
-            "patch_url": "https://github.com/octocat/Hello-World/pull/1347.patch",
-        }
-
-
-class Repository:
-    def __init__(self, url: str, private: bool = False, issues_count: int = 5, pull_requests_count: int = 3):
-        self.id = fake.pyint()
-        self.name = fake.name()
-        self.description = fake.text()
-        self.html_url = url
-        self.forks_count = fake.pyint()
-        self.stargazers_count = fake.pyint()
-        self.created_at = datetime.strptime(fake.date(datetime_format), datetime_format)
-        self.updated_at = datetime.strptime(fake.date(datetime_format), datetime_format)
-        self.open_issues_count = issues_count + pull_requests_count
-        self.private = private
-        self._issues_count = issues_count
-        self._pull_requests_count = pull_requests_count
-
-    def get_issues(self, *args, **kwargs):
-        return [Issue() for _ in range(self._issues_count)] + [PullRequest() for _ in range(self._pull_requests_count)]
 
 
 class RepositoryViewSetTestCase(APITestCase):

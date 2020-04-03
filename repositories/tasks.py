@@ -1,9 +1,12 @@
+from github import Github
 from django.conf import settings
 from django.utils.timezone import make_aware
-from github import Github
+from django.core.mail import send_mail
+from django_q.tasks import async_task
 
 from repositories.models import Repository, VersionControlService
 from repositories.utils import ParsedUrl
+
 
 github = Github(client_id=settings.GITHUB_CLIENT_ID, client_secret=settings.GITHUB_SECRET_KEY)
 
@@ -14,15 +17,11 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
     # Check if repository already exists
     qs = Repository.objects.filter(version_control_service=service, remote_id=repo.id)
     if qs.exists():
-        message = f"Repository already added. Thank you!"
-        user.email_user("[OpenWiden] Repository add request.", message)
-        return message
+        async_task(add_github_repository_send_email, "exists", user)
 
     # Check if repo is private
     if repo.private:
-        message = f"You cannot add a private repository."
-        user.email_user("[OpenWiden] Repository add request.", message)
-        return message
+        async_task(add_github_repository_send_email, "private", user)
 
     # Get repo issues
     issues_data = repo.get_issues(state="all")
@@ -59,7 +58,15 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
         issues=issues,
     )
 
-    message = f"Repository {str(repository)} successfully added!"
-    user.email_user("[OpenWiden] Repository add request.", message)
+    async_task(add_github_repository_send_email, "added", user, repository)
 
-    return message
+
+def add_github_repository_send_email(result, user, repository: Repository = None):
+    if result == "exists":
+        send_mail("Repository add request", "exists", "info@openwiden.com", [user.email])
+    elif result == "private":
+        send_mail("Repository add request", "private", "info@openwiden.com", [user.email])
+    elif result == "added":
+        send_mail("Repository add request", f"{repository.name} was added!", "info@openwiden.com", [user.email])
+    else:
+        raise ValueError(f"Unknown result of type '{result}'")
