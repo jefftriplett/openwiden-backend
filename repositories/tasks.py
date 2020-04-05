@@ -43,7 +43,8 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
             if not i.pull_request  # exclude pull requests
         ]
 
-        programming_languages = repo.get_languages()
+        # programming_languages = repo.get_languages()
+        # main_pl = max(programming_languages, key=lambda k: programming_languages[k])
 
         # Create repository with nested data
         repository = Repository.objects.nested_create(
@@ -56,7 +57,7 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
             star_count=repo.stargazers_count,
             created_at=make_aware(repo.created_at),
             updated_at=make_aware(repo.updated_at),
-            programming_languages=programming_languages,
+            # programming_language=programming_language,
             issues=issues,
         )
 
@@ -88,7 +89,7 @@ def add_gitlab_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
             for i in issues_data
         ]
 
-        programming_languages = repo.languages()
+        # programming_languages = repo.languages()
 
         # Create repository with nested data
         repository = Repository.objects.nested_create(
@@ -101,7 +102,7 @@ def add_gitlab_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
             star_count=repo.star_count,
             created_at=repo.created_at,
             updated_at=repo.last_activity_at,
-            programming_languages=programming_languages,
+            # programming_languages=programming_languages,
             issues=issues,
         )
 

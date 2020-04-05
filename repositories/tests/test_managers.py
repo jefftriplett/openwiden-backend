@@ -22,7 +22,7 @@ class RepositoryManagerTestCase(TestCase):
             star_count=self.repository.star_count,
             created_at=self.repository.created_at,
             updated_at=self.repository.updated_at,
-            programming_languages=self.repository.programming_languages,
+            # programming_languages=self.repository.programming_languages,
             issues=[
                 dict(
                     remote_id=i.remote_id,
@@ -47,8 +47,8 @@ class RepositoryManagerTestCase(TestCase):
     def test_nested_create_full(self):
         self.create_repository()
 
-    def test_nested_create_default_programming_languages(self):
-        self.create_repository(programming_languages=None)
+    # def test_nested_create_default_programming_languages(self):
+    #     self.create_repository(programming_languages=None)
 
     def test_nested_create_no_issues(self):
         self.create_repository(issues=[])
