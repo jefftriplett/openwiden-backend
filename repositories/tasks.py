@@ -27,21 +27,21 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: "models.VersionC
     # Add repo then
     else:
         # Get repo issues
-        issues_data = repo.get_issues(state="open")
-        issues = [
-            dict(
-                remote_id=i.id,
-                title=i.title,
-                description=i.body,
-                state=i.state,
-                labels=[label.name for label in i.labels],
-                url=i.html_url,
-                created_at=make_aware(i.created_at),
-                updated_at=make_aware(i.updated_at),
-            )
-            for i in issues_data
-            if not i.pull_request  # exclude pull requests
-        ]
+        # issues_data = repo.get_issues(state="open")
+        # issues = [
+        #     dict(
+        #         remote_id=i.id,
+        #         title=i.title,
+        #         description=i.body,
+        #         state=i.state,
+        #         labels=[label.name for label in i.labels],
+        #         url=i.html_url,
+        #         created_at=make_aware(i.created_at),
+        #         updated_at=make_aware(i.updated_at),
+        #     )
+        #     for i in issues_data
+        #     if not i.pull_request  # exclude pull requests
+        # ]
 
         programming_languages = repo.get_languages()
         main_pl_name = max(programming_languages, key=lambda k: programming_languages[k])
@@ -52,7 +52,7 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: "models.VersionC
             pass
 
         # Create repository with nested data
-        repository = models.Repository.objects.nested_create(
+        repository = models.Repository.new(
             version_control_service=service,
             remote_id=repo.id,
             name=repo.name,
@@ -63,7 +63,7 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: "models.VersionC
             created_at=make_aware(repo.created_at),
             updated_at=make_aware(repo.updated_at),
             programming_language=pl,
-            issues=issues,
+            # issues=issues,
         )
 
         async_task(add_repository_send_email, "added", user, repository)
@@ -79,25 +79,31 @@ def add_gitlab_repository(user, parsed_url: ParsedUrl, service: "models.VersionC
         async_task(add_repository_send_email, "exists", user)
     else:
         # Get repo issues
-        issues_data = repo.issues.list(state="opened")
-        issues = [
-            dict(
-                remote_id=i.id,
-                title=i.title,
-                description=i.description,
-                state="open",
-                labels=i.labels,
-                url=i.web_url,
-                created_at=i.created_at,
-                updated_at=i.updated_at,
-            )
-            for i in issues_data
-        ]
+        # issues_data = repo.issues.list(state="opened")
+        # issues = [
+        #     dict(
+        #         remote_id=i.id,
+        #         title=i.title,
+        #         description=i.description,
+        #         state="open",
+        #         labels=i.labels,
+        #         url=i.web_url,
+        #         created_at=i.created_at,
+        #         updated_at=i.updated_at,
+        #     )
+        #     for i in issues_data
+        # ]
 
-        # programming_languages = repo.languages()
+        programming_languages = repo.languages()
+        main_pl_name = max(programming_languages, key=lambda k: programming_languages[k])
+        pl, created = models.ProgrammingLanguage.objects.get_or_create(name=main_pl_name)
+
+        if created:
+            # TODO: notify on new pl add
+            pass
 
         # Create repository with nested data
-        repository = models.Repository.objects.nested_create(
+        repository = models.Repository.new(
             version_control_service=service,
             remote_id=repo.id,
             name=repo.name,
@@ -107,8 +113,7 @@ def add_gitlab_repository(user, parsed_url: ParsedUrl, service: "models.VersionC
             star_count=repo.star_count,
             created_at=repo.created_at,
             updated_at=repo.last_activity_at,
-            # programming_languages=programming_languages,
-            issues=issues,
+            programming_language=pl,
         )
 
         async_task(add_repository_send_email, "added", user, repository)

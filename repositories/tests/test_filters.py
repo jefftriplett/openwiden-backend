@@ -34,7 +34,7 @@ class RepositoryFilterTestCase(TestCase):
                 "forks_count_gte",
                 "created_at",
                 "updated_at",
-                "programming_language",
+                # "programming_language",
             ),
         )
 

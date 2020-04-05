@@ -5,6 +5,14 @@ from factory import fuzzy
 from repositories import models
 
 
+class ProgrammingLanguage(factory.DjangoModelFactory):
+    name = fuzzy.FuzzyChoice(["Python", "C++", "C", "Go", "PHP", "Ruby", "C#", "Java", "JavaScript", "Perl"])
+
+    class Meta:
+        model = models.ProgrammingLanguage
+        django_get_or_create = ("name",)
+
+
 class VersionControlService(factory.DjangoModelFactory):
     name = factory.Faker("text", max_nb_chars=100)
     host = factory.Iterator(["github.com", "gitlab.com"])
@@ -25,7 +33,7 @@ class Repository(factory.DjangoModelFactory):
     created_at = fuzzy.FuzzyDateTime(now())
     updated_at = fuzzy.FuzzyDateTime(now())
     open_issues_count = fuzzy.FuzzyInteger(1, 1000)
-    # programming_languages = {"Shell": "94", "Python": "79298", "Makefile": "1569", "Dockerfile": "334"}
+    programming_language = factory.SubFactory(ProgrammingLanguage)
 
     class Meta:
         model = models.Repository
@@ -47,11 +55,3 @@ class Issue(factory.DjangoModelFactory):
     class Meta:
         model = models.Issue
         django_get_or_create = ("repository", "remote_id")
-
-
-class ProgrammingLanguage(factory.DjangoModelFactory):
-    name = fuzzy.FuzzyChoice(["Python", "C++", "C", "Go", "PHP", "Ruby", "C#", "Java", "JavaScript", "Perl"])
-
-    class Meta:
-        model = models.ProgrammingLanguage
-        django_get_or_create = ("name",)

@@ -4,8 +4,6 @@ from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
 
-from .managers import RepositoryManager
-
 
 class ProgrammingLanguage(models.Model):
     name = models.CharField(_("name"), max_length=100, unique=True)
@@ -50,8 +48,6 @@ class Repository(SoftDeletableModel, UUIDModel):
         ProgrammingLanguage, models.PROTECT, "repositories", "repository", verbose_name=_("programming language")
     )
 
-    objects = RepositoryManager()
-
     class Meta:
         ordering = ["-open_issues_count"]
         verbose_name = _("repository")
@@ -62,6 +58,33 @@ class Repository(SoftDeletableModel, UUIDModel):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def new(
+        cls,
+        version_control_service: "VersionControlService",
+        remote_id,
+        name,
+        description,
+        url,
+        forks_count,
+        star_count,
+        created_at,
+        updated_at,
+        programming_language: "ProgrammingLanguage",
+    ) -> "Repository":
+        return cls.objects.create(
+            version_control_service=version_control_service,
+            remote_id=remote_id,
+            name=name,
+            description=description,
+            url=url,
+            forks_count=forks_count,
+            star_count=star_count,
+            created_at=created_at,
+            updated_at=updated_at,
+            programming_language=programming_language,
+        )
 
 
 class Issue(UUIDModel):
