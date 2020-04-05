@@ -7,7 +7,7 @@ from django.test import TestCase
 
 from repositories import tasks
 from repositories import models
-from repositories.tests.factories import RepositoryFactory, VersionControlServiceFactory
+from repositories.tests import factories
 from users.tests.factories import UserFactory
 
 fake = Faker()
@@ -129,11 +129,11 @@ class AddGitHubRepositoryTask(TestCase):
         parsed_url.repo = "repo_test"
         cls.user = UserFactory.create()
         cls.parsed_url = parsed_url
-        cls.service = VersionControlServiceFactory.create()
+        cls.service = factories.VersionControlService.create()
 
     def test_already_exists(self, patched_async_task, patched_get_repo):
         fake_repo = Repository()
-        RepositoryFactory.create(version_control_service=self.service, remote_id=str(fake_repo.id))
+        factories.Repository.create(version_control_service=self.service, remote_id=str(fake_repo.id))
         patched_get_repo.return_value = fake_repo
         tasks.add_github_repository(self.user, self.parsed_url, self.service)
         self.assertEqual(patched_get_repo.call_count, 1)
@@ -173,7 +173,7 @@ class AddGitHubRepositoryTaskSendEmail(TestCase):
         self.assertEqual(send_mail_patched.call_count, 1)
 
     def test_added(self, send_mail_patched):
-        repository = RepositoryFactory.create()
+        repository = factories.Repository.create()
         tasks.add_repository_send_email("added", self.user, repository)
         self.assertEqual(send_mail_patched.call_count, 1)
 
@@ -195,7 +195,7 @@ class AddGitlabRepositoryTask(TestCase):
         parsed_url.repo = "repo_test"
         cls.user = UserFactory.create()
         cls.parsed_url = parsed_url
-        cls.service = VersionControlServiceFactory.create()
+        cls.service = factories.VersionControlService.create()
 
     def test_add_gitlab_repository(self, patched_async_task, patched_projects_get, patched_requests_get):
         tasks.add_gitlab_repository(self.user, self.parsed_url, self.service)
@@ -205,6 +205,6 @@ class AddGitlabRepositoryTask(TestCase):
     def test_add_gitlab_repository_already_exists(self, patched_async_task, patched_projects_get, patched_requests_get):
         fake_repo = Repository()
         patched_projects_get.return_value = fake_repo
-        RepositoryFactory.create(version_control_service=self.service, remote_id=str(fake_repo.id))
+        factories.Repository.create(version_control_service=self.service, remote_id=str(fake_repo.id))
         tasks.add_gitlab_repository(self.user, self.parsed_url, self.service)
         patched_async_task.assert_called_once_with(tasks.add_repository_send_email, "exists", self.user)

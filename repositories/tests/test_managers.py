@@ -1,15 +1,15 @@
 from django.test import TestCase
 from repositories.models import Repository
 
-from .factories import RepositoryFactory, IssueFactory, VersionControlServiceFactory
+from . import factories
 
 
 class RepositoryManagerTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.version_control_service = VersionControlServiceFactory.create()
-        cls.repository = RepositoryFactory.build()
-        cls.issues = IssueFactory.build_batch(3)
+        cls.version_control_service = factories.VersionControlService.create()
+        cls.repository = factories.Repository.build()
+        cls.issues = factories.Issue.build_batch(3)
 
     def create_repository(self, **override_kwargs) -> Repository:
         kwargs = dict(

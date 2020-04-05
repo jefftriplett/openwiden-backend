@@ -1,6 +1,6 @@
 from django.test import TestCase, override_settings
 
-from repositories.tests.factories import RepositoryFactory
+from repositories.tests import factories
 from repositories.models import Repository
 from repositories.filters import RepositoryFilter
 
@@ -13,7 +13,7 @@ class RepositoryFilterTestCase(TestCase):
             count = i * 5
             host = "github.com" if i <= 3 else "gitlab.com"
             date = "2018-01-01" if i <= 3 else "2019-01-01"
-            RepositoryFactory.create(
+            factories.Repository.create(
                 version_control_service__host=host,
                 name=f"Test {i}",
                 star_count=count,

@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from repositories.exceptions import RepositoryURLParse, VersionControlServiceNotFound
-from repositories.tests.factories import RepositoryFactory, IssueFactory, VersionControlServiceFactory
+from repositories.tests import factories
 from users.tests.factories import UserFactory
 
 
@@ -19,13 +19,13 @@ class RepositoryViewSetTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
 
     def test_list_view(self):
-        repositories = RepositoryFactory.create_batch(5)
+        repositories = factories.Repository.create_batch(5)
         response = self.client.get(reverse_lazy("repository-list"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], len(repositories))
 
     def test_retrieve_view(self):
-        repository = RepositoryFactory.create()
+        repository = factories.Repository.create()
         response = self.client.get(reverse_lazy("repository-detail", kwargs={"id": str(repository.id)}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], str(repository.id))
@@ -49,7 +49,7 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(patched_task.call_count, 2)
 
     def test_not_implemented_service(self):
-        VersionControlServiceFactory.create(host="not.implemented")
+        factories.VersionControlService.create(host="not.implemented")
         url = "https://not.implemented/owner/repo"
         self.add_auth_header()
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
@@ -75,14 +75,14 @@ class RepositoryViewSetTestCase(APITestCase):
 
 class IssueViewSetTestCase(APITestCase):
     def test_list_action(self):
-        repository = RepositoryFactory.create()
-        issues = IssueFactory.create_batch(repository=repository, size=3)
+        repository = factories.Repository.create()
+        issues = factories.Issue.create_batch(repository=repository, size=3)
         response = self.client.get(reverse_lazy("issue-list", kwargs={"repository_id": str(repository.id)}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], len(issues))
 
     def test_retrieve_action(self):
-        issue = IssueFactory.create()
+        issue = factories.Issue.create()
         repository = issue.repository
         issue_id = str(issue.id)
         kwargs = {"repository_id": str(repository.id), "id": issue_id}

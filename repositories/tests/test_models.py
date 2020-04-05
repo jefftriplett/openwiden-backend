@@ -1,10 +1,10 @@
 from openwiden.tests.cases import ModelTestCase
-from repositories.tests.factories import VersionControlServiceFactory, RepositoryFactory, IssueFactory
+from repositories.tests import factories
 from django.utils.translation import gettext_lazy as _
 
 
 class VersionControlServiceModelTestCase(ModelTestCase):
-    factory = VersionControlServiceFactory
+    factory = factories.VersionControlService
 
     def test_name_field(self):
         self.assertFieldMaxLength("name", 100)
@@ -23,7 +23,7 @@ class VersionControlServiceModelTestCase(ModelTestCase):
 
 
 class RepositoryModelTestCase(ModelTestCase):
-    factory = RepositoryFactory
+    factory = factories.Repository
 
     def test_meta(self):
         self.assertEqual(self.meta.verbose_name, _("repository"))
@@ -35,7 +35,7 @@ class RepositoryModelTestCase(ModelTestCase):
 
 
 class IssueModelTestCase(ModelTestCase):
-    factory = IssueFactory
+    factory = factories.Issue
 
     def test_meta(self):
         self.assertEqual(self.meta.verbose_name, _("issue"))
