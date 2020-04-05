@@ -1,3 +1,5 @@
+from typing import List
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from model_utils.models import UUIDModel, SoftDeletableModel
@@ -69,8 +71,9 @@ class Repository(SoftDeletableModel, UUIDModel):
         name,
         description,
         url,
-        forks_count,
         star_count,
+        open_issues_count,
+        forks_count,
         created_at,
         updated_at,
         programming_language: "ProgrammingLanguage",
@@ -81,12 +84,19 @@ class Repository(SoftDeletableModel, UUIDModel):
             name=name,
             description=description,
             url=url,
-            forks_count=forks_count,
             star_count=star_count,
+            open_issues_count=open_issues_count,
+            forks_count=forks_count,
             created_at=created_at,
             updated_at=updated_at,
             programming_language=programming_language,
         )
+
+    def create_issues(self, issues: List[dict]):
+        issues = [Issue(repository=self, **i) for i in issues]
+        Issue.objects.bulk_create(issues)
+        self.open_issues_count = self.issues.filter(state="open").count()
+        self.save()
 
 
 class Issue(UUIDModel):

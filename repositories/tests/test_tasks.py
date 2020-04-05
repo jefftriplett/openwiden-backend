@@ -129,8 +129,8 @@ class AddGitHubRepositoryTaskSendEmail(TestCase):
         tasks.add_repository_send_email("exists", self.user)
         self.assertEqual(send_mail_patched.call_count, 1)
 
-    def test_private(self, send_mail_patched):
-        tasks.add_repository_send_email("private", self.user)
+    def test_rate_limit_exceeded(self, send_mail_patched):
+        tasks.add_repository_send_email("rate_limit_exceeded", self.user)
         self.assertEqual(send_mail_patched.call_count, 1)
 
     def test_added(self, send_mail_patched):
@@ -154,14 +154,14 @@ class AddRepository(TestCase):
         user = UserFactory()
         service = factories.VersionControlService(host="github.com")
         github_fake_repo = Repository()
-        gitlab_fake_repo = Repository()
+        gitlab_fake_repo = Repository(issues_count=0, pull_requests_count=0)
         patched_github.return_value = github_fake_repo
         patched_gitlab.return_value = gitlab_fake_repo
         result = tasks.add_repository(user, service, "test_owner", "test_repo")
         repository = models.Repository.objects.get(version_control_service=service, remote_id=github_fake_repo.id)
         self.assertEqual(result, f"{repository.name} was added (id: {repository.id})")
         patched_github.assert_called_once()
-        patched_async_task.assert_called_with(tasks.add_repository_send_email, "added", user, repository)
+        patched_async_task.assert_called_with(tasks.add_issues, github_fake_repo, repository)
 
         # Test already exists
         result = tasks.add_repository(user, service, "test_owner", "test_repo")
@@ -180,3 +180,40 @@ class AddRepository(TestCase):
         service = factories.VersionControlService(host="not-implemented.com")
         with self.assertRaisesMessage(NotImplementedError, f"{service} is not implemented!"):
             tasks.add_repository(user, service, "test_owner", "test_user")
+
+    @mock.patch("repositories.tasks.async_task")
+    @mock.patch.object(tasks.github, "get_repo")
+    def test_rate_limit_exceeded(self, patched_get_repo, patched_async_task):
+        owner, repo = "test_owner", "test_repo"
+        user = UserFactory()
+        service = factories.VersionControlService(host="github.com")
+        patched_get_repo.side_effect = tasks.RateLimitExceededException("err", "now")
+        result = tasks.add_repository(user, service, owner, repo)
+        patched_async_task.assert_called_once_with(tasks.add_repository_send_email, "rate_limit_exceeded", user)
+        self.assertEqual(result, f"Rate limit exceeded for {owner}/{repo} add request.")
+
+
+class AddIssues(TestCase):
+    def test_add_issues_github(self):
+        fake_repo = Repository()
+        factory_repo = factories.Repository(version_control_service__host="github.com")
+        result = tasks.add_issues(fake_repo, factory_repo)
+        self.assertEqual(
+            result, f"Issues created successfully for repository {factory_repo}: {len(fake_repo.issues.list())}"
+        )
+
+    def test_add_issues_gitlab(self):
+        fake_repo = Repository()
+        factory_repo = factories.Repository(version_control_service__host="gitlab.com")
+        result = tasks.add_issues(fake_repo, factory_repo)
+        self.assertEqual(
+            result, f"Issues created successfully for repository {factory_repo}: {len(fake_repo.issues.list())}"
+        )
+
+    def test_add_issues_not_implemented(self):
+        fake_repo = Repository()
+        factory_repo = factories.Repository(version_control_service__host="not-implemented.com")
+        with self.assertRaisesMessage(
+            NotImplementedError, f"{factory_repo.version_control_service} is not implemented for issues download!"
+        ):
+            tasks.add_issues(fake_repo, factory_repo)
