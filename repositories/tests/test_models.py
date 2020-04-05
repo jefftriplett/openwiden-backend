@@ -44,3 +44,15 @@ class IssueModelTestCase(ModelTestCase):
 
     def test_str(self):
         self.assertTrue(str(self.instance), self.instance.title)
+
+
+class ProgrammingLanguageModelTestCase(ModelTestCase):
+    factory = factories.ProgrammingLanguage
+
+    def test_meta(self):
+        self.assertEqual(self.meta.verbose_name, _("programming language"))
+        self.assertEqual(self.meta.verbose_name_plural, _("list of programming languages"))
+
+    def test_str(self):
+        pl = factories.ProgrammingLanguage()
+        self.assertEqual(str(pl), pl.name)

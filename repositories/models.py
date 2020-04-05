@@ -7,6 +7,17 @@ from django.utils.translation import gettext_lazy as _
 from .managers import RepositoryManager
 
 
+class ProgrammingLanguage(models.Model):
+    name = models.CharField(_("name"), max_length=100, unique=True)
+
+    class Meta:
+        verbose_name = _("programming language")
+        verbose_name_plural = _("list of programming languages")
+
+    def __str__(self):
+        return self.name
+
+
 class VersionControlService(models.Model):
     name = models.CharField(_("name"), max_length=100)
     host = models.CharField(_("host"), max_length=50, unique=True)

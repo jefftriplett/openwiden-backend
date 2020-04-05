@@ -47,3 +47,11 @@ class Issue(factory.DjangoModelFactory):
     class Meta:
         model = models.Issue
         django_get_or_create = ("repository", "remote_id")
+
+
+class ProgrammingLanguage(factory.DjangoModelFactory):
+    name = fuzzy.FuzzyChoice(["Python", "C++", "C", "Go", "PHP", "Ruby", "C#", "Java", "JavaScript", "Perl"])
+
+    class Meta:
+        model = models.ProgrammingLanguage
+        django_get_or_create = ("name",)
