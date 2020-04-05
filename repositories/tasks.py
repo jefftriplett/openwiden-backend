@@ -6,7 +6,7 @@ from django.utils.timezone import make_aware
 from django.core.mail import send_mail
 from django_q.tasks import async_task
 
-from repositories.models import Repository, VersionControlService
+from repositories import models
 from repositories.utils import ParsedUrl
 
 
@@ -14,11 +14,11 @@ github = Github(client_id=settings.GITHUB_CLIENT_ID, client_secret=settings.GITH
 gitlab = Gitlab("https://gitlab.com", private_token=settings.GITLAB_PRIVATE_TOKEN)
 
 
-def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlService):
+def add_github_repository(user, parsed_url: ParsedUrl, service: "models.VersionControlService"):
     repo = github.get_repo(f"{parsed_url.owner}/{parsed_url.repo}")
 
     # Check if repository already exists
-    qs = Repository.objects.filter(version_control_service=service, remote_id=repo.id)
+    qs = models.Repository.objects.filter(version_control_service=service, remote_id=repo.id)
     if qs.exists():
         async_task(add_repository_send_email, "exists", user)
     # Check if repo is private
@@ -43,11 +43,16 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
             if not i.pull_request  # exclude pull requests
         ]
 
-        # programming_languages = repo.get_languages()
-        # main_pl = max(programming_languages, key=lambda k: programming_languages[k])
+        programming_languages = repo.get_languages()
+        main_pl_name = max(programming_languages, key=lambda k: programming_languages[k])
+        pl, created = models.ProgrammingLanguage.objects.get_or_create(name=main_pl_name)
+
+        if created:
+            # TODO: notify on new pl add
+            pass
 
         # Create repository with nested data
-        repository = Repository.objects.nested_create(
+        repository = models.Repository.objects.nested_create(
             version_control_service=service,
             remote_id=repo.id,
             name=repo.name,
@@ -57,19 +62,19 @@ def add_github_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
             star_count=repo.stargazers_count,
             created_at=make_aware(repo.created_at),
             updated_at=make_aware(repo.updated_at),
-            # programming_language=programming_language,
+            programming_language=pl,
             issues=issues,
         )
 
         async_task(add_repository_send_email, "added", user, repository)
 
 
-def add_gitlab_repository(user, parsed_url: ParsedUrl, service: VersionControlService):
+def add_gitlab_repository(user, parsed_url: ParsedUrl, service: "models.VersionControlService"):
     repo_raw = requests.get(f"https://gitlab.com/api/v4/projects/{parsed_url.owner}%2F{parsed_url.repo}").json()
     repo = gitlab.projects.get(id=repo_raw["id"])
 
     # Check if repository already exists
-    qs = Repository.objects.filter(version_control_service=service, remote_id=repo.id)
+    qs = models.Repository.objects.filter(version_control_service=service, remote_id=repo.id)
     if qs.exists():
         async_task(add_repository_send_email, "exists", user)
     else:
@@ -92,7 +97,7 @@ def add_gitlab_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
         # programming_languages = repo.languages()
 
         # Create repository with nested data
-        repository = Repository.objects.nested_create(
+        repository = models.Repository.objects.nested_create(
             version_control_service=service,
             remote_id=repo.id,
             name=repo.name,
@@ -109,7 +114,7 @@ def add_gitlab_repository(user, parsed_url: ParsedUrl, service: VersionControlSe
         async_task(add_repository_send_email, "added", user, repository)
 
 
-def add_repository_send_email(result, user, repository: Repository = None):
+def add_repository_send_email(result, user, repository: "models.Repository" = None):
     if result == "exists":
         send_mail("Repository add request", "exists", "info@openwiden.com", [user.email])
     elif result == "private":
