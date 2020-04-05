@@ -11,11 +11,11 @@ from users.views import UserRetrieveByTokenView
 from users.urls import users_urls, auth_urls
 
 router = routers.DefaultRouter()
-router.register("repositories", views.RepositoryViewSet, basename="repository")
+router.register("repositories", views.Repository, basename="repository")
 router.register("programming_languages", views.ProgrammingLanguage, basename="programming_language")
 
 repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
-repository_router.register("issues", views.IssueViewSet, basename="issue")
+repository_router.register("issues", views.Issue, basename="issue")
 
 
 urlpatterns = [

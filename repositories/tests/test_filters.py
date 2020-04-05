@@ -1,8 +1,7 @@
 from django.test import TestCase, override_settings
 
 from repositories.tests import factories
-from repositories.models import Repository
-from repositories.filters import RepositoryFilter
+from repositories import filters, models
 
 
 @override_settings(USE_TZ=False)
@@ -24,9 +23,9 @@ class RepositoryFilterTestCase(TestCase):
             )
 
     def test_meta(self):
-        self.assertEqual(RepositoryFilter.Meta.model, Repository)
+        self.assertEqual(filters.Repository.Meta.model, models.Repository)
         self.assertEqual(
-            RepositoryFilter.Meta.fields,
+            filters.Repository.Meta.fields,
             (
                 "version_control_service",
                 "star_count_gte",
@@ -40,37 +39,37 @@ class RepositoryFilterTestCase(TestCase):
 
     def test_version_control_service_filter(self):
         query = {"version_control_service": "github.com"}
-        f = RepositoryFilter(query, Repository.objects.all())
+        f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertTrue(f.qs.filter(name__in=["Test 1", "Test 2", "Test 3"]).count(), 3)
 
     def test_star_count_gte_filter(self):
         query = {"star_count_gte": 20}
-        f = RepositoryFilter(query, Repository.objects.all())
+        f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
     def test_open_issues_count_gte_filter(self):
         query = {"open_issues_count_gte": 20}
-        f = RepositoryFilter(query, Repository.objects.all())
+        f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
     def test_forks_count_gte_filter(self):
         query = {"forks_count_gte": 20}
-        f = RepositoryFilter(query, Repository.objects.all())
+        f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
     def test_created_at_filter(self):
         query = {"created_at_after": "2017-01-01", "created_at_before": "2018-02-01"}
-        f = RepositoryFilter(query, Repository.objects.all())
+        f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 1", "Test 2", "Test 3"]).count(), 3)
 
     def test_updated_at_filter(self):
         query = {"updated_at_after": "2018-02-01", "updated_at_before": "2019-02-01"}
-        f = RepositoryFilter(query, Repository.objects.all())
+        f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 

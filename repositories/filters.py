@@ -1,9 +1,9 @@
 from django_filters import rest_framework as filters
 
-from .models import Repository
+from repositories import models
 
 
-class RepositoryFilter(filters.FilterSet):
+class Repository(filters.FilterSet):
     version_control_service = filters.CharFilter(field_name="version_control_service", lookup_expr="host")
 
     star_count_gte = filters.NumberFilter(field_name="star_count", lookup_expr="gte")
@@ -16,7 +16,7 @@ class RepositoryFilter(filters.FilterSet):
     # programming_language = filters.CharFilter(field_name="programming_languages", lookup_expr="has_key")
 
     class Meta:
-        model = Repository
+        model = models.Repository
         fields = (
             "version_control_service",
             "star_count_gte",

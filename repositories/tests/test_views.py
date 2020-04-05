@@ -7,7 +7,7 @@ from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from repositories.exceptions import RepositoryURLParse, VersionControlServiceNotFound
+from repositories import exceptions
 from repositories.tests import factories
 from users.tests.factories import UserFactory
 
@@ -56,21 +56,21 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
         self.assertEqual(response.data, {"detail": _(f"Not implemented yet.")})
 
-    @mock.patch("repositories.views.parse_repo_url")
+    @mock.patch("repositories.utils.parse_repo_url")
     def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):
         patched_parse_repo_url.return_value = None
         url = "https://github.com/golang/go"
         self.add_auth_header()
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": RepositoryURLParse(url).detail})
+        self.assertEqual(response.data, {"detail": exceptions.RepositoryURLParse(url).detail})
 
     def test_add_view_raises_vcs_not_found(self):
         url = "https://example.com/golang/go"
         self.add_auth_header()
         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": VersionControlServiceNotFound("example.com").detail})
+        self.assertEqual(response.data, {"detail": exceptions.VersionControlServiceNotFound("example.com").detail})
 
 
 class IssueViewSetTestCase(APITestCase):
