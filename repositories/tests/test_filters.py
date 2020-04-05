@@ -33,7 +33,7 @@ class RepositoryFilterTestCase(TestCase):
                 "forks_count_gte",
                 "created_at",
                 "updated_at",
-                # "programming_language",
+                "programming_language",
             ),
         )
 
@@ -73,11 +73,12 @@ class RepositoryFilterTestCase(TestCase):
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
-    # def test_programming_language_filter(self):
-    #     r = Repository.objects.first()
-    #     r.programming_languages = {"TEST": 1}
-    #     r.save()
-    #     query = {"programming_language": "TEST"}
-    #     f = RepositoryFilter(query, Repository.objects.all())
-    #     self.assertEqual(f.qs.count(), 1)
-    #     self.assertEqual(f.qs.first().name, r.name)
+    def test_programming_language_filter(self):
+        r = models.Repository.objects.first()
+        r.programming_language = factories.ProgrammingLanguage(name="TestLanguage")
+        r.save()
+        query = {"programming_language": r.programming_language.id}
+        f = filters.Repository(query, models.Repository.objects.all())
+        self.assertEqual(f.qs.count(), 1)
+        self.assertEqual(f.qs.first().name, r.name)
+        self.assertEqual(f.qs.first().programming_language, r.programming_language)

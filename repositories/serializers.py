@@ -11,6 +11,7 @@ class ProgrammingLanguage(serializers.ModelSerializer):
 
 class RepositorySerializer(serializers.ModelSerializer):
     version_control_service = serializers.CharField(source="version_control_service.host")
+    programming_language = ProgrammingLanguage()
 
     class Meta:
         model = models.Repository

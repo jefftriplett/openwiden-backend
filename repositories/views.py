@@ -9,7 +9,7 @@ from repositories import models, serializers, exceptions, filters, utils, tasks
 
 class Repository(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.RepositorySerializer
-    queryset = models.Repository.objects.all()
+    queryset = models.Repository.objects.all().select_related("programming_language")
     lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
     filterset_class = filters.Repository
