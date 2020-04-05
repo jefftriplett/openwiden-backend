@@ -6,15 +6,16 @@ from django.views.generic.base import RedirectView
 from rest_framework_nested import routers
 
 from openwiden.views import schema_view
-from repositories.views import RepositoryViewSet, IssueViewSet
+from repositories import views
 from users.views import UserRetrieveByTokenView
 from users.urls import users_urls, auth_urls
 
 router = routers.DefaultRouter()
-router.register("repositories", RepositoryViewSet, basename="repository")
+router.register("repositories", views.RepositoryViewSet, basename="repository")
+router.register("programming_languages", views.ProgrammingLanguage, basename="programming_language")
 
 repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
-repository_router.register("issues", IssueViewSet, basename="issue")
+repository_router.register("issues", views.IssueViewSet, basename="issue")
 
 
 urlpatterns = [

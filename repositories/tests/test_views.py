@@ -91,7 +91,9 @@ class IssueViewSetTestCase(APITestCase):
         self.assertEqual(response.data["id"], issue_id)
 
 
-# class ProgrammingLanguage(APITestCase):
-#     def test_list_action(self):
-#         pl_list = factories.ProgrammingLanguage.create_batch(5)
-#         response =
+class ProgrammingLanguage(APITestCase):
+    def test_list_action(self):
+        pl_list = [factories.ProgrammingLanguage.create(name=name) for name in ["Python", "Go", "Ruby"]]
+        response = self.client.get(reverse_lazy("programming_language-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], len(pl_list))

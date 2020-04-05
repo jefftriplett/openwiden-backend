@@ -5,17 +5,16 @@ from rest_framework.response import Response
 
 from django_q.tasks import async_task
 
+from repositories import models, serializers
 from .exceptions import RepositoryURLParse, VersionControlServiceNotFound
 from .filters import RepositoryFilter
-from .models import VersionControlService, Repository, Issue
-from .serializers import RepositorySerializer, IssueSerializer
 from .utils import parse_repo_url
 from .tasks import add_github_repository, add_gitlab_repository
 
 
 class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = RepositorySerializer
-    queryset = Repository.objects.all()
+    serializer_class = serializers.RepositorySerializer
+    queryset = models.Repository.objects.all()
     lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
     filterset_class = RepositoryFilter
@@ -29,8 +28,8 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
             raise RepositoryURLParse(url)
 
         try:
-            service = VersionControlService.objects.get(host=parsed_url.host)
-        except VersionControlService.DoesNotExist:
+            service = models.VersionControlService.objects.get(host=parsed_url.host)
+        except models.VersionControlService.DoesNotExist:
             raise VersionControlServiceNotFound(parsed_url.host)
 
         if service.host == "github.com":
@@ -44,9 +43,16 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IssueViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = IssueSerializer
+    serializer_class = serializers.IssueSerializer
     lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
 
     def get_queryset(self):
-        return Issue.objects.filter(repository=self.kwargs["repository_id"])
+        return models.Issue.objects.filter(repository=self.kwargs["repository_id"])
+
+
+class ProgrammingLanguage(viewsets.ReadOnlyModelViewSet):
+    serializer_class = serializers.ProgrammingLanguage
+    lookup_field = "id"
+    permission_classes = (permissions.AllowAny,)
+    queryset = models.ProgrammingLanguage.objects.all()

@@ -1,13 +1,19 @@
 from rest_framework import serializers
 
-from .models import Repository, Issue
+from repositories import models
+
+
+class ProgrammingLanguage(serializers.ModelSerializer):
+    class Meta:
+        model = models.ProgrammingLanguage
+        fields = ("id", "name")
 
 
 class RepositorySerializer(serializers.ModelSerializer):
     version_control_service = serializers.CharField(source="version_control_service.host")
 
     class Meta:
-        model = Repository
+        model = models.Repository
         fields = (
             "id",
             "version_control_service",
@@ -25,7 +31,7 @@ class RepositorySerializer(serializers.ModelSerializer):
 
 class IssueSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Issue
+        model = models.Issue
         fields = (
             "id",
             "title",

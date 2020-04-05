@@ -9,6 +9,7 @@ class ProgrammingLanguage(models.Model):
     name = models.CharField(_("name"), max_length=100, unique=True)
 
     class Meta:
+        ordering = ("name",)
         verbose_name = _("programming language")
         verbose_name_plural = _("list of programming languages")
 
@@ -21,6 +22,7 @@ class VersionControlService(models.Model):
     host = models.CharField(_("host"), max_length=50, unique=True)
 
     class Meta:
+        ordering = ("host",)
         verbose_name = _("version control service")
         verbose_name_plural = _("version control services")
 
@@ -49,7 +51,7 @@ class Repository(SoftDeletableModel, UUIDModel):
     )
 
     class Meta:
-        ordering = ["-open_issues_count"]
+        ordering = ("-open_issues_count",)
         verbose_name = _("repository")
         verbose_name_plural = _("repositories")
         constraints = (
@@ -108,7 +110,7 @@ class Issue(UUIDModel):
     updated_at = models.DateTimeField(_("updated at"))
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ("-created_at",)
         verbose_name = _("issue")
         verbose_name_plural = _("issues")
         constraints = (models.UniqueConstraint(fields=["repository", "remote_id"], name="unique_issue"),)
