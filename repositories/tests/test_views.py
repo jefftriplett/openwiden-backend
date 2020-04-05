@@ -48,14 +48,6 @@ class RepositoryViewSetTestCase(APITestCase):
             )
         self.assertEqual(patched_task.call_count, 2)
 
-    def test_not_implemented_service(self):
-        factories.VersionControlService.create(host="not.implemented")
-        url = "https://not.implemented/owner/repo"
-        self.add_auth_header()
-        response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
-        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
-        self.assertEqual(response.data, {"detail": _(f"Not implemented yet.")})
-
     @mock.patch("repositories.utils.parse_repo_url")
     def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):
         patched_parse_repo_url.return_value = None

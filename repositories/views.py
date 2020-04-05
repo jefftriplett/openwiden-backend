@@ -1,5 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_q.tasks import async_task
@@ -19,20 +19,17 @@ class Repository(viewsets.ReadOnlyModelViewSet):
         url = request.data["url"]
         parsed_url = utils.parse_repo_url(url)
 
+        # If repository url was not parsed (None returned)
         if parsed_url is None:
             raise exceptions.RepositoryURLParse(url)
 
+        # Try to find version control service by url host
         try:
             service = models.VersionControlService.objects.get(host=parsed_url.host)
         except models.VersionControlService.DoesNotExist:
             raise exceptions.VersionControlServiceNotFound(parsed_url.host)
 
-        if service.host == "github.com":
-            async_task(tasks.add_github_repository, self.request.user, parsed_url, service)
-        elif service.host == "gitlab.com":
-            async_task(tasks.add_gitlab_repository, self.request.user, parsed_url, service)
-        else:
-            return Response({"detail": _(f"Not implemented yet.")}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        async_task(tasks.add_repository, self.request.user, service, parsed_url.owner, parsed_url.repo)
 
         return Response({"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")})
 
