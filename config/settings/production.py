@@ -1,4 +1,4 @@
-from openwiden import get_version
+import openwiden
 from .base import Base
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -33,7 +33,7 @@ class Production(Base):
     SENTRY_DSN = Base.env("SENTRY_DSN")
     SENTRY_INTEGRATIONS = [DjangoIntegration()]
     SENTRY_SEND_DEFAULT_PII = True
-    SENTRY_RELEASE = f"openwiden-backend@{get_version()}"
+    SENTRY_RELEASE = f"openwiden-backend@{openwiden.__version__}"
     SENTRY_ENVIRONMENT = "production"
     SENTRY_DEBUG = False
 
