@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.models import UUIDModel
 
 from openwiden.tests.cases import ModelTestCase
-from .factories import UserFactory, OAuth2TokenFactory
+from openwiden.users.tests import factories
 
 
 class UserModelTestCase(ModelTestCase):
@@ -11,7 +11,7 @@ class UserModelTestCase(ModelTestCase):
     User model test case.
     """
 
-    factory = UserFactory
+    factory = factories.UserFactory
 
     def test_model_meta(self):
         self.assertEqual(str(self.meta.verbose_name), _("user"))
@@ -27,7 +27,7 @@ class OAuth2TokenModelTestCase(ModelTestCase):
     OAuth2Token model test case.
     """
 
-    factory = OAuth2TokenFactory
+    factory = factories.OAuth2TokenFactory
 
     def test_model_meta(self):
         self.assertEqual(str(self.meta.verbose_name), _("oauth2 token"))

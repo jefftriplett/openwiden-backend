@@ -1,4 +1,4 @@
-from users.filters import OAuthCompleteFilter
+from openwiden.users.filters import OAuthCompleteFilter
 
 
 def test_oauth_complete_filter_get_schema_operation_parameters():

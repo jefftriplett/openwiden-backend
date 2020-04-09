@@ -8,7 +8,7 @@ from django.test import TestCase
 from openwiden.repositories import tasks
 from openwiden.repositories import models
 from openwiden.repositories.tests import factories
-from users.tests.factories import UserFactory
+from openwiden.users.tests import factories as users_factories
 
 fake = Faker()
 
@@ -123,7 +123,7 @@ class Repository:
 class AddGitHubRepositoryTaskSendEmail(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory()
+        cls.user = users_factories.UserFactory()
 
     def test_exists(self, send_mail_patched):
         tasks.add_repository_send_email("exists", self.user)
@@ -151,7 +151,7 @@ class AddRepository(TestCase):
     @mock.patch.object(tasks.gitlab.projects, "get")
     @mock.patch.object(tasks.github, "get_repo")
     def test_add_repository(self, patched_github, patched_gitlab, patched_async_task, patched_requests_get):
-        user = UserFactory()
+        user = users_factories.UserFactory()
         service = factories.VersionControlService(host="github.com")
         github_fake_repo = Repository()
         gitlab_fake_repo = Repository(issues_count=0, pull_requests_count=0)
@@ -176,7 +176,7 @@ class AddRepository(TestCase):
         patched_gitlab.assert_called_once()
 
     def test_add_github_repository_service_not_implemented(self):
-        user = UserFactory()
+        user = users_factories.UserFactory()
         service = factories.VersionControlService(host="not-implemented.com")
         with self.assertRaisesMessage(NotImplementedError, f"{service} is not implemented!"):
             tasks.add_repository(user, service, "test_owner", "test_user")
@@ -185,7 +185,7 @@ class AddRepository(TestCase):
     @mock.patch.object(tasks.github, "get_repo")
     def test_rate_limit_exceeded(self, patched_get_repo, patched_async_task):
         owner, repo = "test_owner", "test_repo"
-        user = UserFactory()
+        user = users_factories.UserFactory()
         service = factories.VersionControlService(host="github.com")
         patched_get_repo.side_effect = tasks.RateLimitExceededException("err", "now")
         result = tasks.add_repository(user, service, owner, repo)

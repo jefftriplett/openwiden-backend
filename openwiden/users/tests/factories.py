@@ -1,7 +1,7 @@
 import factory
 from factory import fuzzy
 
-from users.models import User, OAuth2Token
+from openwiden.users.models import User, OAuth2Token
 
 
 class UserFactory(factory.django.DjangoModelFactory):

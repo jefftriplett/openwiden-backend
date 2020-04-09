@@ -2,9 +2,9 @@ import mock
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.test import TestCase
-from users import utils
+from openwiden.users import utils
 from faker import Faker
-from users import models
+from .. import models
 from .factories import OAuth2TokenFactory, UserFactory
 
 fake = Faker()
@@ -38,7 +38,7 @@ class CreateOrUpdateUserTestCase(TestCase):
         return utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
 
 
-@mock.patch("users.utils.get_profile")
+@mock.patch("openwiden.users.utils.get_profile")
 class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
     @classmethod
     def setUpTestData(cls):
@@ -100,10 +100,10 @@ class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
         self.assertEqual(str(oauth2_token.user.id), str(new_user.id))
 
 
-@mock.patch("users.utils.get_profile")
+@mock.patch("openwiden.users.utils.get_profile")
 class CreateOrUpdateUserTokenDoesNotExistsTestCase(CreateOrUpdateUserTestCase):
-    @mock.patch("users.utils.ContentFile")
-    @mock.patch("users.utils.requests.get")
+    @mock.patch("openwiden.users.utils.ContentFile")
+    @mock.patch("openwiden.users.utils.requests.get")
     def test_anonymous_user(self, patched_requests_get, patched_content_file, patched_get_profile):
         """
         Test that creates new User & OAuth2Token for that user.
@@ -117,8 +117,8 @@ class CreateOrUpdateUserTokenDoesNotExistsTestCase(CreateOrUpdateUserTestCase):
         self.assertEqual(str(user.id), str(models.User.objects.first().id))
         self.assertEqual(models.OAuth2Token.objects.count(), 1)
 
-    @mock.patch("users.utils.ContentFile")
-    @mock.patch("users.utils.requests.get")
+    @mock.patch("openwiden.users.utils.ContentFile")
+    @mock.patch("openwiden.users.utils.requests.get")
     def test_anonymous_user_login_exists(self, patched_requests_get, patched_content_file, patched_get_profile):
         UserFactory.create(username=self.fake_profile.login)
         patched_get_profile.return_value = self.fake_profile

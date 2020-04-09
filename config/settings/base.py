@@ -31,7 +31,7 @@ class Base(Configuration):
         "anymail",
     )
     LOCAL_APPS = (
-        "users",
+        "openwiden.users",
         "openwiden.repositories",
     )
 

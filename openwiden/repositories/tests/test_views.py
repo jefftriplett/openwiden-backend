@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.repositories import exceptions
 from openwiden.repositories.tests import factories
-from users.tests.factories import UserFactory
+from openwiden.users.tests.factories import UserFactory
 
 
 class RepositoryViewSetTestCase(APITestCase):
