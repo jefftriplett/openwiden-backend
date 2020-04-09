@@ -7,8 +7,8 @@ from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from repositories import exceptions
-from repositories.tests import factories
+from openwiden.repositories import exceptions
+from openwiden.repositories.tests import factories
 from users.tests.factories import UserFactory
 
 
@@ -34,7 +34,7 @@ class RepositoryViewSetTestCase(APITestCase):
         response = self.client.post(reverse_lazy("repository-add"), data={"url": "test"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @mock.patch("repositories.views.async_task")
+    @mock.patch("openwiden.repositories.views.async_task")
     def test_add_view_success(self, patched_task):
         management.call_command("loaddata", "version_control_services.json", verbosity=0)
         urls = ("https://github.com/golang/go", "https://gitlab.com/pgjones/quart")
@@ -48,7 +48,7 @@ class RepositoryViewSetTestCase(APITestCase):
             )
         self.assertEqual(patched_task.call_count, 2)
 
-    @mock.patch("repositories.utils.parse_repo_url")
+    @mock.patch("openwiden.repositories.utils.parse_repo_url")
     def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):
         patched_parse_repo_url.return_value = None
         url = "https://github.com/golang/go"

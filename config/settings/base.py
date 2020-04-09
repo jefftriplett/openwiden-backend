@@ -32,7 +32,7 @@ class Base(Configuration):
     )
     LOCAL_APPS = (
         "users",
-        "repositories",
+        "openwiden.repositories",
     )
 
     # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

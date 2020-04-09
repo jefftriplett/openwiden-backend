@@ -6,8 +6,7 @@ from django.utils.timezone import make_aware
 from django.core.mail import send_mail
 from django_q.tasks import async_task
 
-from repositories import models
-
+from openwiden.repositories import models
 
 PAGINATION_LIMIT = 30
 github = Github(client_id=settings.GITHUB_CLIENT_ID, client_secret=settings.GITHUB_SECRET_KEY)

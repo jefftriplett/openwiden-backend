@@ -4,7 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_q.tasks import async_task
 
-from repositories import models, serializers, exceptions, filters, utils, tasks
+from openwiden.repositories import tasks
+from openwiden.repositories import serializers, models, exceptions, filters, utils
 
 
 class Repository(viewsets.ReadOnlyModelViewSet):

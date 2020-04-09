@@ -1,4 +1,4 @@
-from repositories.utils import parse_repo_url
+from openwiden.repositories.utils import parse_repo_url
 
 
 success_test_cases = (

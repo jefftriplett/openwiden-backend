@@ -2,7 +2,7 @@ import factory
 from django.utils.timezone import now
 from factory import fuzzy
 
-from repositories import models
+from openwiden.repositories import models
 
 
 class ProgrammingLanguage(factory.DjangoModelFactory):

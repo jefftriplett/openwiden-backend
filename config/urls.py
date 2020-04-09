@@ -6,7 +6,7 @@ from django.views.generic.base import RedirectView
 from rest_framework_nested import routers
 
 from openwiden.views import schema_view
-from repositories import views
+from openwiden.repositories import views
 from users.views import UserRetrieveByTokenView
 from users.urls import users_urls, auth_urls
 

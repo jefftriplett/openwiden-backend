@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from repositories import models
+from openwiden.repositories import models
 
 
 class ProgrammingLanguage(serializers.ModelSerializer):

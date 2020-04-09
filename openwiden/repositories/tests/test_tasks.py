@@ -5,9 +5,9 @@ from faker import Faker
 
 from django.test import TestCase
 
-from repositories import tasks
-from repositories import models
-from repositories.tests import factories
+from openwiden.repositories import tasks
+from openwiden.repositories import models
+from openwiden.repositories.tests import factories
 from users.tests.factories import UserFactory
 
 fake = Faker()
@@ -119,7 +119,7 @@ class Repository:
         return self.get_languages()
 
 
-@mock.patch("repositories.tasks.send_mail")
+@mock.patch("openwiden.repositories.tasks.send_mail")
 class AddGitHubRepositoryTaskSendEmail(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -146,8 +146,8 @@ class AddGitHubRepositoryTaskSendEmail(TestCase):
 
 
 class AddRepository(TestCase):
-    @mock.patch("repositories.tasks.requests.get")
-    @mock.patch("repositories.tasks.async_task")
+    @mock.patch("openwiden.repositories.tasks.requests.get")
+    @mock.patch("openwiden.repositories.tasks.async_task")
     @mock.patch.object(tasks.gitlab.projects, "get")
     @mock.patch.object(tasks.github, "get_repo")
     def test_add_repository(self, patched_github, patched_gitlab, patched_async_task, patched_requests_get):
@@ -181,7 +181,7 @@ class AddRepository(TestCase):
         with self.assertRaisesMessage(NotImplementedError, f"{service} is not implemented!"):
             tasks.add_repository(user, service, "test_owner", "test_user")
 
-    @mock.patch("repositories.tasks.async_task")
+    @mock.patch("openwiden.repositories.tasks.async_task")
     @mock.patch.object(tasks.github, "get_repo")
     def test_rate_limit_exceeded(self, patched_get_repo, patched_async_task):
         owner, repo = "test_owner", "test_repo"

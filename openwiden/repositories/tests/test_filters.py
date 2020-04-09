@@ -1,7 +1,7 @@
 from django.test import TestCase, override_settings
 
-from repositories.tests import factories
-from repositories import filters, models
+from openwiden.repositories.tests import factories
+from openwiden.repositories import models, filters
 
 
 @override_settings(USE_TZ=False)

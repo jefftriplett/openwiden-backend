@@ -1,5 +1,5 @@
 from openwiden.tests.cases import ModelTestCase
-from repositories.tests import factories
+from openwiden.repositories.tests import factories
 from django.utils.translation import gettext_lazy as _
 
 

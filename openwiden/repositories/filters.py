@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from repositories import models
+from openwiden.repositories import models
 
 
 class Repository(filters.FilterSet):

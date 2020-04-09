@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from repositories import models
+from openwiden.repositories import models
 
 
 class DisabledAddModelAdmin(admin.ModelAdmin):
