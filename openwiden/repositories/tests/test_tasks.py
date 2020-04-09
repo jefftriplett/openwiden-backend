@@ -3,7 +3,7 @@ from datetime import datetime
 import mock
 from faker import Faker
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from openwiden.repositories import tasks
 from openwiden.repositories import models
@@ -145,6 +145,7 @@ class AddGitHubRepositoryTaskSendEmail(TestCase):
         self.assertEqual(send_mail_patched.call_count, 0)
 
 
+@override_settings(USE_TZ=False)
 class AddRepository(TestCase):
     @mock.patch("openwiden.repositories.tasks.requests.get")
     @mock.patch("openwiden.repositories.tasks.async_task")
@@ -193,6 +194,7 @@ class AddRepository(TestCase):
         self.assertEqual(result, f"Rate limit exceeded for {owner}/{repo} add request.")
 
 
+@override_settings(USE_TZ=False)
 class AddIssues(TestCase):
     def test_add_issues_github(self):
         fake_repo = Repository()

@@ -1,5 +1,5 @@
 import factory
-from django.utils.timezone import now
+from django.utils.timezone import get_current_timezone
 from factory import fuzzy
 
 from openwiden.repositories import models
@@ -30,8 +30,8 @@ class Repository(factory.DjangoModelFactory):
     url = factory.Faker("url")
     forks_count = fuzzy.FuzzyInteger(1, 1000)
     star_count = fuzzy.FuzzyInteger(1, 90000)
-    created_at = fuzzy.FuzzyDateTime(now())
-    updated_at = fuzzy.FuzzyDateTime(now())
+    created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
+    updated_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     open_issues_count = fuzzy.FuzzyInteger(1, 1000)
     programming_language = factory.SubFactory(ProgrammingLanguage)
 
@@ -48,9 +48,9 @@ class Issue(factory.DjangoModelFactory):
     state = fuzzy.FuzzyChoice(models.Issue.STATE_CHOICES)
     labels = ["bug", "back-end"]
     url = factory.Faker("url")
-    created_at = fuzzy.FuzzyDateTime(now())
-    closed_at = fuzzy.FuzzyDateTime(now())
-    updated_at = fuzzy.FuzzyDateTime(now())
+    created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
+    closed_at = factory.Faker("date_time", tzinfo=get_current_timezone())
+    updated_at = factory.Faker("date_time", tzinfo=get_current_timezone())
 
     class Meta:
         model = models.Issue
