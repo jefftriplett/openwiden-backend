@@ -2,7 +2,7 @@ from django.utils.encoding import force_str
 from rest_framework import exceptions, status
 from django.utils.translation import gettext_lazy as _
 
-from .models import VersionControlService
+from openwiden.repositories import models
 
 
 class RepositoryURLParse(exceptions.ParseError):
@@ -13,19 +13,13 @@ class RepositoryURLParse(exceptions.ParseError):
         super().__init__(detail)
 
 
-class PrivateRepository(exceptions.APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = _("You cannot add a private repository.")
-    default_code = "invalid"
-
-
 class VersionControlServiceNotFound(exceptions.APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = _("Service for {host} is not found. Available services are: {available_services}.")
     default_code = "invalid"
 
     def __init__(self, host: str):
-        available_services = ", ".join(VersionControlService.objects.values_list("host", flat=True))
+        available_services = ", ".join(models.VersionControlService.objects.values_list("host", flat=True))
         detail = force_str(self.default_detail).format(host=host, available_services=available_services)
         super().__init__(detail)
 
