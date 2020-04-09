@@ -1,10 +1,9 @@
-from typing import List
-
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
+from openwiden.repositories import managers
 
 
 class ProgrammingLanguage(models.Model):
@@ -52,6 +51,8 @@ class Repository(SoftDeletableModel, UUIDModel):
         ProgrammingLanguage, models.PROTECT, "repositories", "repository", verbose_name=_("programming language")
     )
 
+    objects = managers.Repository()
+
     class Meta:
         ordering = ("-open_issues_count",)
         verbose_name = _("repository")
@@ -63,40 +64,17 @@ class Repository(SoftDeletableModel, UUIDModel):
     def __str__(self):
         return self.name
 
-    @classmethod
-    def new(
-        cls,
-        version_control_service: "VersionControlService",
-        remote_id,
-        name,
-        description,
-        url,
-        star_count,
-        open_issues_count,
-        forks_count,
-        created_at,
-        updated_at,
-        programming_language: "ProgrammingLanguage",
-    ) -> "Repository":
-        return cls.objects.create(
-            version_control_service=version_control_service,
-            remote_id=remote_id,
-            name=name,
-            description=description,
-            url=url,
-            star_count=star_count,
-            open_issues_count=open_issues_count,
-            forks_count=forks_count,
-            created_at=created_at,
-            updated_at=updated_at,
-            programming_language=programming_language,
-        )
+    def save(self, **kwargs):
+        self.update_open_issues_count(save=False)
+        super().save(**kwargs)
 
-    def create_issues(self, issues: List[dict]):
-        issues = [Issue(repository=self, **i) for i in issues]
-        Issue.objects.bulk_create(issues)
+    def update_open_issues_count(self, save: bool = True):
+        """
+        Updates open issues count.
+        """
         self.open_issues_count = self.issues.filter(state="open").count()
-        self.save()
+        if save:
+            self.save()
 
 
 class Issue(UUIDModel):
@@ -118,6 +96,8 @@ class Issue(UUIDModel):
     created_at = models.DateTimeField(_("crated at"))
     closed_at = models.DateTimeField(_("closed at"), blank=True, null=True)
     updated_at = models.DateTimeField(_("updated at"))
+
+    objects = managers.Issue()
 
     class Meta:
         ordering = ("-created_at",)

@@ -12,7 +12,7 @@ class RepositoryFilterTestCase(TestCase):
             count = i * 5
             host = "github.com" if i <= 3 else "gitlab.com"
             date = "2018-01-01" if i <= 3 else "2019-01-01"
-            factories.Repository.create(
+            repository: "models.Repository" = factories.Repository.create(
                 version_control_service__host=host,
                 name=f"Test {i}",
                 star_count=count,
@@ -21,6 +21,8 @@ class RepositoryFilterTestCase(TestCase):
                 created_at=date,
                 updated_at=date,
             )
+            factories.Issue.create_batch(repository=repository, size=count, state="open")
+            repository.update_open_issues_count()
 
     def test_meta(self):
         self.assertEqual(filters.Repository.Meta.model, models.Repository)

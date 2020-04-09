@@ -29,7 +29,7 @@ class Repository(viewsets.ReadOnlyModelViewSet):
         except models.VersionControlService.DoesNotExist:
             raise exceptions.VersionControlServiceNotFound(parsed_url.host)
 
-        async_task(tasks.add_repository, self.request.user, service, parsed_url.owner, parsed_url.repo)
+        async_task(tasks.update_or_create_repository, self.request.user, service, parsed_url.owner, parsed_url.repo)
 
         return Response({"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")})
 
