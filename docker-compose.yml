@@ -3,12 +3,14 @@ version: "3.7"
 services:
   db:
     image: postgres:11.6
+  cache:
+    image: redis:5.0
   web:
     restart: always
-    image: web
+    image: &web web
     build: .
     command: bash run_server.sh
-    environment:
+    environment: &env
       - CODECOV_TOKEN
       - DJANGO_DEBUG
       - DJANGO_SECRET_KEY
@@ -20,9 +22,21 @@ services:
       - GITHUB_SECRET_KEY
       - GITLAB_APP_ID
       - GITLAB_SECRET
+      - GITLAB_PRIVATE_TOKEN
+      - REDIS_URL
+      - MAILGUN_API_KEY
+      - MAILGUN_DOMAIN
+      - MAILGUN_API_URL
     volumes:
       - "./:/code"
     ports:
       - "8000:8000"
     depends_on:
       - db
+      - cache
+      - tasks
+  tasks:
+    restart: always
+    image: *web
+    environment: *env
+    command: bash -c "python manage.py qcluster"

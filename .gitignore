@@ -134,3 +134,8 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# Django
+media/
+staticfiles/
+!staticfiles/.gitkeep

@@ -14,7 +14,7 @@ class Development(Base):
         "--nologcapture",
         "--with-coverage",
         "--with-progressive",
-        "--cover-package=openwiden,users,repositories",
+        "--cover-package=openwiden",
         "--cover-html",
     ]
 

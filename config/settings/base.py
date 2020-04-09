@@ -8,6 +8,7 @@ class Base(Configuration):
     # Path configurations
     # /openwiden/settings/base.py - 3 = /
     ROOT_DIR = environ.Path(__file__) - 3
+    APPS_DIR = ROOT_DIR.path("openwiden")
 
     # Environment
     env = environ.Env()
@@ -20,16 +21,19 @@ class Base(Configuration):
         "django.contrib.sessions",
         "django.contrib.messages",
         "django.contrib.staticfiles",
+        "django.contrib.postgres",
     )
     THIRD_PARTY_APPS = (
         "rest_framework",
         "django_filters",
         "drf_yasg",
         "corsheaders",
+        "django_q",
+        "anymail",
     )
     LOCAL_APPS = (
-        "users",
-        "repositories",
+        "openwiden.users",
+        "openwiden.repositories",
     )
 
     # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -41,6 +45,7 @@ class Base(Configuration):
         "django.middleware.security.SecurityMiddleware",
         "whitenoise.middleware.WhiteNoiseMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.locale.LocaleMiddleware",
         "corsheaders.middleware.CorsMiddleware",
         "django.middleware.common.CommonMiddleware",
         "django.middleware.csrf.CsrfViewMiddleware",
@@ -70,15 +75,19 @@ class Base(Configuration):
     ADMINS = (("Author", "stefanitsky.mozdor@gmail.com"),)
 
     # Email
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+    DEFAULT_FROM_EMAIL = "info@openwiden.com"
 
     # Postgres
     DATABASES = {"default": env.db(default="postgresql://postgres:@db:5432/postgres")}
 
+    # Fixtures
+    FIXTURE_DIRS = [str(APPS_DIR.path("fixtures"))]
+
     # Static files (CSS, JavaScript, Images)
     # https://docs.djangoproject.com/en/2.0/howto/static-files/
     STATIC_ROOT = str(ROOT_DIR.path("staticfiles"))
-    STATICFILES_DIRS = []
+    STATICFILES_DIRS = [str(APPS_DIR.path("static"))]
     STATIC_URL = "/static/"
     STATICFILES_FINDERS = (
         "django.contrib.staticfiles.finders.FileSystemFinder",
@@ -86,15 +95,18 @@ class Base(Configuration):
     )
 
     # Media files
-    MEDIA_ROOT = str(ROOT_DIR.path("media"))
+    MEDIA_ROOT = str(APPS_DIR.path("media"))
     MEDIA_URL = "/media/"
 
     TEMPLATES = [
         {
             "BACKEND": "django.template.backends.django.DjangoTemplates",
-            "DIRS": [],
-            "APP_DIRS": True,
+            "DIRS": [str(APPS_DIR.path("templates"))],
             "OPTIONS": {
+                "loaders": [
+                    "django.template.loaders.filesystem.Loader",
+                    "django.template.loaders.app_directories.Loader",
+                ],
                 "context_processors": [
                     "django.template.context_processors.debug",
                     "django.template.context_processors.request",
@@ -132,7 +144,10 @@ class Base(Configuration):
         ),
         "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
         "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-        "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+        "DEFAULT_AUTHENTICATION_CLASSES": (
+            "rest_framework.authentication.SessionAuthentication",
+            "rest_framework_simplejwt.authentication.JWTAuthentication",
+        ),
     }
 
     GITHUB_CLIENT_ID = env("GITHUB_CLIENT_ID")
@@ -140,6 +155,7 @@ class Base(Configuration):
 
     GITLAB_APP_ID = env("GITLAB_APP_ID")
     GITLAB_SECRET = env("GITLAB_SECRET")
+    GITLAB_PRIVATE_TOKEN = env("GITLAB_PRIVATE_TOKEN")
     GITLAB_DEFAULT_REDIRECT_URI = env(
         "GITLAB_DEFAULT_REDIRECT_URI", default="http://0.0.0.0:8000/users/complete/gitlab/"
     )
@@ -182,3 +198,24 @@ class Base(Configuration):
 
     # Cors headers
     CORS_ORIGIN_ALLOW_ALL = True
+
+    # Django-Q
+    Q_CLUSTER = {
+        "name": "openwiden",
+        "workers": 8,
+        "recycle": 500,
+        "timeout": 60,
+        "compress": True,
+        "save_limit": 250,
+        "queue_limit": 500,
+        "cpu_affinity": 1,
+        "label": "Django Q",
+        "redis": env("REDIS_URL"),
+    }
+
+    # Anymail
+    ANYMAIL = {
+        "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
+        "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN"),
+        "MAILGUN_API_URL": env("MAILGUN_API_URL"),
+    }

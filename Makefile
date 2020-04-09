@@ -51,9 +51,13 @@ black_check:
 # Tests
 with_test_settings:
 	DJANGO_CONFIGURATION=Test $(WEB_CONTAINER) $(c)
+
 test:
-	@make with_test_settings c="coverage erase"
 	@make with_test_settings c="coverage run manage.py test --settings=config.settings.test"
+
+test_cov:
+	@make with_test_settings c="coverage erase"
+	@make test
 	@make with_test_settings c="coverage report -m"
 	@make with_test_settings c="coverage html"
 
