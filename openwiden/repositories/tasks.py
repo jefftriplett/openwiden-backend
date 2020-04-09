@@ -52,7 +52,7 @@ def update_or_create_repository(user, service: "models.VersionControlService", o
             updated_at=make_aware(repo.updated_at),
         )
     elif service.host == "gitlab.com":
-        repo_raw = requests.get(f"https://gitlab.com/api/v4/projects/{owner}%2F{repo}").json()
+        repo_raw = requests.get(f"https://gitlab.com/api/v4/projects/{owner}%2F{repo_name}").json()
         repo: "GitlabRepository" = gitlab.projects.get(id=repo_raw["id"])
         programming_languages = repo.languages()
 
