@@ -4,12 +4,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_q.tasks import async_task
 
-from openwiden.repositories import tasks
-from openwiden.repositories import serializers, models, exceptions, filters, utils
+from openwiden.repositories import serializers, tasks, models, exceptions, filters, utils
 
 
 class Repository(viewsets.ReadOnlyModelViewSet):
-    serializer_class = serializers.RepositorySerializer
+    serializer_class = serializers.Repository
     queryset = models.Repository.objects.all().select_related("programming_language")
     lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
@@ -36,7 +35,7 @@ class Repository(viewsets.ReadOnlyModelViewSet):
 
 
 class Issue(viewsets.ReadOnlyModelViewSet):
-    serializer_class = serializers.IssueSerializer
+    serializer_class = serializers.Issue
     lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
 

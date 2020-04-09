@@ -9,7 +9,7 @@ class ProgrammingLanguage(serializers.ModelSerializer):
         fields = ("id", "name")
 
 
-class RepositorySerializer(serializers.ModelSerializer):
+class Repository(serializers.ModelSerializer):
     version_control_service = serializers.CharField(source="version_control_service.host")
     programming_language = ProgrammingLanguage()
 
@@ -30,7 +30,7 @@ class RepositorySerializer(serializers.ModelSerializer):
         )
 
 
-class IssueSerializer(serializers.ModelSerializer):
+class Issue(serializers.ModelSerializer):
     class Meta:
         model = models.Issue
         fields = (

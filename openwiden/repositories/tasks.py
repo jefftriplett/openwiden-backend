@@ -27,6 +27,9 @@ def add_repository_send_email(result, user, repository: "models.Repository" = No
 
 
 def add_repository(user, service: "models.VersionControlService", owner: str, repo: str):
+    """
+    Task for adding a repository.
+    """
     if service.host == "github.com":
         try:
             repo = github.get_repo(f"{owner}/{repo}")
@@ -80,7 +83,7 @@ def add_repository(user, service: "models.VersionControlService", owner: str, re
     # Notify user for successfully repository add
     async_task(add_repository_send_email, "added", user, repository)
 
-    # Download last issues
+    # Download issues
     if repo.open_issues_count > 0:
         async_task(add_issues, repo, repository)
 
@@ -89,7 +92,7 @@ def add_repository(user, service: "models.VersionControlService", owner: str, re
 
 def add_issues(repo, repository: "models.Repository"):
     """
-    Add repository issues from specified page.
+    Add repository issues.
     """
     if repository.version_control_service.host == "github.com":
         issues_data = repo.get_issues(state="open")[:PAGINATION_LIMIT]
