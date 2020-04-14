@@ -10,6 +10,8 @@ from django.core.mail import send_mail
 from django_q.tasks import async_task
 
 from openwiden.repositories import models, utils
+from .constants import GitProviderHost
+
 
 PAGINATION_LIMIT = 30
 github = Github(client_id=settings.GITHUB_CLIENT_ID, client_secret=settings.GITHUB_SECRET_KEY)
@@ -34,7 +36,8 @@ def update_or_create_repository(user, service: "models.VersionControlService", o
     """
     Task for adding a repository.
     """
-    if service.host == "github.com":
+
+    if service.host == GitProviderHost.GITHUB:
         try:
             repo: "GitHubRepository" = github.get_repo(f"{owner}/{repo_name}")
         except RateLimitExceededException:
@@ -51,7 +54,7 @@ def update_or_create_repository(user, service: "models.VersionControlService", o
             created_at=make_aware(repo.created_at),
             updated_at=make_aware(repo.updated_at),
         )
-    elif service.host == "gitlab.com":
+    elif service.host == GitProviderHost.GITLAB:
         repo_raw = requests.get(f"https://gitlab.com/api/v4/projects/{owner}%2F{repo_name}").json()
         repo: "GitlabRepository" = gitlab.projects.get(id=repo_raw["id"])
         programming_languages = repo.languages()
@@ -103,10 +106,10 @@ def update_or_create_issues(repo, repository: "models.Repository"):
     """
     Add repository issues.
     """
-    if repository.version_control_service.host == "github.com":
+    if repository.version_control_service.host == GitProviderHost.GITHUB:
         issues_data = repo.get_issues(state="open")[:PAGINATION_LIMIT]
         issues: t.List[dict] = utils.parse_github_issues(issues_data)
-    elif repository.version_control_service.host == "gitlab.com":
+    elif repository.version_control_service.host == GitProviderHost.GITLAB:
         issues_data = repo.issues.list(state="opened", page=1)
         issues: t.List[dict] = utils.parse_gitlab_issues(issues_data)
     else:
