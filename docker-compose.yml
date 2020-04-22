@@ -8,25 +8,12 @@ services:
   web:
     restart: always
     image: &web web
-    build: .
-    command: bash run_server.sh
-    environment: &env
-      - CODECOV_TOKEN
-      - DJANGO_DEBUG
-      - DJANGO_SECRET_KEY
-      - DJANGO_SETTINGS_MODULE
-      - DJANGO_CONFIGURATION
-      - DJANGO_ALLOWED_HOSTS
-      - SENTRY_DSN
-      - GITHUB_CLIENT_ID
-      - GITHUB_SECRET_KEY
-      - GITLAB_APP_ID
-      - GITLAB_SECRET
-      - GITLAB_PRIVATE_TOKEN
-      - REDIS_URL
-      - MAILGUN_API_KEY
-      - MAILGUN_DOMAIN
-      - MAILGUN_API_URL
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    command: bash ./docker/run_server.sh
+    env_file: &env
+      - ./docker/.env
     volumes:
       - "./:/code"
     ports:
@@ -38,5 +25,5 @@ services:
   tasks:
     restart: always
     image: *web
-    environment: *env
+    env_file: *env
     command: bash -c "python manage.py qcluster"
