@@ -62,7 +62,7 @@ class Base(Configuration):
     SECRET_KEY = env("DJANGO_SECRET_KEY")
 
     ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["*"])
-    ROOT_URLCONF = "config.urls"
+    ROOT_URLCONF = "config.urls.root"
     WSGI_APPLICATION = "config.wsgi.application"
     APPEND_SLASH = True
     TIME_ZONE = "UTC"
