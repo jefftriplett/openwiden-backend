@@ -19,6 +19,7 @@ jobs:
   include:
   - stage: test
     before_script:
+      - touch ./docker/.env
       - docker-compose build
     script:
       - make run_tests
