@@ -6,7 +6,7 @@ from configurations import Configuration
 
 class Base(Configuration):
     # Path configurations
-    # /openwiden/settings/base.py - 3 = /
+    # /config/settings/base.py - 3 = /
     ROOT_DIR = environ.Path(__file__) - 3
     APPS_DIR = ROOT_DIR.path("openwiden")
 
