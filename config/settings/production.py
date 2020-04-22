@@ -13,13 +13,8 @@ class Production(Base):
     INSTALLED_APPS += ("gunicorn",)
 
     # SSL: https://docs.djangoproject.com/en/dev/topics/security/#ssl-https
-    SECURE_SSL_REDIRECT = Base.env("DJANGO_SECURE_SSL_REDIRECT", default=False)
-    SECURE_HSTS_SECONDS = 60
-    SECURE_HSTS_PRELOAD = True
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
 
     # Static files (CSS, JavaScript, Images)
     STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
