@@ -15,7 +15,22 @@ services:
     env_file: &env
       - ./docker/.env
     environment:
+      - CODECOV_TOKEN
+      - DJANGO_DEBUG
+      - DJANGO_SECRET_KEY
+      - DJANGO_SETTINGS_MODULE
       - DJANGO_CONFIGURATION
+      - DJANGO_ALLOWED_HOSTS
+      - SENTRY_DSN
+      - GITHUB_CLIENT_ID
+      - GITHUB_SECRET_KEY
+      - GITLAB_APP_ID
+      - GITLAB_SECRET
+      - GITLAB_PRIVATE_TOKEN
+      - REDIS_URL
+      - MAILGUN_API_KEY
+      - MAILGUN_DOMAIN
+      - MAILGUN_API_URL
     volumes:
       - "./:/code"
     ports:
