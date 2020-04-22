@@ -65,5 +65,6 @@ run_tests:
 	@make test
 	@make black_check
 	@make flake8
+	touch ./docker/.env
 	@make with_test_settings c="coverage xml"
 	@make with_test_settings c="codecov"

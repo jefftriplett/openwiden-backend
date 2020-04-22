@@ -14,6 +14,8 @@ services:
     command: bash ./docker/run_server.sh
     env_file: &env
       - ./docker/.env
+    environment:
+      - DJANGO_CONFIGURATION
     volumes:
       - "./:/code"
     ports:
