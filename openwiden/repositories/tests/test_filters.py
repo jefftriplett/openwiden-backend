@@ -22,7 +22,6 @@ class RepositoryFilterTestCase(TestCase):
                 updated_at=date,
             )
             factories.Issue.create_batch(repository=repository, size=count, state="open")
-            repository.update_open_issues_count()
 
     def test_meta(self):
         self.assertEqual(filters.Repository.Meta.model, models.Repository)

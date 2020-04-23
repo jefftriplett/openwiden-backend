@@ -64,18 +64,6 @@ class Repository(SoftDeletableModel, UUIDModel):
     def __str__(self):
         return self.name
 
-    def save(self, **kwargs):
-        self.update_open_issues_count(save=False)
-        super().save(**kwargs)
-
-    def update_open_issues_count(self, save: bool = True):
-        """
-        Updates open issues count.
-        """
-        self.open_issues_count = self.issues.filter(state="open").count()
-        if save:
-            self.save()
-
 
 class Issue(UUIDModel):
     STATE_CHOICES = Choices(("open", "Open"), ("closed", "Closed"),)

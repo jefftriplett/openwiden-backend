@@ -81,6 +81,7 @@ def update_or_create_repository(user, service: "models.VersionControlService", o
         name=repo.name,
         description=repo.description,
         forks_count=repo.forks_count,
+        open_issues_count=repo.open_issues_count,
         **kwargs,
     )
 
@@ -118,9 +119,6 @@ def update_or_create_issues(repo, repository: "models.Repository"):
     # Create issues for repository
     for i in issues:
         models.Issue.objects.update_or_create(repository=repository, **i)
-
-    # Update open issues count
-    repository.update_open_issues_count()
 
     # Return successfully message
     return f"Issues created successfully for repository {repository}: {len(issues)}"
