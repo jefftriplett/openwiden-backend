@@ -48,6 +48,9 @@ class OAuthLoginView(views.APIView):
         return client.authorize_redirect(request, redirect_uri)
 
 
+oauth_login_view = OAuthLoginView.as_view()
+
+
 class OAuthCompleteView(views.APIView):
     """
     Creates or updates user for specified provider.
@@ -84,6 +87,9 @@ class OAuthCompleteView(views.APIView):
         return Response({"detail": msg}, code)
 
 
+oauth_complete_view = OAuthCompleteView.as_view()
+
+
 class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """
     User view set for list, retrieve or update actions for user.
@@ -100,7 +106,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
         return super().get_serializer_class()
 
 
-class UserRetrieveByTokenView(views.APIView):
+class UserByTokenView(views.APIView):
     """
     Returns user with oauth tokens by provided JWT tokens.
     """
@@ -108,3 +114,6 @@ class UserRetrieveByTokenView(views.APIView):
     def get(self, request, *args, **kwargs):
         data = UserWithOAuthTokensSerializer(instance=request.user).data
         return Response(data=data)
+
+
+user_by_token_view = UserByTokenView.as_view()

@@ -1,18 +1,13 @@
-from urllib.parse import urlencode
-
 import mock
+from urllib.parse import urlencode
 from authlib.common.errors import AuthlibBaseError
 from faker import Faker
 from django.test import override_settings
 from rest_framework import status
-from rest_framework.reverse import reverse_lazy
-from rest_framework.test import APITestCase
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from openwiden.users import exceptions
-from openwiden.users import serializers
-
-from .factories import UserFactory, OAuth2TokenFactory
+from openwiden.users import exceptions, serializers
+from openwiden.users.tests.factories import UserFactory, OAuth2TokenFactory
+from openwiden.tests.cases import ViewTestCase
 
 fake = Faker()
 
@@ -57,80 +52,73 @@ class Profile:
         }
 
 
-class ProviderNotFoundTestMixin:
+# class ProviderNotFoundTestMixin(APITestCase):
+#     url_path = None
 
-    url_path = None
-
-    def test_client_not_found(self):
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test_provider"}))
-        detail = exceptions.OAuthProviderNotFound("test_provider").detail
-        self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual({"detail": detail}, response.data)
+# def test_client_not_found(self):
+#     response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test_provider"}))
+#     detail = exceptions.OAuthProviderNotFound("test_provider").detail
+#     self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
+#     self.assertEqual({"detail": detail}, response.data)
 
 
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
-class OAuthLoginViewTestCase(APITestCase, ProviderNotFoundTestMixin):
-
-    url_path = "auth:login"
+class OAuthLoginViewTestCase(ViewTestCase):
+    url_namespace = "auth:login"
 
     @mock.patch("openwiden.users.utils.requests.get")
     def test_github_provider(self, p):
         p.return_value = "test"
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "github"}))
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        url = self.get_url(provider="github")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_302_FOUND)
 
     @mock.patch("openwiden.users.utils.requests.get")
     def test_gitlab_provider(self, p):
         p.return_value = "test"
-        url = reverse_lazy(self.url_path, kwargs={"provider": "gitlab"})
-        response = self.client.get(f"{url}?redirect_uri=http://example.com/")
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        url = self.get_url(query=dict(redirect_uri="http://example.com/"), provider="gitlab")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_302_FOUND)
 
     def test_gitlab_provider_no_redirect_uri(self):
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "gitlab"}))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": exceptions.GitLabOAuthMissedRedirectURI().detail})
+        url = self.get_url(provider="gitlab")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(r.data, {"detail": exceptions.GitLabOAuthMissedRedirectURI().detail})
 
     def test_github_provider_redirect_uri_is_correct(self):
         redirect_uri = "http://localhost:3000/repositories/"
-        query_params = urlencode({"redirect_uri": redirect_uri})
-        url = reverse_lazy(self.url_path, kwargs={"provider": "github"}) + f"?{query_params}"
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
-        self.assertIn(query_params, response.url)
+        query = {"redirect_uri": redirect_uri}
+        query_params = urlencode(query)
+        url = self.get_url(query=query, provider="github")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_302_FOUND)
+        self.assertIn(query_params, r.url)
 
 
-@override_settings(
-    AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER,}
-)
-class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
-
-    url_path = "auth:complete"
-
-    def get_user_data(self, access_token) -> dict:
-        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
-        response = self.client.get(reverse_lazy("user"))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.client.credentials(HTTP_AUTHORIZATION="")
-        return response.data
+@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
+class OAuthCompleteViewTestCase(ViewTestCase):
+    url_namespace = "auth:complete"
 
     @mock.patch("openwiden.users.views.create_or_update_user")
     @mock.patch("openwiden.users.views.oauth.create_client")
     def test_raises_error_when_user_is_none(self, patched_create_client, patched_create_or_update_user):
         patched_create_client.return_value = "test"
         patched_create_or_update_user.return_value = None
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test"}))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": exceptions.CreateOrUpdateUserReturnedNone().detail})
+        url = self.get_url(provider="test")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(r.data, {"detail": exceptions.CreateOrUpdateUserReturnedNone().detail})
 
     @mock.patch("openwiden.users.views.create_or_update_user")
     @mock.patch("openwiden.users.views.oauth.create_client")
     def test_raises_authlib_error(self, patched_create_client, patched_create_or_update_user):
         patched_create_client.return_value = "test"
         patched_create_or_update_user.side_effect = AuthlibBaseError(description="test error")
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test"}))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": "test error"})
+        url = self.get_url(provider="test")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(r.data, {"detail": "test error"})
 
     @mock.patch("openwiden.users.views.create_or_update_user")
     @mock.patch("openwiden.users.views.oauth.create_client")
@@ -138,56 +126,63 @@ class OAuthCompleteViewTestCase(APITestCase, ProviderNotFoundTestMixin):
         user = UserFactory.create()
         patched_create_client.return_value = "test"
         patched_create_or_update_user.return_value = user
-        response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test"}))
+        url = self.get_url(provider="test")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertIn("access", r.data["detail"])
+        self.assertIn("refresh", r.data["detail"])
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data["detail"])
-        self.assertIn("refresh", response.data["detail"])
 
+class UsersViewSetTestCase(ViewTestCase):
+    url_namespace = "user"
 
-class UsersViewSetTestCase(APITestCase):
     def setUp(self) -> None:
         self.user = UserFactory.create()
-        access_token = str(RefreshToken.for_user(self.user).access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+        self.set_auth_header(self.user)
 
-    def test_list_view(self):
-        response = self.client.get(reverse_lazy("users:user-list"))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        first_result = response.data["results"][0]
+    def test_list(self):
+        url = self.get_url(postfix="list")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        first_result = r.data["results"][0]
         self.assertEqual(first_result["id"], self.user.id)
         self.assertEqual(first_result["username"], self.user.username)
 
-    def test_detail_view(self):
-        response = self.client.get(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_detail(self):
+        url = self.get_url(postfix="detail", id=self.user.id)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
 
-    def test_update_view(self):
+    def test_update(self):
         username = fake.user_name()
         first_name = fake.first_name()
         last_name = fake.last_name()
         data = {"username": username, "first_name": first_name, "last_name": last_name}
-        response = self.client.patch(reverse_lazy("users:user-detail", kwargs={"id": self.user.id}), data=data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["first_name"], first_name)
+        url = self.get_url(postfix="detail", id=self.user.id)
+        r = self.client.patch(url, data=data)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data["first_name"], first_name)
 
-    def test_create_view(self):
-        response = self.client.post(reverse_lazy("users:user-list"))
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+    def test_create(self):
+        url = self.get_url(postfix="list")
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class UserRetrieveByTokenViewTestCase(APITestCase):
-    def test_get_action(self):
+class UserRetrieveByTokenViewTestCase(ViewTestCase):
+    url_namespace = "user"
+
+    def test_success(self):
         user = UserFactory.create()
         OAuth2TokenFactory.create(user=user, provider="github")
         OAuth2TokenFactory.create(user=user, provider="gitlab")
-        access_token = str(RefreshToken.for_user(user).access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f"JWT {access_token}")
+        self.set_auth_header(user)
+
         expected_data = serializers.UserWithOAuthTokensSerializer(user).data
         mock_get = mock.MagicMock("users.views.UserWithOAuthTokensSerializer.data")
         mock_get.return_value = expected_data
-        response = self.client.get(reverse_lazy("user"))
+        r = self.client.get(self.get_url())
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, expected_data)
-        self.assertEqual(len(response.data["oauth2_tokens"]), 2)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data, expected_data)
+        self.assertEqual(len(r.data["oauth2_tokens"]), 2)
