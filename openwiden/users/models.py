@@ -14,11 +14,17 @@ class User(AbstractUser, UUIDModel):
 
 
 class OAuth2Token(models.Model):
+    GITHUB_PROVIDER = "github"
+    GITLAB_PROVIDER = "gitlab"
+    PROVIDER_CHOICES = (
+        (GITHUB_PROVIDER, "GitHub"),
+        (GITLAB_PROVIDER, "Gitlab"),
+    )
+
     user = models.ForeignKey(
         User, models.CASCADE, related_name="oauth2_tokens", related_query_name="oauth2_token", verbose_name=_("user")
     )
-    # Fields
-    provider = models.CharField(_("provider name"), max_length=40)
+    provider = models.CharField(_("provider name"), max_length=40, choices=PROVIDER_CHOICES)
     remote_id = models.IntegerField(_("user id from provider site"))
     login = models.CharField(_("login"), max_length=150)
     token_type = models.CharField(_("token type"), blank=True, max_length=40)
