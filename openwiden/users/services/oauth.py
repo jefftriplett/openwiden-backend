@@ -7,9 +7,11 @@ from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from rest_framework.request import Request
+from sentry_sdk import capture_message
+from django_q.tasks import async_task
 
 from openwiden.users import models
-from openwiden.users.services import exceptions, models as service_models
+from openwiden.users.services import exceptions, models as service_models, serializers
 
 
 oauth = OAuth()
@@ -53,14 +55,18 @@ class OAuthService:
         else:
             # Modify raw profile data if needed
             if provider == models.OAuth2Token.GITHUB_PROVIDER:
-                # Do nothing
-                pass
+                s = serializers.GitHubUserSerializer(data=profile_data)
             elif provider == models.OAuth2Token.GITLAB_PROVIDER:
-                profile_data["login"] = profile_data.pop("username")
+                s = serializers.GitlabUserSerializer(data=profile_data)
             else:
                 raise exceptions.ProviderNotImplemented(provider)
 
-            return service_models.Profile(**profile_data, **token)
+            if s.is_valid():
+                return service_models.Profile(**s.data, **token)
+            else:
+                e = exceptions.ProfileValidateException(error=s.errors)
+                async_task(capture_message, message=e.description)
+                raise e
 
     @staticmethod
     def oauth(provider: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
