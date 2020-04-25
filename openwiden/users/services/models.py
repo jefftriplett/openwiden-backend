@@ -7,7 +7,7 @@ class Profile:
         email: str,
         avatar_url: str,
         access_token: str,
-        expires_at,
+        expires_at: int = None,
         split_name: bool = True,
         token_type: str = None,
         refresh_token: str = None,
