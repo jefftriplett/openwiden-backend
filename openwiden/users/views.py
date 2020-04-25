@@ -65,10 +65,6 @@ class OAuthCompleteView(OAuthView):
     def get(self, request, provider: str):
         client: DjangoRemoteApp = self.get_client(provider)
 
-        # If no specified provider found
-        if client is None:
-            raise exceptions.OAuthProviderNotFound(provider)
-
         # Return user (new or created) for specified provider profile.
         try:
             profile: services.Profile = services.OAuthService.get_profile(provider, client, request)

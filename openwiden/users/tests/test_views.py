@@ -2,10 +2,10 @@ import mock
 from urllib.parse import urlencode
 from authlib.common.errors import AuthlibBaseError
 from faker import Faker
-from django.test import override_settings
-from rest_framework import status
+from django.test import override_settings, TestCase
+from rest_framework import status, permissions
 
-from openwiden.users import exceptions, serializers
+from openwiden.users import exceptions, serializers, views
 from openwiden.users.tests.factories import UserFactory, OAuth2TokenFactory
 from openwiden.tests.cases import ViewTestCase
 
@@ -52,14 +52,19 @@ class Profile:
         }
 
 
-# class ProviderNotFoundTestMixin(APITestCase):
-#     url_path = None
+@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
+class OAuthViewTestCase(TestCase):
+    def test_oauth_provider_not_found(self):
+        expected_message = exceptions.OAuthProviderNotFound("test").detail
+        with self.assertRaisesMessage(exceptions.OAuthProviderNotFound, expected_message):
+            views.OAuthView.get_client("test")
 
-# def test_client_not_found(self):
-#     response = self.client.get(reverse_lazy(self.url_path, kwargs={"provider": "test_provider"}))
-#     detail = exceptions.OAuthProviderNotFound("test_provider").detail
-#     self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
-#     self.assertEqual({"detail": detail}, response.data)
+    def test_oauth_views_inheritance(self):
+        self.assertTrue(issubclass(views.OAuthLoginView, views.OAuthView))
+        self.assertTrue(issubclass(views.OAuthCompleteView, views.OAuthView))
+
+    def test_permission_cls(self):
+        self.assertEqual(views.OAuthView.permission_classes, (permissions.AllowAny,))
 
 
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
