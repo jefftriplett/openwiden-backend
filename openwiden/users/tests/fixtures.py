@@ -1,6 +1,6 @@
 from faker import Faker
 
-from openwiden.users import services
+from openwiden.users.services import models as service_models
 
 fake = Faker()
 
@@ -28,7 +28,7 @@ GITLAB_PROVIDER = {
 }
 
 
-class Profile(services.Profile):
+class Profile(service_models.Profile):
     def json(self):
         return {
             "id": self.id,

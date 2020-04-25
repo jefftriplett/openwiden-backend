@@ -31,14 +31,14 @@ class OAuthViewTestCase(TestCase):
 class OAuthLoginViewTestCase(ViewTestCase):
     url_namespace = "auth:login"
 
-    @mock.patch("openwiden.users.services.requests.get")
+    @mock.patch("openwiden.users.services.oauth.requests.get")
     def test_github_provider(self, p):
         p.return_value = "test"
         url = self.get_url(provider="github")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_302_FOUND)
 
-    @mock.patch("openwiden.users.services.requests.get")
+    @mock.patch("openwiden.users.services.oauth.requests.get")
     def test_gitlab_provider(self, p):
         p.return_value = "test"
         url = self.get_url(query=dict(redirect_uri="http://example.com/"), provider="gitlab")
@@ -62,8 +62,8 @@ class OAuthLoginViewTestCase(ViewTestCase):
 
 
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
-@mock.patch("openwiden.users.services.OAuthService.get_profile")
-@mock.patch("openwiden.users.services.OAuthService.get_client")
+@mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
+@mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
 class OAuthCompleteViewTestCase(ViewTestCase):
     url_namespace = "auth:complete"
 
@@ -77,8 +77,8 @@ class OAuthCompleteViewTestCase(ViewTestCase):
         self.assertEqual(p_get_client.call_count, 1)
         self.assertEqual(p_get_profile.call_count, 1)
 
-    @mock.patch("openwiden.users.services.UserService.get_jwt")
-    @mock.patch("openwiden.users.services.OAuthService.oauth")
+    @mock.patch("openwiden.users.services.user.UserService.get_jwt")
+    @mock.patch("openwiden.users.services.oauth.OAuthService.oauth")
     def test_success(self, p_oauth, p_get_jwt, p_get_client, p_get_profile):
         user = factories.UserFactory.create()
         expected_jwt = {"access": "123", "refresh": "123"}

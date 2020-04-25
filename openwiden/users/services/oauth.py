@@ -6,53 +6,26 @@ from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from rest_framework.request import Request
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.users import models
+from openwiden.users.services import exceptions, models as service_models
+
 
 oauth = OAuth()
 oauth.register("github")
 oauth.register("gitlab")
 
 
-class Profile:
-    def __init__(
-        self,
-        id: str,
-        login: str,
-        name: str,
-        email: str,
-        avatar_url: str,
-        access_token: str,
-        expires_at,
-        split_name: bool = True,
-        token_type: str = None,
-        refresh_token: str = None,
-        **kwargs,
-    ):
-        self.id = id
-        self.login = login
-        self._name = name
-        self.email = email
-        self.first_name = None
-        self.last_name = None
-        self.avatar_url = avatar_url
-        self.access_token = access_token
-        self.token_type = token_type
-        self.refresh_token = refresh_token
-        self.expires_at = expires_at
-
-        if split_name:
-            self.first_name, sep, self.last_name = self._name.partition(" ")
-
-
 class OAuthService:
     @staticmethod
-    def get_client(provider: str) -> t.Optional[DjangoRemoteApp]:
+    def get_client(provider: str) -> DjangoRemoteApp:
         """
         Returns authlib client instance or None if not found.
         """
-        return oauth.create_client(provider)
+        client = oauth.create_client(provider)
+        if client is None:
+            raise exceptions.ClientNotFound
+        return client
 
     @staticmethod
     def get_token(provider: str, request: Request) -> dict:
@@ -63,7 +36,7 @@ class OAuthService:
         return client.authorize_access_token(request)
 
     @staticmethod
-    def get_profile(provider: str, client: DjangoRemoteApp, request: Request) -> "Profile":
+    def get_profile(provider: str, client: DjangoRemoteApp, request: Request) -> "service_models.Profile":
         """
         Returns profile mapped cls with a data from provider's API.
         """
@@ -79,10 +52,10 @@ class OAuthService:
         else:
             raise NotImplementedError(f"{provider} is not implemented")
 
-        return Profile(**profile_data, **token)
+        return service_models.Profile(**profile_data, **token)
 
     @staticmethod
-    def oauth(provider: str, user: t.Union[models.User, AnonymousUser], profile: Profile) -> models.User:
+    def oauth(provider: str, user: t.Union[models.User, AnonymousUser], profile: service_models.Profile) -> models.User:
         """
         Returns user (new or existed) by provider and service provider profile data.
         """
@@ -147,13 +120,3 @@ class OAuthService:
             # Return oauth_token's user, because we can handle case when
             # user is not authenticated, but oauth_token for specified profile does exist.
             return oauth2_token.user
-
-
-class UserService:
-    @staticmethod
-    def get_jwt(user: models.User) -> dict:
-        """
-        Returns JWT tokens for specified user.
-        """
-        refresh = RefreshToken.for_user(user)
-        return dict(access=str(refresh.access_token), refresh=str(refresh))

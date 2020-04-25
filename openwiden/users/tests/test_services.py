@@ -1,10 +1,12 @@
 import mock
+from authlib.integrations.django_client import DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.users import services, models
+from openwiden.users.services import exceptions as service_exceptions
 from openwiden.users.tests import fixtures, factories
 from faker import Faker
 
@@ -25,12 +27,15 @@ class OAuthServiceTestCase(TestCase):
         self.user = factories.UserFactory()
         self.oauth_token = factories.OAuth2TokenFactory(user=self.user, provider=self.provider)
 
-    # def test_get_client(self):
-    #     self.fail()
-    #
-    # def test_get_client_returns_none(self):
-    #     self.fail()
-    #
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER})
+    def test_get_client(self):
+        client: DjangoRemoteApp = services.OAuthService.get_client("github")
+        self.assertIsInstance(client, DjangoRemoteApp)
+
+    def test_get_client_raises_error(self):
+        with self.assertRaises(service_exceptions.ClientNotFound):
+            services.OAuthService.get_client("test")
+
     # def test_get_token(self):
     #     self.fail()
     #
@@ -92,8 +97,8 @@ class OAuthServiceTestCase(TestCase):
         self.assertEqual(oauth_token.user.id, user.id)
         self.assertEqual(oauth_token.login, profile.login)
 
-    @mock.patch("openwiden.users.services.ContentFile")
-    @mock.patch("openwiden.users.services.requests.get")
+    @mock.patch("openwiden.users.services.oauth.ContentFile")
+    @mock.patch("openwiden.users.services.oauth.requests.get")
     def test_oauth_token_does_not_exist_authenticated_user(self, p_get, p_cf):
         """
         Authenticated user -> create oauth token -> return authenticated user
@@ -109,8 +114,8 @@ class OAuthServiceTestCase(TestCase):
         self.assertEqual(created_oauth_token.remote_id, profile.id)
         self.assertEqual(created_oauth_token.login, profile.login)
 
-    @mock.patch("openwiden.users.services.ContentFile")
-    @mock.patch("openwiden.users.services.requests.get")
+    @mock.patch("openwiden.users.services.oauth.ContentFile")
+    @mock.patch("openwiden.users.services.oauth.requests.get")
     def test_oauth_token_does_not_exist_anonymous_user(self, p_get, p_cf):
         """
         Anonymous -> login does not exist -> create user -> create oauth token -> return created user
@@ -129,8 +134,8 @@ class OAuthServiceTestCase(TestCase):
         self.assertEqual(created_oauth_token.provider, self.provider)
         self.assertEqual(created_oauth_token.remote_id, profile.id)
 
-    @mock.patch("openwiden.users.services.ContentFile")
-    @mock.patch("openwiden.users.services.requests.get")
+    @mock.patch("openwiden.users.services.oauth.ContentFile")
+    @mock.patch("openwiden.users.services.oauth.requests.get")
     def test_oauth_token_does_not_exist_anonymous_user_login_exist(self, p_get, p_cf):
         """
         Anonymous -> login exist -> generate new login -> create user -> create oauth token -> return created user
@@ -149,7 +154,7 @@ class OAuthServiceTestCase(TestCase):
 
 
 class UserServiceTestCase(TestCase):
-    @mock.patch("openwiden.users.services.RefreshToken.for_user")
+    @mock.patch("openwiden.users.services.user.RefreshToken.for_user")
     def test_get_jwt(self, p_refresh):
         user = factories.UserFactory()
         token = RefreshToken.for_user(user)

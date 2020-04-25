@@ -5,6 +5,7 @@ from rest_framework import views, permissions as drf_permissions, status, viewse
 from rest_framework.response import Response
 
 from openwiden.users import exceptions, filters, models, permissions, serializers, services
+from openwiden.users.services import exceptions as service_exceptions, models as service_models
 
 
 class OAuthView(views.APIView):
@@ -19,10 +20,12 @@ class OAuthView(views.APIView):
         """
         Returns client or raises OAuthProviderNotFound exception.
         """
-        client: DjangoRemoteApp = services.OAuthService.get_client(provider)
-        if client is None:
+        try:
+            client: DjangoRemoteApp = services.OAuthService.get_client(provider)
+        except service_exceptions.ClientNotFound:
             raise exceptions.OAuthProviderNotFound(provider)
-        return client
+        else:
+            return client
 
 
 class OAuthLoginView(OAuthView):
@@ -67,7 +70,7 @@ class OAuthCompleteView(OAuthView):
 
         # Return user (new or created) for specified provider profile.
         try:
-            profile: services.Profile = services.OAuthService.get_profile(provider, client, request)
+            profile: service_models.Profile = services.OAuthService.get_profile(provider, client, request)
         except AuthlibBaseError as e:
             return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
         else:
