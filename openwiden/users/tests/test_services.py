@@ -36,7 +36,7 @@ class OAuthServiceTestCase(TestCase):
         self, provider: str, p_get_token, p_get_client, profile=fixtures.create_random_profile()
     ) -> t.Tuple[service_models.Profile, dict]:
         mock_client = mock.MagicMock()
-        mock_client.get.return_value = profile
+        mock_client.get.side_effect = [profile, fixtures.EmailListMock()]
         p_get_client.return_value = mock_client
         p_get_token.return_value = self.token
         returned_profile = services.OAuthService.get_profile(provider, mock.MagicMock())
@@ -91,11 +91,17 @@ class OAuthServiceTestCase(TestCase):
     @mock.patch("openwiden.users.services.oauth.async_task")
     def test_get_profile_validation_error(self, p_async_task):
         profile = fixtures.create_random_profile()
-        profile.email = None
+        profile.login = None
         expected_message = service_exceptions.ProfileValidateException("errors dict from serializer").description
         with self.assertRaisesMessage(service_exceptions.ProfileValidateException, expected_message):
             self.get_profile("github", profile=profile)
             self.assertEqual(p_async_task.call_count, 1)
+
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITLAB_PROVIDER})
+    def test_get_profile_email_does_not_exist(self):
+        profile = fixtures.create_random_profile()
+        profile.email = None
+        self.get_profile("github", profile=profile)
 
     @override_settings(AUTHLIB_OAUTH_CLIENTS={"gitlab": fixtures.GITLAB_PROVIDER})
     @mock.patch("openwiden.users.services.oauth.OAuthService.get_client")

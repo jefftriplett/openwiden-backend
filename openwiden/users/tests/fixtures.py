@@ -70,3 +70,15 @@ def create_random_profile(
         refresh_token=refresh_token,
         username=username,
     )
+
+
+class EmailListMock:
+    """
+    Mock list for additional case, when email is not retrieved from API.
+    https://developer.github.com/v3/users/emails/
+    https://docs.gitlab.com/ee/api/users.html#list-emails
+    """
+
+    @staticmethod
+    def json():
+        return [{"email": fake.email()} for _ in range(2)]

@@ -50,6 +50,13 @@ class OAuthService:
 
         try:
             profile_data = client.get("user", token=token).json()
+
+            # Also check if email does not exist and get it from API
+            # Useful for GitHub, when "private email" option is ON.
+            if profile_data.get("email") is None:
+                emails = client.get("user/emails", token=token).json()
+                profile_data["email"] = emails[0]["email"]
+
         except AuthlibBaseError as e:
             raise exceptions.ProfileRetrieveException(e.description)
         else:
