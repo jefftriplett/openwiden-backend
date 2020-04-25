@@ -4,7 +4,7 @@ from rest_framework import views, permissions as drf_permissions, status, viewse
 from rest_framework.response import Response
 
 from openwiden.users import exceptions, filters, models, permissions, serializers, services
-from openwiden.users.services import exceptions as service_exceptions, models as service_models
+from openwiden.users.services import exceptions as service_exceptions
 
 
 class OAuthLoginView(views.APIView):
@@ -41,11 +41,11 @@ class OAuthLoginView(views.APIView):
 
         # GitLab OAuth requires redirect_uri,
         # that's why additional check should be passed
-        if provider == "gitlab":
+        if provider == models.OAuth2Token.GITLAB_PROVIDER:
             if redirect_uri is None:
                 raise exceptions.GitLabOAuthMissedRedirectURI()
 
-        return client.authorize_redirect(request, redirect_uri)
+        return client.authorize_redirect(request, redirect_uri=redirect_uri)
 
 
 oauth_login_view = OAuthLoginView.as_view()
@@ -61,12 +61,10 @@ class OAuthCompleteView(views.APIView):
 
     def get(self, request, provider: str):
         try:
-            profile: service_models.Profile = services.OAuthService.get_profile(provider, request)
+            user = services.OAuthService.oauth(provider, self.request.user, request)
         except service_exceptions.OAuthServiceException as e:
             return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
         else:
-            # TODO: handle requests error or skip avatar download
-            user = services.OAuthService.oauth(provider, self.request.user, profile)
             jwt_tokens = services.UserService.get_jwt(user)
             return Response(jwt_tokens)
 

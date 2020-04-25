@@ -63,10 +63,11 @@ class OAuthService:
             return service_models.Profile(**profile_data, **token)
 
     @staticmethod
-    def oauth(provider: str, user: t.Union[models.User, AnonymousUser], profile: service_models.Profile) -> models.User:
+    def oauth(provider: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
         """
         Returns user (new or existed) by provider and service provider profile data.
         """
+        profile = OAuthService.get_profile(provider, request)
         try:
             oauth2_token = models.OAuth2Token.objects.get(provider=provider, remote_id=profile.id)
         except models.OAuth2Token.DoesNotExist:

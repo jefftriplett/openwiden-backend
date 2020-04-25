@@ -1,7 +1,6 @@
 import mock
 from faker import Faker
 from urllib.parse import urlencode
-from authlib.common.errors import AuthlibBaseError
 from django.test import override_settings
 from rest_framework import status
 
@@ -53,26 +52,21 @@ class OAuthLoginViewTestCase(ViewTestCase):
 
 
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
-@mock.patch("openwiden.users.services.oauth.OAuthService.get_token")
-@mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
 class OAuthCompleteViewTestCase(ViewTestCase):
     url_namespace = "auth:complete"
 
-    def test_raises_authlib_error(self, p_client, p_get_token):
-        mock_client = mock.MagicMock()
-        mock_client.get.side_effect = AuthlibBaseError(description="test")
-        p_client.return_value = mock_client
-        p_get_token.return_value = {}
+    @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
+    def test_raises_get_profile_exception(self, p_get_profile):
+        p_get_profile.side_effect = service_exceptions.ProfileRetrieveException("test")
         url = self.get_url(provider="test")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(r.data, {"detail": str(service_exceptions.ProfileRetrieveException("test"))})
-        self.assertEqual(p_client.call_count, 1)
-        self.assertEqual(p_get_token.call_count, 1)
+        self.assertEqual(p_get_profile.call_count, 1)
 
     @mock.patch("openwiden.users.services.user.UserService.get_jwt")
     @mock.patch("openwiden.users.services.oauth.OAuthService.oauth")
-    def test_success(self, p_oauth, p_get_jwt, p_client, p_get_token):
+    def test_success(self, p_oauth, p_get_jwt):
         user = factories.UserFactory.create()
         expected_jwt = {"access": "123", "refresh": "123"}
         p_oauth.return_value = user
@@ -80,16 +74,12 @@ class OAuthCompleteViewTestCase(ViewTestCase):
         mock_client = mock.MagicMock()
         profile = fixtures.create_random_profile()
         mock_client.get.return_value = profile
-        p_client.return_value = mock_client
-        p_get_token.return_value = {"access_token": profile.access_token, "expires_at": profile.expires_at}
         url = self.get_url(provider="github")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
         self.assertEqual(r.json(), expected_jwt)
         self.assertEqual(p_oauth.call_count, 1)
         self.assertEqual(p_get_jwt.call_count, 1)
-        self.assertEqual(p_client.call_count, 1)
-        self.assertEqual(p_oauth.call_count, 1)
 
 
 class UsersViewSetTestCase(ViewTestCase):
