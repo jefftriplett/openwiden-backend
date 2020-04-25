@@ -1,4 +1,3 @@
-from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import DjangoRemoteApp
 
 from rest_framework import views, permissions as drf_permissions, status, viewsets, mixins
@@ -8,27 +7,7 @@ from openwiden.users import exceptions, filters, models, permissions, serializer
 from openwiden.users.services import exceptions as service_exceptions, models as service_models
 
 
-class OAuthView(views.APIView):
-    """
-    Base oauth view for inheritance by login and complete views.
-    """
-
-    permission_classes = (drf_permissions.AllowAny,)
-
-    @staticmethod
-    def get_client(provider: str) -> DjangoRemoteApp:
-        """
-        Returns client or raises OAuthProviderNotFound exception.
-        """
-        try:
-            client: DjangoRemoteApp = services.OAuthService.get_client(provider)
-        except service_exceptions.ClientNotFound:
-            raise exceptions.OAuthProviderNotFound(provider)
-        else:
-            return client
-
-
-class OAuthLoginView(OAuthView):
+class OAuthLoginView(views.APIView):
     """
     Redirects user for auth via available provider.
 
@@ -40,6 +19,20 @@ class OAuthLoginView(OAuthView):
     For example:
     ### http://0.0.0.0:8000/users/login/gitlab/?redirect_uri=http://0.0.0.0:8000/users/complete/gitlab/
     """
+
+    permission_classes = (drf_permissions.AllowAny,)
+
+    @staticmethod
+    def get_client(provider: str) -> DjangoRemoteApp:
+        """
+        Returns client or raises OAuthProviderNotFound exception.
+        """
+        try:
+            client: DjangoRemoteApp = services.OAuthService.get_client(provider)
+        except service_exceptions.ProviderNotFound:
+            raise exceptions.OAuthProviderNotFound(provider)
+        else:
+            return client
 
     def get(self, request, provider):
         client: DjangoRemoteApp = self.get_client(provider)
@@ -58,20 +51,18 @@ class OAuthLoginView(OAuthView):
 oauth_login_view = OAuthLoginView.as_view()
 
 
-class OAuthCompleteView(OAuthView):
+class OAuthCompleteView(views.APIView):
     """
     Creates or updates user for specified provider.
     """
 
+    permission_classes = (drf_permissions.AllowAny,)
     filter_backends = (filters.OAuthCompleteFilter,)
 
     def get(self, request, provider: str):
-        client: DjangoRemoteApp = self.get_client(provider)
-
-        # Return user (new or created) for specified provider profile.
         try:
-            profile: service_models.Profile = services.OAuthService.get_profile(provider, client, request)
-        except AuthlibBaseError as e:
+            profile: service_models.Profile = services.OAuthService.get_profile(provider, request)
+        except service_exceptions.OAuthServiceException as e:
             return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
         else:
             # TODO: handle requests error or skip avatar download

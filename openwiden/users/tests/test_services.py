@@ -33,15 +33,25 @@ class OAuthServiceTestCase(TestCase):
         self.assertIsInstance(client, DjangoRemoteApp)
 
     def test_get_client_raises_error(self):
-        with self.assertRaises(service_exceptions.ClientNotFound):
+        with self.assertRaises(service_exceptions.ProviderNotFound):
             services.OAuthService.get_client("test")
 
-    # def test_get_token(self):
-    #     self.fail()
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER})
+    @mock.patch.object(DjangoRemoteApp, "authorize_access_token")
+    def test_get_token(self, p_authorize_access_token):
+        p_authorize_access_token.return_value = self.token
+        client = services.OAuthService.get_client("github")
+        mock_request = mock.MagicMock()
+        mock_request.user = AnonymousUser()
+        token = services.OAuthService.get_token(client, mock_request)
+        self.assertEqual(token, self.token)
+        self.assertEqual(p_authorize_access_token.call_count, 1)
+
+    # @mock.patch("openwiden.users.services.oauth.OAuthService.get_token")
+    # def get_github_profile(self, p_get_token):
+    #     p_get_token.return_value = self.token
     #
-    # def get_github_profile(self):
-    #     self.fail()
-    #
+
     # def get_gitlab_profile(self):
     #     self.fail()
     #

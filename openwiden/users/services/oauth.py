@@ -2,6 +2,7 @@ import requests
 import typing as t
 from uuid import uuid4
 
+from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
@@ -24,35 +25,42 @@ class OAuthService:
         """
         client = oauth.create_client(provider)
         if client is None:
-            raise exceptions.ClientNotFound
+            raise exceptions.ProviderNotFound(provider)
         return client
 
     @staticmethod
-    def get_token(provider: str, request: Request) -> dict:
+    def get_token(client: DjangoRemoteApp, request: Request) -> dict:
         """
         Returns token data from provider.
         """
-        client = OAuthService.get_client(provider)
-        return client.authorize_access_token(request)
+        try:
+            return client.authorize_access_token(request)
+        except AuthlibBaseError as e:
+            raise exceptions.TokenFetchException(e.description)
 
     @staticmethod
-    def get_profile(provider: str, client: DjangoRemoteApp, request: Request) -> "service_models.Profile":
+    def get_profile(provider: str, request: Request) -> "service_models.Profile":
         """
         Returns profile mapped cls with a data from provider's API.
         """
-        token = OAuthService.get_token(provider, request)
-        profile_data = client.get("user", token=token).json()
+        client = OAuthService.get_client(provider)
+        token = OAuthService.get_token(client, request)
 
-        # Modify raw profile data if needed
-        if provider == models.OAuth2Token.GITHUB_PROVIDER:
-            # Do nothing
-            pass
-        elif provider == models.OAuth2Token.GITLAB_PROVIDER:
-            profile_data["login"] = profile_data.pop("username")
+        try:
+            profile_data = client.get("user", token=token).json()
+        except AuthlibBaseError as e:
+            raise exceptions.ProfileRetrieveException(e.description)
         else:
-            raise NotImplementedError(f"{provider} is not implemented")
+            # Modify raw profile data if needed
+            if provider == models.OAuth2Token.GITHUB_PROVIDER:
+                # Do nothing
+                pass
+            elif provider == models.OAuth2Token.GITLAB_PROVIDER:
+                profile_data["login"] = profile_data.pop("username")
+            else:
+                raise exceptions.ProviderNotImplemented(provider)
 
-        return service_models.Profile(**profile_data, **token)
+            return service_models.Profile(**profile_data, **token)
 
     @staticmethod
     def oauth(provider: str, user: t.Union[models.User, AnonymousUser], profile: service_models.Profile) -> models.User:
