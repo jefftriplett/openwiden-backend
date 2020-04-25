@@ -4,7 +4,7 @@ from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, SimpleTestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.users import services, models
@@ -15,10 +15,11 @@ from faker import Faker
 fake = Faker()
 
 
-def test_profile_cls_split_name_false():
-    p = fixtures.create_random_profile(split_name=False)
-    assert p.first_name is None
-    assert p.last_name is None
+class ProfileTest(SimpleTestCase):
+    def test_profile_cls_split_name_false(self):
+        p = fixtures.create_random_profile(split_name=False)
+        self.assertIsNone(p.first_name)
+        self.assertIsNone(p.last_name)
 
 
 class OAuthServiceTestCase(TestCase):
