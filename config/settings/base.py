@@ -156,9 +156,6 @@ class Base(Configuration):
     GITLAB_APP_ID = env("GITLAB_APP_ID")
     GITLAB_SECRET = env("GITLAB_SECRET")
     GITLAB_PRIVATE_TOKEN = env("GITLAB_PRIVATE_TOKEN")
-    GITLAB_DEFAULT_REDIRECT_URI = env(
-        "GITLAB_DEFAULT_REDIRECT_URI", default="http://0.0.0.0:8000/users/complete/gitlab/"
-    )
 
     AUTHLIB_OAUTH_CLIENTS = {
         "github": {
@@ -177,7 +174,6 @@ class Base(Configuration):
             "access_token_url": "https://gitlab.com/oauth/token",
             "access_token_params": None,
             "authorize_url": "https://gitlab.com/oauth/authorize",
-            "authorize_params": {"redirect_uri": GITLAB_DEFAULT_REDIRECT_URI},
             "api_base_url": "https://gitlab.com/api/v4/",
             "client_kwargs": None,
         },
