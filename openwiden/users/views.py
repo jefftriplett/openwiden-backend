@@ -7,7 +7,25 @@ from rest_framework.response import Response
 from openwiden.users import exceptions, filters, models, permissions, serializers, services
 
 
-class OAuthLoginView(views.APIView):
+class OAuthView(views.APIView):
+    """
+    Base oauth view for inheritance by login and complete views.
+    """
+
+    permission_classes = (drf_permissions.AllowAny,)
+
+    @staticmethod
+    def get_client(provider: str) -> DjangoRemoteApp:
+        """
+        Returns client or raises OAuthProviderNotFound exception.
+        """
+        client: DjangoRemoteApp = services.OAuthService.get_client(provider)
+        if client is None:
+            raise exceptions.OAuthProviderNotFound(provider)
+        return client
+
+
+class OAuthLoginView(OAuthView):
     """
     Redirects user for auth via available provider.
 
@@ -20,13 +38,8 @@ class OAuthLoginView(views.APIView):
     ### http://0.0.0.0:8000/users/login/gitlab/?redirect_uri=http://0.0.0.0:8000/users/complete/gitlab/
     """
 
-    permission_classes = (drf_permissions.AllowAny,)
-
     def get(self, request, provider):
-        client: DjangoRemoteApp = services.OAuthService.get_client(provider)
-
-        if client is None:
-            raise exceptions.OAuthProviderNotFound(provider)
+        client: DjangoRemoteApp = self.get_client(provider)
 
         redirect_uri = request.GET.get("redirect_uri")
 
@@ -42,16 +55,15 @@ class OAuthLoginView(views.APIView):
 oauth_login_view = OAuthLoginView.as_view()
 
 
-class OAuthCompleteView(views.APIView):
+class OAuthCompleteView(OAuthView):
     """
     Creates or updates user for specified provider.
     """
 
-    permission_classes = (drf_permissions.AllowAny,)
     filter_backends = (filters.OAuthCompleteFilter,)
 
     def get(self, request, provider: str):
-        client: DjangoRemoteApp = services.OAuthService.get_client(provider)
+        client: DjangoRemoteApp = self.get_client(provider)
 
         # If no specified provider found
         if client is None:
