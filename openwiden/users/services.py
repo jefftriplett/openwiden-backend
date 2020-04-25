@@ -3,6 +3,7 @@ import typing as t
 from uuid import uuid4
 
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
+from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from rest_framework.request import Request
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -47,6 +48,13 @@ class Profile:
 
 class OAuthService:
     @staticmethod
+    def get_client(provider: str) -> t.Optional[DjangoRemoteApp]:
+        """
+        Returns authlib client instance or None if not found.
+        """
+        return oauth.create_client(provider)
+
+    @staticmethod
     def get_token(provider: str, request: Request) -> dict:
         """
         Returns token data from provider.
@@ -74,14 +82,7 @@ class OAuthService:
         return Profile(**profile_data, **token)
 
     @staticmethod
-    def get_client(provider: str) -> t.Optional[DjangoRemoteApp]:
-        """
-        Returns authlib client instance or None if not found.
-        """
-        return oauth.create_client(provider)
-
-    @staticmethod
-    def oauth(provider: str, user: models.User, profile: Profile) -> models.User:
+    def oauth(provider: str, user: t.Union[models.User, AnonymousUser], profile: Profile) -> models.User:
         """
         Returns user (new or existed) by provider and service provider profile data.
         """
@@ -133,7 +134,7 @@ class OAuthService:
             # Now, if the second user will repeat auth with github, then oauth_token user will be
             # changed for the second user. Now we have one user account with two oauth_tokens as expected.
             if user.is_authenticated:
-                if oauth2_token.user.id != user.id:
+                if oauth2_token.user.username != user.username:
                     oauth2_token.user = user
 
             # Change oauth_token login if it's changed in github, gitlab etc.

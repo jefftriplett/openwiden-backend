@@ -1,42 +1,6 @@
-# import mock
-# from django.contrib.auth.models import AnonymousUser
-# from django.core.files.base import ContentFile
-# from django.test import TestCase
-# from openwiden.users import utils, models
-# from openwiden.users.tests.factories import OAuth2TokenFactory, UserFactory
-# from faker import Faker
-#
-# fake = Faker()
-#
-#
-# def create_random_profile(
-#     id=fake.pyint(), login=fake.pystr(), name=fake.name(), email=fake.email(), avatar_url=fake.url(), split_name=True,
-# ) -> utils.Profile:
-#     return utils.Profile(id=id, login=login, name=name, email=email, avatar_url=avatar_url, split_name=split_name)
-#
-#
-# def test_profile_cls_split_name_false():
-#     p = create_random_profile(split_name=False)
-#     assert p.first_name is None
-#     assert p.last_name is None
-#
-#
-# class CreateOrUpdateUserTestCase(TestCase):
-#     @classmethod
-#     def setUpTestData(cls):
-#         cls.token = {"access_token": "test_token"}
-#         cls.provider = "test_provider"
-#         cls.fake_profile = create_random_profile()
-#
-#         cls.mock_client = mock.MagicMock()
-#         cls.mock_client.authorize_access_token.return_value = cls.token
-#         cls.mock_request = mock.MagicMock()
-#         cls.mock_request.user = AnonymousUser()
-#
 #     def create_or_update_user(self):
 #         return utils.create_or_update_user(self.provider, self.mock_client, self.mock_request)
-#
-#
+
 # @mock.patch("openwiden.users.utils.get_profile")
 # class CreateOrUpdateUserTokenExistsTestCase(CreateOrUpdateUserTestCase):
 #     @classmethod

@@ -1,58 +1,18 @@
 import mock
+from faker import Faker
 from urllib.parse import urlencode
 from authlib.common.errors import AuthlibBaseError
-from faker import Faker
 from django.test import override_settings, TestCase
 from rest_framework import status, permissions
 
 from openwiden.users import exceptions, serializers, views
-from openwiden.users.tests.factories import UserFactory, OAuth2TokenFactory
+from openwiden.users.tests import factories, fixtures
 from openwiden.tests.cases import ViewTestCase
 
 fake = Faker()
 
 
-GITHUB_PROVIDER = {
-    "client_id": "GITHUB_CLIENT_ID",
-    "client_secret": "GITHUB_SECRET_KEY",
-    "access_token_url": "https://github.com/login/oauth/access_token",
-    "access_token_params": None,
-    "authorize_url": "https://github.com/login/oauth/authorize",
-    "authorize_params": None,
-    "api_base_url": "https://api.github.com/",
-    "client_kwargs": {"scope": "user:email"},
-}
-
-GITLAB_PROVIDER = {
-    "client_id": "GITHUB_CLIENT_ID",
-    "client_secret": "GITHUB_SECRET_KEY",
-    "access_token_url": "http://gitlab.example.com/oauth/token",
-    "access_token_params": None,
-    "authorize_url": "https://gitlab.example.com/oauth/authorize",
-    "authorize_params": None,
-    "api_base_url": "https://gitlab.example.com/api/v4/",
-    "client_kwargs": None,
-}
-
-
-class Profile:
-    id = fake.pyint()
-    login = f"{fake.first_name()} {fake.last_name()}"
-    name = fake.name()
-    email = fake.email()
-    avatar_url = "https://test.com/avatar.jpg"
-
-    def json(self):
-        return {
-            "id": self.id,
-            "login": self.login,
-            "name": self.name,
-            "email": self.email,
-            "avatar_url": self.avatar_url,
-        }
-
-
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
+@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
 class OAuthViewTestCase(TestCase):
     def test_oauth_provider_not_found(self):
         expected_message = exceptions.OAuthProviderNotFound("test").detail
@@ -67,7 +27,7 @@ class OAuthViewTestCase(TestCase):
         self.assertEqual(views.OAuthView.permission_classes, (permissions.AllowAny,))
 
 
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
+@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
 class OAuthLoginViewTestCase(ViewTestCase):
     url_namespace = "auth:login"
 
@@ -101,7 +61,7 @@ class OAuthLoginViewTestCase(ViewTestCase):
         self.assertIn(query_params, r.url)
 
 
-@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
+@override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
 @mock.patch("openwiden.users.services.OAuthService.get_profile")
 @mock.patch("openwiden.users.services.OAuthService.get_client")
 class OAuthCompleteViewTestCase(ViewTestCase):
@@ -120,12 +80,12 @@ class OAuthCompleteViewTestCase(ViewTestCase):
     @mock.patch("openwiden.users.services.UserService.get_jwt")
     @mock.patch("openwiden.users.services.OAuthService.oauth")
     def test_success(self, p_oauth, p_get_jwt, p_get_client, p_get_profile):
-        user = UserFactory.create()
+        user = factories.UserFactory.create()
         expected_jwt = {"access": "123", "refresh": "123"}
         p_oauth.return_value = user
         p_get_jwt.return_value = expected_jwt
         p_get_client.return_value = "test"
-        p_get_profile.return_value = Profile()
+        p_get_profile.return_value = fixtures.create_random_profile()
         url = self.get_url(provider="test")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -139,7 +99,7 @@ class UsersViewSetTestCase(ViewTestCase):
     url_namespace = "user"
 
     def setUp(self) -> None:
-        self.user = UserFactory.create()
+        self.user = factories.UserFactory.create()
         self.set_auth_header(self.user)
 
     def test_list(self):
@@ -175,9 +135,9 @@ class UserRetrieveByTokenViewTestCase(ViewTestCase):
     url_namespace = "user"
 
     def test_success(self):
-        user = UserFactory.create()
-        OAuth2TokenFactory.create(user=user, provider="github")
-        OAuth2TokenFactory.create(user=user, provider="gitlab")
+        user = factories.UserFactory.create()
+        factories.OAuth2TokenFactory.create(user=user, provider="github")
+        factories.OAuth2TokenFactory.create(user=user, provider="gitlab")
         self.set_auth_header(user)
 
         expected_data = serializers.UserWithOAuthTokensSerializer(user).data
