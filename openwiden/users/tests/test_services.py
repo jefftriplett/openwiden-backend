@@ -2,6 +2,8 @@ import mock
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.test import TestCase
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from openwiden.users import services, models
 from openwiden.users.tests import fixtures, factories
 from faker import Faker
@@ -144,3 +146,16 @@ class OAuthServiceTestCase(TestCase):
         self.assertTrue(str(user.username).startswith(expected_username))
         self.assertEqual(p_get.call_count, 1)
         self.assertEqual(p_cf.call_count, 1)
+
+
+class UserServiceTestCase(TestCase):
+    @mock.patch("openwiden.users.services.RefreshToken.for_user")
+    def test_get_jwt(self, p_refresh):
+        user = factories.UserFactory()
+        token = RefreshToken.for_user(user)
+        self.assertEqual(p_refresh.call_count, 1)
+        p_refresh.return_value = token
+        jwt_tokens = services.UserService.get_jwt(user)
+        expected_dict = dict(access=str(token.access_token), refresh=str(token))
+        self.assertEqual(jwt_tokens, expected_dict)
+        self.assertEqual(p_refresh.call_count, 2)
