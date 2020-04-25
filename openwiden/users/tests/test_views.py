@@ -66,14 +66,14 @@ class Profile:
 class OAuthLoginViewTestCase(ViewTestCase):
     url_namespace = "auth:login"
 
-    @mock.patch("openwiden.users.utils.requests.get")
+    @mock.patch("openwiden.users.services.requests.get")
     def test_github_provider(self, p):
         p.return_value = "test"
         url = self.get_url(provider="github")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_302_FOUND)
 
-    @mock.patch("openwiden.users.utils.requests.get")
+    @mock.patch("openwiden.users.services.requests.get")
     def test_gitlab_provider(self, p):
         p.return_value = "test"
         url = self.get_url(query=dict(redirect_uri="http://example.com/"), provider="gitlab")
@@ -97,40 +97,37 @@ class OAuthLoginViewTestCase(ViewTestCase):
 
 
 @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": GITHUB_PROVIDER, "gitlab": GITLAB_PROVIDER})
+@mock.patch("openwiden.users.services.OAuthService.get_profile")
+@mock.patch("openwiden.users.services.OAuthService.get_client")
 class OAuthCompleteViewTestCase(ViewTestCase):
     url_namespace = "auth:complete"
 
-    @mock.patch("openwiden.users.views.create_or_update_user")
-    @mock.patch("openwiden.users.views.oauth.create_client")
-    def test_raises_error_when_user_is_none(self, patched_create_client, patched_create_or_update_user):
-        patched_create_client.return_value = "test"
-        patched_create_or_update_user.return_value = None
-        url = self.get_url(provider="test")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(r.data, {"detail": exceptions.CreateOrUpdateUserReturnedNone().detail})
-
-    @mock.patch("openwiden.users.views.create_or_update_user")
-    @mock.patch("openwiden.users.views.oauth.create_client")
-    def test_raises_authlib_error(self, patched_create_client, patched_create_or_update_user):
-        patched_create_client.return_value = "test"
-        patched_create_or_update_user.side_effect = AuthlibBaseError(description="test error")
+    def test_raises_authlib_error(self, p_get_client, p_get_profile):
+        p_get_client.return_value = object()
+        p_get_profile.side_effect = AuthlibBaseError(description="test error")
         url = self.get_url(provider="test")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(r.data, {"detail": "test error"})
+        self.assertEqual(p_get_client.call_count, 1)
+        self.assertEqual(p_get_profile.call_count, 1)
 
-    @mock.patch("openwiden.users.views.create_or_update_user")
-    @mock.patch("openwiden.users.views.oauth.create_client")
-    def test_returns_tokens(self, patched_create_client, patched_create_or_update_user):
+    @mock.patch("openwiden.users.services.UserService.get_jwt")
+    @mock.patch("openwiden.users.services.OAuthService.oauth")
+    def test_success(self, p_oauth, p_get_jwt, p_get_client, p_get_profile):
         user = UserFactory.create()
-        patched_create_client.return_value = "test"
-        patched_create_or_update_user.return_value = user
+        expected_jwt = {"access": "123", "refresh": "123"}
+        p_oauth.return_value = user
+        p_get_jwt.return_value = expected_jwt
+        p_get_client.return_value = "test"
+        p_get_profile.return_value = Profile()
         url = self.get_url(provider="test")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
-        self.assertIn("access", r.data["detail"])
-        self.assertIn("refresh", r.data["detail"])
+        self.assertEqual(r.json(), expected_jwt)
+        self.assertEqual(p_get_client.call_count, 1)
+        self.assertEqual(p_get_profile.call_count, 1)
+        self.assertEqual(p_oauth.call_count, 1)
 
 
 class UsersViewSetTestCase(ViewTestCase):

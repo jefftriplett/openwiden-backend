@@ -1,19 +1,10 @@
 from authlib.common.errors import AuthlibBaseError
-from authlib.integrations.django_client import OAuth
-from rest_framework import views, permissions, status, viewsets, mixins
+from authlib.integrations.django_client import DjangoRemoteApp
+
+from rest_framework import views, permissions as drf_permissions, status, viewsets, mixins
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from .exceptions import OAuthProviderNotFound, CreateOrUpdateUserReturnedNone, GitLabOAuthMissedRedirectURI
-from .filters import OAuthCompleteFilter
-from .models import User
-from .permissions import IsUserOrReadOnly
-from .serializers import UserSerializer, UserUpdateSerializer, UserWithOAuthTokensSerializer
-from .utils import create_or_update_user
-
-oauth = OAuth()
-oauth.register("github")
-oauth.register("gitlab")
+from openwiden.users import exceptions, filters, models, permissions, serializers, services
 
 
 class OAuthLoginView(views.APIView):
@@ -29,13 +20,13 @@ class OAuthLoginView(views.APIView):
     ### http://0.0.0.0:8000/users/login/gitlab/?redirect_uri=http://0.0.0.0:8000/users/complete/gitlab/
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (drf_permissions.AllowAny,)
 
     def get(self, request, provider):
-        client = oauth.create_client(provider)
+        client: DjangoRemoteApp = services.OAuthService.get_client(provider)
 
         if client is None:
-            raise OAuthProviderNotFound(provider)
+            raise exceptions.OAuthProviderNotFound(provider)
 
         redirect_uri = request.GET.get("redirect_uri")
 
@@ -43,7 +34,7 @@ class OAuthLoginView(views.APIView):
         # that's why additional check should be passed
         if provider == "gitlab":
             if redirect_uri is None:
-                raise GitLabOAuthMissedRedirectURI()
+                raise exceptions.GitLabOAuthMissedRedirectURI()
 
         return client.authorize_redirect(request, redirect_uri)
 
@@ -56,63 +47,50 @@ class OAuthCompleteView(views.APIView):
     Creates or updates user for specified provider.
     """
 
-    permission_classes = (permissions.AllowAny,)
-    filter_backends = (OAuthCompleteFilter,)
+    permission_classes = (drf_permissions.AllowAny,)
+    filter_backends = (filters.OAuthCompleteFilter,)
 
     def get(self, request, provider: str):
-        client = oauth.create_client(provider)
+        client: DjangoRemoteApp = services.OAuthService.get_client(provider)
 
         # If no specified provider found
         if client is None:
-            raise OAuthProviderNotFound(provider)
+            raise exceptions.OAuthProviderNotFound(provider)
 
-        # Create or update user by specified provider and user type (anonymous or authenticated)
+        # Return user (new or created) for specified provider profile.
         try:
-            user = create_or_update_user(provider, client, request)
-
-            if user is None:
-                raise CreateOrUpdateUserReturnedNone()
-
-            # Create JWT tokens for created / updated user
-            refresh = RefreshToken.for_user(user)
-            jwt_tokens = {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }
-
-            msg, code = jwt_tokens, status.HTTP_200_OK
+            profile: services.Profile = services.OAuthService.get_profile(provider, client, request)
         except AuthlibBaseError as e:
-            msg, code = e.description, status.HTTP_400_BAD_REQUEST
-
-        return Response({"detail": msg}, code)
+            return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
+        else:
+            # TODO: handle requests error or skip avatar download
+            user = services.OAuthService.oauth(provider, self.request.user, profile)
+            jwt_tokens = services.UserService.get_jwt(user)
+            return Response(jwt_tokens)
 
 
 oauth_complete_view = OAuthCompleteView.as_view()
 
 
 class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    """
-    User view set for list, retrieve or update actions for user.
-    """
-
-    serializer_class = UserSerializer
+    serializer_class = serializers.UserSerializer
     lookup_field = "id"
-    queryset = User.objects.all()
-    permission_classes = (IsUserOrReadOnly,)
+    queryset = models.User.objects.all()
+    permission_classes = (permissions.IsUserOrAdminOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ["update", "partial_update"]:
-            return UserUpdateSerializer
+            return serializers.UserUpdateSerializer
         return super().get_serializer_class()
 
 
 class UserByTokenView(views.APIView):
     """
-    Returns user with oauth tokens by provided JWT tokens.
+    Returns current user's oauth tokens.
     """
 
-    def get(self, request, *args, **kwargs):
-        data = UserWithOAuthTokensSerializer(instance=request.user).data
+    def get(self, request):
+        data = serializers.UserWithOAuthTokensSerializer(instance=request.user).data
         return Response(data=data)
 
 

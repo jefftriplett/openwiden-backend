@@ -14,12 +14,6 @@ class OAuthProviderNotFound(APIException):
         super().__init__(detail)
 
 
-class CreateOrUpdateUserReturnedNone(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = _("An error occurred while trying to create or update a user. Try again.")
-    default_code = "invalid"
-
-
 class GitLabOAuthMissedRedirectURI(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = _("Required redirect_uri query parameter is missing.")

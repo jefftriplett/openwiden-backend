@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class IsUserOrReadOnly(permissions.BasePermission):
+class IsUserOrAdminOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
     """
     Object-level permission to only allow owners of an object to edit it.
     """
