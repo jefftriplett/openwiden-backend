@@ -29,6 +29,10 @@ GITLAB_PROVIDER = {
 
 
 class Profile(service_models.Profile):
+    def __init__(self, username: str, **kwargs):
+        super().__init__(**kwargs)
+        self.username = username
+
     def json(self):
         return {
             "id": self.id,
@@ -36,6 +40,7 @@ class Profile(service_models.Profile):
             "name": self._name,
             "email": self.email,
             "avatar_url": self.avatar_url,
+            "username": self.username,
         }
 
 
@@ -50,6 +55,7 @@ def create_random_profile(
     expires_at=fake.pyint(),
     token_type="bearer",
     refresh_token=fake.pystr(),
+    username=fake.pystr(),
 ) -> Profile:
     return Profile(
         id=id,
@@ -62,4 +68,5 @@ def create_random_profile(
         expires_at=expires_at,
         token_type=token_type,
         refresh_token=refresh_token,
+        username=username,
     )

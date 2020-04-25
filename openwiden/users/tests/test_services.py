@@ -1,4 +1,6 @@
 import mock
+import typing as t
+from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
@@ -6,7 +8,7 @@ from django.test import TestCase, override_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.users import services, models
-from openwiden.users.services import exceptions as service_exceptions
+from openwiden.users.services import exceptions as service_exceptions, models as service_models
 from openwiden.users.tests import fixtures, factories
 from faker import Faker
 
@@ -20,12 +22,24 @@ def test_profile_cls_split_name_false():
 
 
 class OAuthServiceTestCase(TestCase):
-    token = {"access_token": "test_token"}
+    token = {"access_token": fake.pystr(), "expires_at": fake.pyint()}
     provider = "test_provider"
 
     def setUp(self) -> None:
         self.user = factories.UserFactory()
         self.oauth_token = factories.OAuth2TokenFactory(user=self.user, provider=self.provider)
+
+    @mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
+    @mock.patch("openwiden.users.services.oauth.OAuthService.get_token")
+    def get_profile(
+        self, provider: str, p_get_token, p_get_client, profile=fixtures.create_random_profile()
+    ) -> t.Tuple[service_models.Profile, dict]:
+        mock_client = mock.MagicMock()
+        mock_client.get.return_value = profile
+        p_get_client.return_value = mock_client
+        p_get_token.return_value = self.token
+        returned_profile = services.OAuthService.get_profile(provider, mock.MagicMock())
+        return returned_profile, profile.json()
 
     @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER})
     def test_get_client(self):
@@ -47,16 +61,30 @@ class OAuthServiceTestCase(TestCase):
         self.assertEqual(token, self.token)
         self.assertEqual(p_authorize_access_token.call_count, 1)
 
-    # @mock.patch("openwiden.users.services.oauth.OAuthService.get_token")
-    # def get_github_profile(self, p_get_token):
-    #     p_get_token.return_value = self.token
-    #
+    def test_get_token_raises_fetch_exception(self):
+        mock_client = mock.MagicMock()
+        mock_client.authorize_access_token.side_effect = AuthlibBaseError(description="test")
+        with self.assertRaisesMessage(service_exceptions.TokenFetchException, "test"):
+            services.OAuthService.get_token(mock_client, mock.MagicMock())
 
-    # def get_gitlab_profile(self):
-    #     self.fail()
-    #
-    # def get_profile_not_implemented_error(self):
-    #     self.fail()
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER})
+    def test_get_github_profile(self):
+        profile, data = self.get_profile("github")
+        expected_profile = service_models.Profile(**data, **self.token)
+        self.assertEqual(profile.to_dict(), expected_profile.to_dict())
+
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={"gitlab": fixtures.GITLAB_PROVIDER})
+    def test_get_gitlab_profile(self):
+        profile, data = self.get_profile("gitlab")
+        data["login"] = data.pop("username")
+        expected_profile = service_models.Profile(**data, **self.token)
+        self.assertEqual(profile.to_dict(), expected_profile.to_dict())
+
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={})
+    def test_get_profile_not_implemented_error(self):
+        expected_message = service_exceptions.ProviderNotImplemented("test").description
+        with self.assertRaisesMessage(service_exceptions.ProviderNotImplemented, expected_message):
+            self.get_profile("test")
 
     def test_oauth_token_exist_authenticated_user_change_oauth_token_user(self):
         """

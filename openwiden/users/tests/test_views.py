@@ -79,7 +79,7 @@ class OAuthCompleteViewTestCase(ViewTestCase):
         p_get_jwt.return_value = expected_jwt
         mock_client = mock.MagicMock()
         profile = fixtures.create_random_profile()
-        mock_client.get.return_value = fixtures.create_random_profile()
+        mock_client.get.return_value = profile
         p_client.return_value = mock_client
         p_get_token.return_value = {"access_token": profile.access_token, "expires_at": profile.expires_at}
         url = self.get_url(provider="github")
