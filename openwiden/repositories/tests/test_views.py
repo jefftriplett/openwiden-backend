@@ -1,13 +1,13 @@
-import mock
-from django.core import management
-from django.utils.translation import gettext_lazy as _
+# import mock
+# from django.core import management
+# from django.utils.translation import gettext_lazy as _
 
 from rest_framework import status
 from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from openwiden.repositories import exceptions
+# from openwiden.repositories import exceptions
 from openwiden.repositories.tests import factories
 from openwiden.users.tests.factories import UserFactory
 
@@ -30,39 +30,39 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], str(repository.id))
 
-    def test_add_view_not_authenticated(self):
-        response = self.client.post(reverse_lazy("repository-add"), data={"url": "test"})
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    # def test_add_view_not_authenticated(self):
+    #     response = self.client.post(reverse_lazy("repository-add"), data={"url": "test"})
+    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @mock.patch("openwiden.repositories.views.async_task")
-    def test_add_view_success(self, patched_task):
-        management.call_command("loaddata", "version_control_services.json", verbosity=0)
-        urls = ("https://github.com/golang/go", "https://gitlab.com/pgjones/quart")
-        self.add_auth_header()
-        for url in urls:
-            response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
-            self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
-            self.assertEqual(
-                response.data,
-                {"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")},
-            )
-        self.assertEqual(patched_task.call_count, 2)
+    # @mock.patch("openwiden.repositories.views.async_task")
+    # def test_add_view_success(self, patched_task):
+    #     management.call_command("loaddata", "version_control_services.json", verbosity=0)
+    #     urls = ("https://github.com/golang/go", "https://gitlab.com/pgjones/quart")
+    #     self.add_auth_header()
+    #     for url in urls:
+    #         response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+    #         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
+    #         self.assertEqual(
+    #             response.data,
+    #             {"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")},
+    #         )
+    #     self.assertEqual(patched_task.call_count, 2)
 
-    @mock.patch("openwiden.repositories.utils.parse_repo_url")
-    def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):
-        patched_parse_repo_url.return_value = None
-        url = "https://github.com/golang/go"
-        self.add_auth_header()
-        response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": exceptions.RepositoryURLParse(url).detail})
-
-    def test_add_view_raises_vcs_not_found(self):
-        url = "https://example.com/golang/go"
-        self.add_auth_header()
-        response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": exceptions.VersionControlServiceNotFound("example.com").detail})
+    # @mock.patch("openwiden.repositories.utils.parse_repo_url")
+    # def test_add_view_raises_repo_url_parse_error(self, patched_parse_repo_url):
+    #     patched_parse_repo_url.return_value = None
+    #     url = "https://github.com/golang/go"
+    #     self.add_auth_header()
+    #     response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    #     self.assertEqual(response.data, {"detail": exceptions.RepositoryURLParse(url).detail})
+    #
+    # def test_add_view_raises_vcs_not_found(self):
+    #     url = "https://example.com/golang/go"
+    #     self.add_auth_header()
+    #     response = self.client.post(reverse_lazy("repository-add"), data={"url": url})
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    #     self.assertEqual(response.data, {"detail": exceptions.VersionControlServiceNotFound("example.com").detail})
 
 
 class IssueViewSetTestCase(APITestCase):

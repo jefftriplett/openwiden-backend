@@ -3,7 +3,8 @@ from django.db import models
 from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
-from openwiden.repositories import managers
+
+# from openwiden.repositories import managers
 
 
 class ProgrammingLanguage(models.Model):
@@ -51,7 +52,7 @@ class Repository(SoftDeletableModel, UUIDModel):
         ProgrammingLanguage, models.PROTECT, "repositories", "repository", verbose_name=_("programming language")
     )
 
-    objects = managers.Repository()
+    # objects = managers.Repository()
 
     class Meta:
         ordering = ("-open_issues_count",)
@@ -85,7 +86,7 @@ class Issue(UUIDModel):
     closed_at = models.DateTimeField(_("closed at"), blank=True, null=True)
     updated_at = models.DateTimeField(_("updated at"))
 
-    objects = managers.Issue()
+    # objects = managers.Issue()
 
     class Meta:
         ordering = ("-created_at",)
