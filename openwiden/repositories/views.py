@@ -11,9 +11,9 @@ from openwiden.repositories import serializers, models, filters  # exceptions, u
 class Repository(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Repository
     queryset = models.Repository.objects.all().select_related("programming_language")
-    lookup_field = "id"
-    permission_classes = (permissions.AllowAny,)
     filterset_class = filters.Repository
+    permission_classes = (permissions.AllowAny,)
+    lookup_field = "id"
 
     # @action(detail=False, methods=["POST"], permission_classes=(permissions.IsAuthenticated,))
     # def add(self, request, *args, **kwargs):
@@ -44,8 +44,8 @@ class Issue(viewsets.ReadOnlyModelViewSet):
         return models.Issue.objects.filter(repository=self.kwargs["repository_id"])
 
 
-class ProgrammingLanguage(viewsets.ReadOnlyModelViewSet):
-    serializer_class = serializers.ProgrammingLanguage
-    lookup_field = "id"
-    permission_classes = (permissions.AllowAny,)
-    queryset = models.ProgrammingLanguage.objects.all()
+# class ProgrammingLanguage(viewsets.ReadOnlyModelViewSet):
+#     serializer_class = serializers.ProgrammingLanguage
+#     lookup_field = "id"
+#     permission_classes = (permissions.AllowAny,)
+#     queryset = models.ProgrammingLanguage.objects.all()

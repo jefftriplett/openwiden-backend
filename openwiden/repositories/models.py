@@ -3,38 +3,39 @@ from django.db import models
 from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
+from openwiden import enums
 
 # from openwiden.repositories import managers
 
 
-class ProgrammingLanguage(models.Model):
-    name = models.CharField(_("name"), max_length=100, unique=True)
+# class ProgrammingLanguage(models.Model):
+#     name = models.CharField(_("name"), max_length=100, unique=True)
+#
+#     class Meta:
+#         ordering = ("name",)
+#         verbose_name = _("programming language")
+#         verbose_name_plural = _("list of programming languages")
+#
+#     def __str__(self):
+#         return self.name
 
-    class Meta:
-        ordering = ("name",)
-        verbose_name = _("programming language")
-        verbose_name_plural = _("list of programming languages")
 
-    def __str__(self):
-        return self.name
-
-
-class VersionControlService(models.Model):
-    name = models.CharField(_("name"), max_length=100)
-    host = models.CharField(_("host"), max_length=50, unique=True)
-
-    class Meta:
-        ordering = ("host",)
-        verbose_name = _("version control service")
-        verbose_name_plural = _("version control services")
-
-    def __str__(self):
-        return self.name
+# class VersionControlService(models.Model):
+#     name = models.CharField(_("name"), max_length=100)
+#     host = models.CharField(_("host"), max_length=50, unique=True)
+#
+#     class Meta:
+#         ordering = ("host",)
+#         verbose_name = _("version control service")
+#         verbose_name_plural = _("version control services")
+#
+#     def __str__(self):
+#         return self.name
 
 
 class Repository(SoftDeletableModel, UUIDModel):
-    version_control_service = models.ForeignKey(
-        VersionControlService, models.PROTECT, related_name="repositories", verbose_name=_("version control service")
+    version_control_service = models.CharField(
+        _("version control service"), max_length=50, choices=enums.VersionControlService.choices
     )
     remote_id = models.PositiveIntegerField(_("remote repository id"))
     name = models.CharField(_("name"), max_length=255)
@@ -48,8 +49,8 @@ class Repository(SoftDeletableModel, UUIDModel):
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
 
-    programming_language = models.ForeignKey(
-        ProgrammingLanguage, models.PROTECT, "repositories", "repository", verbose_name=_("programming language")
+    programming_languages = ArrayField(
+        models.CharField(_("language"), max_length=50), verbose_name=_("programming languages")
     )
 
     # objects = managers.Repository()

@@ -12,7 +12,7 @@ repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="r
 repository_router.register("issues", repository_views.Issue, basename="issue")
 
 # Programming languages
-router.register("programming_languages", repository_views.ProgrammingLanguage, basename="programming_language")
+# router.register("programming_languages", repository_views.ProgrammingLanguage, basename="programming_language")
 
 # User
 router.register("users", user_views.UserViewSet, basename="user")

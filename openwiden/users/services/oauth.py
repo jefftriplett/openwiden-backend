@@ -12,7 +12,8 @@ from django_q.tasks import async_task
 
 from openwiden.users import models
 from openwiden.users.services import exceptions, models as service_models, serializers
-
+from openwiden.repositories import services as repository_services
+from openwiden import enums
 
 oauth = OAuth()
 oauth.register("github")
@@ -61,13 +62,14 @@ class OAuthService:
             raise exceptions.ProfileRetrieveException(e.description)
         else:
             # Modify raw profile data if needed
-            if provider == models.OAuth2Token.GITHUB_PROVIDER:
+            if provider == enums.VersionControlService.GITHUB:
                 s = serializers.GitHubUserSerializer(data=profile_data)
-            elif provider == models.OAuth2Token.GITLAB_PROVIDER:
+            elif provider == enums.VersionControlService.GITLAB:
                 s = serializers.GitlabUserSerializer(data=profile_data)
             else:
                 raise exceptions.ProviderNotImplemented(provider)
 
+            # Validate profile data before return
             if s.is_valid():
                 return service_models.Profile(**s.data, **token)
             else:
@@ -107,14 +109,14 @@ class OAuthService:
 
             # Create new oauth token instance for user:
             # New if anonymous or existed if is authenticated.
-            models.OAuth2Token.objects.create(
+            OAuthService.new_token(
                 user=user,
                 provider=provider,
                 remote_id=profile.id,
                 login=profile.login,
                 access_token=profile.access_token,
-                token_type=profile.token_type or "",
-                refresh_token=profile.refresh_token or "",
+                token_type=profile.token_type,
+                refresh_token=profile.refresh_token,
                 expires_at=profile.expires_at,
             )
             return user
@@ -142,3 +144,40 @@ class OAuthService:
             # Return oauth_token's user, because we can handle case when
             # user is not authenticated, but oauth_token for specified profile does exist.
             return oauth2_token.user
+
+    @staticmethod
+    def new_token(
+        user: models.User,
+        provider: str,
+        remote_id: int,
+        login: str,
+        access_token: str,
+        token_type: str = None,
+        refresh_token: str = None,
+        expires_at: int = None,
+    ):
+        """
+        Validate specified data and create new oauth token instance.
+        Also trigger new actions for a new created token.
+        """
+        data = dict(
+            user=user.id,
+            provider=provider,
+            remote_id=remote_id,
+            login=login,
+            access_token=access_token,
+            token_type=token_type,
+            refresh_token=refresh_token,
+            expires_at=expires_at,
+        )
+        s = serializers.OAuthTokenSerializer(data=data)
+
+        # Trigger some actions if oauth is saved
+        # or raise an error on validation error
+        if s.is_valid():
+            oauth_token = s.save()
+            # async_task(repository_services.RepositoryService.download, oauth_token=oauth_token)
+            repository_services.RepositoryService.download(oauth_token)
+            return oauth_token
+        else:
+            raise exceptions.UserServiceException(str(s.errors))

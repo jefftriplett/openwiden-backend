@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from openwiden.users import models
+
 
 class GitHubUserSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -19,3 +21,9 @@ class GitlabUserSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         data["login"] = data.pop("username")
         return super().to_internal_value(data)
+
+
+class OAuthTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.OAuth2Token
+        fields = "__all__"

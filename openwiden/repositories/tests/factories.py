@@ -5,12 +5,12 @@ from factory import fuzzy
 from openwiden.repositories import models
 
 
-class ProgrammingLanguage(factory.DjangoModelFactory):
-    name = fuzzy.FuzzyChoice(["Python", "C++", "C", "Go", "PHP", "Ruby", "C#", "Java", "JavaScript", "Perl"])
-
-    class Meta:
-        model = models.ProgrammingLanguage
-        django_get_or_create = ("name",)
+# class ProgrammingLanguage(factory.DjangoModelFactory):
+#     name = fuzzy.FuzzyChoice(["Python", "C++", "C", "Go", "PHP", "Ruby", "C#", "Java", "JavaScript", "Perl"])
+#
+#     class Meta:
+#         model = models.ProgrammingLanguage
+#         django_get_or_create = ("name",)
 
 
 class VersionControlService(factory.DjangoModelFactory):
@@ -33,7 +33,7 @@ class Repository(factory.DjangoModelFactory):
     created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     updated_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     open_issues_count = fuzzy.FuzzyInteger(1, 1000)
-    programming_language = factory.SubFactory(ProgrammingLanguage)
+    # programming_language = factory.SubFactory(ProgrammingLanguage)
 
     class Meta:
         model = models.Repository

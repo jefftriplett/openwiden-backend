@@ -12,14 +12,14 @@ class DisabledAddModelAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(models.ProgrammingLanguage)
-class ProgrammingLanguage(DisabledAddModelAdmin):
-    pass
+# @admin.register(models.ProgrammingLanguage)
+# class ProgrammingLanguage(DisabledAddModelAdmin):
+#     pass
 
 
-@admin.register(models.VersionControlService)
-class VersionControlServiceAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(models.VersionControlService)
+# class VersionControlServiceAdmin(admin.ModelAdmin):
+#     pass
 
 
 @admin.register(models.Repository)

@@ -3,6 +3,7 @@ from authlib.integrations.django_client import DjangoRemoteApp
 from rest_framework import views, permissions as drf_permissions, status, viewsets, mixins
 from rest_framework.response import Response
 
+from openwiden import enums
 from openwiden.users import exceptions, filters, models, permissions, serializers, services
 from openwiden.users.services import exceptions as service_exceptions
 
@@ -41,7 +42,7 @@ class OAuthLoginView(views.APIView):
 
         # GitLab OAuth requires redirect_uri,
         # that's why additional check should be passed
-        if provider == models.OAuth2Token.GITLAB_PROVIDER:
+        if provider == enums.VersionControlService.GITLAB:
             if redirect_uri is None:
                 raise exceptions.GitLabOAuthMissedRedirectURI()
 

@@ -1,14 +1,17 @@
-class ServiceException(Exception):
-    def __init__(self, description: str, error=None):
-        self.description = description
-        self.error = error
-
-    def __str__(self):
-        return self.description
+from openwiden.exceptions import ServiceException
 
 
 class OAuthServiceException(ServiceException):
     pass
+
+
+class UserServiceException(ServiceException):
+    pass
+
+
+class OAuthTokenDoesNotExist(UserServiceException):
+    def __init__(self, provider):
+        super().__init__(f"OAuth token for {provider} not found.")
 
 
 class ProviderNotFound(OAuthServiceException):

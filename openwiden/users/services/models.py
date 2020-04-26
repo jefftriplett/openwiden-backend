@@ -1,7 +1,7 @@
 class Profile:
     def __init__(
         self,
-        id: str,
+        id: int,
         login: str,
         name: str,
         email: str,
@@ -13,7 +13,7 @@ class Profile:
         refresh_token: str = None,
         **kwargs,
     ):
-        self.id = id
+        self.id: int = id
         self.login = login
         self._name = name
         self.email = email
