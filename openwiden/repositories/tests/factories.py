@@ -3,6 +3,11 @@ from django.utils.timezone import get_current_timezone
 from factory import fuzzy
 
 from openwiden.repositories import models
+from openwiden import enums
+
+from faker import Faker
+
+fake = Faker()
 
 
 # class ProgrammingLanguage(factory.DjangoModelFactory):
@@ -13,17 +18,17 @@ from openwiden.repositories import models
 #         django_get_or_create = ("name",)
 
 
-class VersionControlService(factory.DjangoModelFactory):
-    name = factory.Faker("text", max_nb_chars=100)
-    host = factory.Iterator(["github.com", "gitlab.com"])
-
-    class Meta:
-        model = models.VersionControlService
-        django_get_or_create = ("host",)
+# class VersionControlService(factory.DjangoModelFactory):
+#     name = factory.Faker("text", max_nb_chars=100)
+#     host = factory.Iterator(["github.com", "gitlab.com"])
+#
+#     class Meta:
+#         model = models.VersionControlService
+#         django_get_or_create = ("host",)
 
 
 class Repository(factory.DjangoModelFactory):
-    version_control_service = factory.SubFactory(VersionControlService)
+    version_control_service = fuzzy.FuzzyChoice(enums.VersionControlService.choices, getter=lambda c: c[0])
     remote_id = fuzzy.FuzzyInteger(1, 10000000)
     name = factory.Faker("text", max_nb_chars=255)
     description = factory.Faker("text")
@@ -33,7 +38,7 @@ class Repository(factory.DjangoModelFactory):
     created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     updated_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     open_issues_count = fuzzy.FuzzyInteger(1, 1000)
-    # programming_language = factory.SubFactory(ProgrammingLanguage)
+    programming_languages = factory.List([fake.pystr() for _ in range(3)])
 
     class Meta:
         model = models.Repository

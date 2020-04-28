@@ -69,4 +69,4 @@ class OAuth2TokenModelTestCase(ModelTestCase):
             "refresh_token": self.instance.refresh_token,
             "expires_at": self.instance.expires_at,
         }
-        self.assertEqual(self.instance.to_dict(), expected_dict)
+        self.assertEqual(self.instance.to_token(), expected_dict)

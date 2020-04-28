@@ -2,6 +2,7 @@ import factory
 from factory import fuzzy
 
 from openwiden.users import models
+from openwiden import enums
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -17,7 +18,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 class OAuth2TokenFactory(factory.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
-    provider = fuzzy.FuzzyChoice(models.OAuth2Token.PROVIDER_CHOICES, getter=lambda c: c[0])
+    provider = fuzzy.FuzzyChoice(enums.VersionControlService.choices, getter=lambda c: c[0])
     remote_id = fuzzy.FuzzyInteger(1)
     login = factory.Faker("first_name")
     token_type = factory.Faker("pystr")

@@ -10,7 +10,7 @@ from openwiden.repositories import models
 
 
 class Repository(serializers.ModelSerializer):
-    version_control_service = serializers.CharField(source="version_control_service.host")
+    version_control_service = serializers.CharField()
     # programming_language = ProgrammingLanguage()
 
     class Meta:

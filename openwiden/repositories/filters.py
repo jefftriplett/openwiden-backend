@@ -1,10 +1,11 @@
 from django_filters import rest_framework as filters
 
 from openwiden.repositories import models
+from openwiden import enums
 
 
 class Repository(filters.FilterSet):
-    version_control_service = filters.CharFilter(field_name="version_control_service", lookup_expr="host")
+    version_control_service = filters.ChoiceFilter(choices=enums.VersionControlService.choices)
 
     star_count_gte = filters.NumberFilter(field_name="star_count", lookup_expr="gte")
     open_issues_count_gte = filters.NumberFilter(field_name="open_issues_count", lookup_expr="gte")

@@ -11,6 +11,7 @@ from openwiden.users import services, models
 from openwiden.users.services import exceptions as service_exceptions, models as service_models
 from openwiden.users.tests import fixtures, factories
 from faker import Faker
+from openwiden import enums
 
 fake = Faker()
 
@@ -24,9 +25,9 @@ class ProfileTest(SimpleTestCase):
 
 class OAuthServiceTestCase(TestCase):
     token = {"access_token": fake.pystr(), "expires_at": fake.pyint()}
-    provider = "test_provider"
 
     def setUp(self) -> None:
+        self.provider = fake.random_element(enums.VersionControlService.values)
         self.user = factories.UserFactory()
         self.oauth_token = factories.OAuth2TokenFactory(user=self.user, provider=self.provider)
 
@@ -174,10 +175,11 @@ class OAuthServiceTestCase(TestCase):
         self.assertEqual(oauth_token.login, profile.login)
         self.assertEqual(p_get_profile.call_count, 1)
 
+    @mock.patch("openwiden.users.services.oauth.OAuthService.new_token")
     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
     @mock.patch("openwiden.users.services.oauth.ContentFile")
     @mock.patch("openwiden.users.services.oauth.requests.get")
-    def test_oauth_token_does_not_exist_authenticated_user(self, p_get, p_cf, p_get_profile):
+    def test_oauth_token_does_not_exist_authenticated_user(self, p_get, p_cf, p_get_profile, p_new_token):
         """
         Authenticated user -> create oauth token -> return authenticated user
         """
@@ -185,19 +187,19 @@ class OAuthServiceTestCase(TestCase):
         p_get.return_value = mock.MagicMock()
         p_cf.return_value = ContentFile(b"12345")
         p_get_profile.return_value = profile
+        p_new_token.return_value = None
         user = services.OAuthService.oauth(self.provider, self.user, mock.MagicMock())
-        created_oauth_token = models.OAuth2Token.objects.get(user=user, provider=self.provider, remote_id=profile.id)
         self.assertEqual(user.id, self.user.id)
         self.assertEqual(p_get.call_count, 0)
         self.assertEqual(p_cf.call_count, 0)
         self.assertEqual(p_get_profile.call_count, 1)
-        self.assertEqual(created_oauth_token.remote_id, profile.id)
-        self.assertEqual(created_oauth_token.login, profile.login)
+        self.assertEqual(p_new_token.call_count, 1)
 
+    @mock.patch("openwiden.users.services.oauth.OAuthService.new_token")
     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
     @mock.patch("openwiden.users.services.oauth.ContentFile")
     @mock.patch("openwiden.users.services.oauth.requests.get")
-    def test_oauth_token_does_not_exist_anonymous_user(self, p_get, p_cf, p_get_profile):
+    def test_oauth_token_does_not_exist_anonymous_user(self, p_get, p_cf, p_get_profile, p_new_token):
         """
         Anonymous -> login does not exist -> create user -> create oauth token -> return created user
         """
@@ -205,22 +207,20 @@ class OAuthServiceTestCase(TestCase):
         p_get.return_value = mock.MagicMock()
         p_cf.return_value = ContentFile(b"12345")
         p_get_profile.return_value = profile
+        p_new_token.return_value = None
         self.user = AnonymousUser()
         user = services.OAuthService.oauth(self.provider, self.user, mock.MagicMock())
         user_from_db = models.User.objects.get(username=profile.login)
-        created_oauth_token = user_from_db.oauth2_tokens.first()
         self.assertEqual(user.id, user_from_db.id)
-        self.assertEqual(user_from_db.oauth2_tokens.count(), 1)
         self.assertEqual(p_get.call_count, 1)
         self.assertEqual(p_cf.call_count, 1)
         self.assertEqual(p_get_profile.call_count, 1)
-        self.assertEqual(created_oauth_token.provider, self.provider)
-        self.assertEqual(created_oauth_token.remote_id, profile.id)
 
+    @mock.patch("openwiden.users.services.oauth.OAuthService.new_token")
     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
     @mock.patch("openwiden.users.services.oauth.ContentFile")
     @mock.patch("openwiden.users.services.oauth.requests.get")
-    def test_oauth_token_does_not_exist_anonymous_user_login_exist(self, p_get, p_cf, p_get_profile):
+    def test_oauth_token_does_not_exist_anonymous_user_login_exist(self, p_get, p_cf, p_get_profile, new_token):
         """
         Anonymous -> login exist -> generate new login -> create user -> create oauth token -> return created user
         """
@@ -229,6 +229,7 @@ class OAuthServiceTestCase(TestCase):
         p_get.return_value = mock.MagicMock()
         p_cf.return_value = ContentFile(b"12345")
         p_get_profile.return_value = profile
+        new_token.return_value = None
         self.user = AnonymousUser()
         user = services.OAuthService.oauth(self.provider, self.user, mock.MagicMock())
         user_from_db = models.User.objects.get(username=profile.login)

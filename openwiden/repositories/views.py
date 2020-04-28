@@ -10,7 +10,7 @@ from openwiden.repositories import serializers, models, filters  # exceptions, u
 
 class Repository(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Repository
-    queryset = models.Repository.objects.all().select_related("programming_language")
+    queryset = models.Repository.objects.all()
     filterset_class = filters.Repository
     permission_classes = (permissions.AllowAny,)
     lookup_field = "id"
