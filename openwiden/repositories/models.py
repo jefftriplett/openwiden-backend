@@ -50,7 +50,7 @@ class Repository(SoftDeletableModel, UUIDModel):
     updated_at = models.DateTimeField(_("updated at"))
 
     programming_languages = ArrayField(
-        models.CharField(_("language"), max_length=50), verbose_name=_("programming languages")
+        models.CharField(_("language"), max_length=50), default=list, verbose_name=_("programming languages")
     )
 
     is_added = models.BooleanField(_("is added"), default=False)
