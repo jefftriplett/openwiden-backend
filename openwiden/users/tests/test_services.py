@@ -1,5 +1,6 @@
-import mock
 import typing as t
+from unittest import mock
+
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
@@ -10,8 +11,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from openwiden.users import services, models
 from openwiden.users.services import exceptions as service_exceptions, models as service_models
 from openwiden.users.tests import fixtures, factories
-from faker import Faker
 from openwiden import enums
+from faker import Faker
 
 fake = Faker()
 

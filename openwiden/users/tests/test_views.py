@@ -1,4 +1,5 @@
-import mock
+from unittest import mock
+
 from faker import Faker
 from urllib.parse import urlencode
 from django.test import override_settings
