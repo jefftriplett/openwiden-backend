@@ -9,9 +9,9 @@ OpenWiden - An Open Source Project Search Platform.
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
      :target: https://github.com/ambv/black
      :alt: Black code style
-.. image:: https://travis-ci.com/OpenWiden/openwiden-backend.svg?branch=master
+.. image:: https://github.com/OpenWiden/openwiden-backend/workflows/test/badge.svg
      :target: https://travis-ci.com/OpenWiden/openwiden-backend
-     :alt: Build Status
+     :alt: Tests
 .. image:: https://codecov.io/gh/OpenWiden/openwiden-backend/branch/master/graph/badge.svg
      :target: https://codecov.io/gh/OpenWiden/openwiden-backend
      :alt: Codecov
