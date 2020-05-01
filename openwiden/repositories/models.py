@@ -53,6 +53,8 @@ class Repository(SoftDeletableModel, UUIDModel):
         models.CharField(_("language"), max_length=50), verbose_name=_("programming languages")
     )
 
+    is_added = models.BooleanField(_("is added"), default=False)
+
     # objects = managers.Repository()
 
     class Meta:
