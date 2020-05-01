@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=openwiden
+POSTGRES_USER=usvOPgeHMixkzGhArPLrdtsmHJuvSiJi
+POSTGRES_PASSWORD=TaANOSwZiel7ZNiu68cH1ZLS1ng9bBrM6AjDi6HMASnWh9lzEDTdPVOfBP7X5NEG

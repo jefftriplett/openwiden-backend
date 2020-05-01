@@ -1,0 +1,15 @@
+# General
+# ------------------------------------------------------------------------------
+USE_DOCKER=yes
+IPYTHONDIR=/app/.ipython
+
+# GitHub
+GITHUB_CLIENT_ID=6c30255c94212d89ad3c
+GITHUB_SECRET_KEY=b99baf2dc0c11e3d8de903858769cddd09692625
+
+# GitLab
+GITLAB_APP_ID=6f1da0699d62c2ba7ae71d377e369897025aa43cf695e8bd7bf67dfd41f1069e
+GITLAB_SECRET=7a625e20f348eb56b4f362090097e30458aaa2312a465f43a24a9d9bf9923b65
+
+# Redis
+REDIS_URL=redis://redis:6379/0
