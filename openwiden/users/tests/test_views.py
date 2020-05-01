@@ -78,7 +78,7 @@ class OAuthCompleteViewTestCase(ViewTestCase):
         url = self.get_url(provider="github")
         r = self.client.get(url)
         self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
-        self.assertEqual(r.json(), expected_jwt)
+        self.assertEqual(r.data, expected_jwt)
         self.assertEqual(p_oauth.call_count, 1)
         self.assertEqual(p_get_jwt.call_count, 1)
 
