@@ -3,7 +3,8 @@ from django.db import models
 from model_utils.models import UUIDModel, SoftDeletableModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
-from openwiden import enums
+from openwiden.repositories import enums
+from openwiden.enums import VersionControlService
 
 # from openwiden.repositories import managers
 
@@ -35,7 +36,7 @@ from openwiden import enums
 
 class Repository(SoftDeletableModel, UUIDModel):
     version_control_service = models.CharField(
-        _("version control service"), max_length=50, choices=enums.VersionControlService.choices
+        _("version control service"), max_length=50, choices=VersionControlService.choices
     )
     remote_id = models.PositiveIntegerField(_("remote repository id"))
     name = models.CharField(_("name"), max_length=255)
@@ -53,6 +54,7 @@ class Repository(SoftDeletableModel, UUIDModel):
         models.CharField(_("language"), max_length=50), default=list, verbose_name=_("programming languages")
     )
 
+    visibility = models.CharField(_("visibility"), max_length=8, choices=enums.VisibilityLevel.choices)
     is_added = models.BooleanField(_("is added"), default=False)
 
     # objects = managers.Repository()

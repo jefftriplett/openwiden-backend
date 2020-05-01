@@ -1,6 +1,6 @@
-import enum
-
-
-class GitProviderHost(str, enum.Enum):
-    GITLAB = "gitlab.com"
-    GITHUB = "github.com"
+# import enum
+#
+#
+# class GitProviderHost(str, enum.Enum):
+#     GITLAB = "gitlab.com"
+#     GITHUB = "github.com"
