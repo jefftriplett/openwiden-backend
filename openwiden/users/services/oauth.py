@@ -177,7 +177,7 @@ class OAuthService:
         if s.is_valid():
             oauth_token = s.save()
             # async_task(repository_services.RepositoryService.download, oauth_token=oauth_token)
-            repository_services.RepositoryService.download(oauth_token)
+            repository_services.external.get_service(oauth_token).sync()
             return oauth_token
         else:
             raise exceptions.UserServiceException(str(s.errors))
