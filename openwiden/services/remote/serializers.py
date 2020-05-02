@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from openwiden.repositories import models as repositories_models, enums
 from openwiden.users import models as users_models
+from openwiden.organizations import models as organization_models
 
 
 class RepositorySync(serializers.ModelSerializer):
@@ -81,3 +82,39 @@ class OAuthTokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = users_models.OAuth2Token
         fields = "__all__"
+
+
+class OrganizationSync(serializers.ModelSerializer):
+    class Meta:
+        model = organization_models.Organization
+        fields = (
+            "remote_id",
+            "url",
+            "avatar_url",
+            "description",
+            "name",
+            "created_at",
+            "updated_at",
+        )
+
+    def create(self, validated_data):
+        user = validated_data.pop("user")
+
+        instance, created = organization_models.Organization.objects.update_or_create(
+            version_control_service=validated_data["version_control_service"],
+            remote_id=validated_data["remote_id"],
+            defaults=validated_data,
+        )
+
+        instance.users.add(user)
+        return instance
+
+
+class GithubOrganizationSync(OrganizationSync):
+    class Meta(OrganizationSync.Meta):
+        pass
+
+    def to_internal_value(self, data):
+        for new_key, old_key in {"remote_id": "id", "url": "html_url",}.items():
+            data[new_key] = data.pop(old_key)
+        return super().to_internal_value(data)
