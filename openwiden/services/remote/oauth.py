@@ -7,6 +7,7 @@ from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext_lazy as _
+from django_q.tasks import async_task
 from rest_framework.request import Request
 
 from openwiden.users import models
@@ -172,9 +173,7 @@ class OAuthService:
         # or raise an error on validation error
         if s.is_valid():
             oauth_token = s.save()
-            service = utils.get_service(oauth_token)
-            service.sync()
-            # repositories_tasks.external_repositories_sync(oauth_token)
+            async_task(utils.get_service(oauth_token).sync)
             return oauth_token
         else:
             raise exceptions.RemoteException(str(s.errors))
