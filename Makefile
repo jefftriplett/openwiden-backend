@@ -1,12 +1,4 @@
-BASE_COMPOSE_FILES=docker-compose.yml
-#LOCAL_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.develop.yml
-#TEST_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.test.yml
-#STAGING_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.staging.yml
-#PRODUCTION_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.production.yml
-
-COMPOSE_FILES=BASE_COMPOSE_FILES
-
-WEB_CONTAINER=docker-compose $(foreach file, $($(COMPOSE_FILES)), -f $(file)) run --rm web
+WEB_CONTAINER=docker-compose -f local.yml run --rm django
 
 # Containers
 web:
