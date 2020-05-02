@@ -1,7 +1,7 @@
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.users import models
-from openwiden.users.services import exceptions
+from openwiden.services import exceptions
 
 
 class UserService:
@@ -22,6 +22,6 @@ class UserService:
         try:
             oauth_token = models.OAuth2Token.objects.get(user=user, provider=provider)
         except models.OAuth2Token.DoesNotExist:
-            raise exceptions.UserServiceException(provider)
+            raise exceptions.ServiceException(provider)
         else:
             return oauth_token

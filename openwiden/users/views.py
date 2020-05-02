@@ -5,7 +5,8 @@ from rest_framework.response import Response
 
 from openwiden import enums
 from openwiden.users import exceptions, filters, models, permissions, serializers, services
-from openwiden.users.services import exceptions as service_exceptions
+from openwiden.services import remote
+from openwiden.services.remote import exceptions as remote_service_exceptions
 
 
 class OAuthLoginView(views.APIView):
@@ -29,8 +30,8 @@ class OAuthLoginView(views.APIView):
         Returns client or raises OAuthProviderNotFound exception.
         """
         try:
-            client: DjangoRemoteApp = services.OAuthService.get_client(provider)
-        except service_exceptions.ProviderNotFound:
+            client: DjangoRemoteApp = remote.OAuthService.get_client(provider)
+        except remote_service_exceptions.RemoteException:
             raise exceptions.OAuthProviderNotFound(provider)
         else:
             return client
@@ -62,8 +63,8 @@ class OAuthCompleteView(views.APIView):
 
     def get(self, request, provider: str):
         try:
-            user = services.OAuthService.oauth(provider, self.request.user, request)
-        except service_exceptions.OAuthServiceException as e:
+            user = remote.OAuthService.oauth(provider, self.request.user, request)
+        except remote_service_exceptions.RemoteException as e:
             return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
         else:
             jwt_tokens = services.UserService.get_jwt(user)

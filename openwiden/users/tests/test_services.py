@@ -90,7 +90,7 @@ class OAuthServiceTestCase(TestCase):
             self.get_profile("test")
 
     @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITLAB_PROVIDER})
-    @mock.patch("openwiden.users.services.oauth.repositories_tasks.external_repositories_sync")
+    @mock.patch("openwiden.users.services.oauth.repositories_tasks.remote_repositories_sync")
     def test_get_profile_validation_error(self, p_sync):
         profile = fixtures.create_random_profile()
         profile.login = None

@@ -1,3 +1,3 @@
-from . import external
+from .repositories import Repository
 
-__all__ = ["external"]
+__all__ = ["Repository"]

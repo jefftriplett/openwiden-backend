@@ -3,15 +3,8 @@ from rest_framework import serializers
 from openwiden.repositories import models
 
 
-# class ProgrammingLanguage(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.ProgrammingLanguage
-#         fields = ("id", "name")
-
-
 class Repository(serializers.ModelSerializer):
     version_control_service = serializers.CharField()
-    # programming_language = ProgrammingLanguage()
 
     class Meta:
         model = models.Repository
@@ -26,7 +19,6 @@ class Repository(serializers.ModelSerializer):
             "forks_count",
             "created_at",
             "updated_at",
-            # "programming_language",
         )
 
 
