@@ -11,17 +11,15 @@ class Organization(UUIDModel):
         _("version control service"), max_length=50, choices=VersionControlService.choices
     )
     remote_id = models.PositiveIntegerField(_("remote id"))
+    name = models.CharField(_("name"), max_length=255)
 
-    url = models.URLField(_("url"))
-    avatar_url = models.URLField(_("avatar url"))
+    url = models.URLField(_("url"), blank=True, null=True)
+    avatar_url = models.URLField(_("avatar url"), blank=True, null=True)
 
-    description = models.CharField(_("the description of the company"), max_length=255)
-    name = models.CharField(_("the shorthand name of the company"), max_length=255)
-    company = models.CharField(_("company name"), max_length=255)
-    location = models.CharField(_("location"), max_length=255)
-    email = models.EmailField(_("publicity visible email"))
+    description = models.CharField(_("description"), max_length=255, blank=True, null=True)
 
-    created_at = models.DateTimeField(_("created at"))
+    created_at = models.DateTimeField(_("created at"), blank=True, null=True)
+    updated_at = models.DateTimeField(_("updated at"), blank=True, null=True)
 
     users = models.ManyToManyField(User, "users", "user", verbose_name=_("organization users"))
 
@@ -32,3 +30,6 @@ class Organization(UUIDModel):
         constraints = (
             models.UniqueConstraint(fields=("version_control_service", "remote_id",), name="unique_organization"),
         )
+
+    def __str__(self):
+        return self.name
