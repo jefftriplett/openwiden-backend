@@ -4,15 +4,14 @@ from model_utils.models import UUIDModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
 
+from openwiden import enums
 from openwiden.organizations.models import Organization
-from openwiden.repositories import enums
-from openwiden.enums import VersionControlService
 from openwiden.users.models import User
 
 
 class Repository(UUIDModel):
     version_control_service = models.CharField(
-        _("version control service"), max_length=50, choices=VersionControlService.choices
+        _("version control service"), max_length=50, choices=enums.VersionControlService.choices
     )
     remote_id = models.PositiveIntegerField(_("remote repository id"))
     name = models.CharField(_("name"), max_length=255)

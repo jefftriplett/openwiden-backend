@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from openwiden.repositories import models as repositories_models, enums
+from openwiden import enums
+from openwiden.repositories import models as repositories_models
 from openwiden.users import models as users_models
 from openwiden.organizations import models as organization_models
 
@@ -95,6 +96,7 @@ class OrganizationSync(serializers.ModelSerializer):
             "name",
             "created_at",
             "updated_at",
+            "visibility",
         )
 
     def create(self, validated_data):
@@ -116,5 +118,15 @@ class GithubOrganizationSync(OrganizationSync):
 
     def to_internal_value(self, data):
         for new_key, old_key in {"remote_id": "id", "url": "html_url",}.items():
+            data[new_key] = data.pop(old_key)
+        return super().to_internal_value(data)
+
+
+class GitlabOrganizationSync(OrganizationSync):
+    class Meta(OrganizationSync.Meta):
+        pass
+
+    def to_internal_value(self, data):
+        for new_key, old_key in {"remote_id": "id"}.items():
             data[new_key] = data.pop(old_key)
         return super().to_internal_value(data)
