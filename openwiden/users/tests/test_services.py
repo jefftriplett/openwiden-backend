@@ -89,15 +89,15 @@ class OAuthServiceTestCase(TestCase):
         with self.assertRaisesMessage(service_exceptions.ProviderNotImplemented, expected_message):
             self.get_profile("test")
 
-    # @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITLAB_PROVIDER})
-    # @mock.patch("openwiden.users.services.oauth.async_task")
-    # def test_get_profile_validation_error(self, p_async_task):
-    #     profile = fixtures.create_random_profile()
-    #     profile.login = None
-    #     expected_message = service_exceptions.ProfileValidateException("errors dict from serializer").description
-    #     with self.assertRaisesMessage(service_exceptions.ProfileValidateException, expected_message):
-    #         self.get_profile("github", profile=profile)
-    #         self.assertEqual(p_async_task.call_count, 1)
+    @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITLAB_PROVIDER})
+    @mock.patch("openwiden.users.services.oauth.repositories_tasks.external_repositories_sync")
+    def test_get_profile_validation_error(self, p_sync):
+        profile = fixtures.create_random_profile()
+        profile.login = None
+        expected_message = service_exceptions.ProfileValidateException("errors dict from serializer").description
+        with self.assertRaisesMessage(service_exceptions.ProfileValidateException, expected_message):
+            self.get_profile("github", profile=profile)
+            self.assertEqual(p_sync.call_count, 1)
 
     @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITLAB_PROVIDER})
     def test_get_profile_email_does_not_exist(self):

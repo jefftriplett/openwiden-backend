@@ -10,7 +10,7 @@ from rest_framework.request import Request
 
 from openwiden.users import models
 from openwiden.users.services import exceptions, models as service_models, serializers
-from openwiden.repositories import services as repository_services
+from openwiden.repositories import tasks as repositories_tasks
 from openwiden import enums
 
 oauth = OAuth()
@@ -172,8 +172,7 @@ class OAuthService:
         # or raise an error on validation error
         if s.is_valid():
             oauth_token = s.save()
-            # async_task(repository_services.RepositoryService.download, oauth_token=oauth_token)
-            repository_services.external.get_service(oauth_token).sync()
+            repositories_tasks.external_repositories_sync(oauth_token)
             return oauth_token
         else:
             raise exceptions.UserServiceException(str(s.errors))
