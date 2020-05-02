@@ -3,8 +3,11 @@ from django.db import models
 from model_utils.models import UUIDModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
+
+from openwiden.organizations.models import Organization
 from openwiden.repositories import enums
 from openwiden.enums import VersionControlService
+from openwiden.users.models import User
 
 
 class Repository(UUIDModel):
@@ -15,6 +18,19 @@ class Repository(UUIDModel):
     name = models.CharField(_("name"), max_length=255)
     description = models.TextField(_("description"), blank=True)
     url = models.URLField(_("url"))
+
+    owner = models.ForeignKey(
+        User, models.SET_NULL, "repositories", "repository", blank=True, null=True, verbose_name=_("owner")
+    )
+    organization = models.ForeignKey(
+        Organization,
+        models.SET_NULL,
+        "repositories",
+        "repository",
+        blank=True,
+        null=True,
+        verbose_name=_("organization"),
+    )
 
     star_count = models.PositiveIntegerField(_("star count"), default=0)
     open_issues_count = models.PositiveSmallIntegerField(_("open issues count"), default=0)
