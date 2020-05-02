@@ -1,40 +1,13 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from model_utils.models import UUIDModel, SoftDeletableModel
+from model_utils.models import UUIDModel
 from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
 from openwiden.repositories import enums
 from openwiden.enums import VersionControlService
 
-# from openwiden.repositories import managers
 
-
-# class ProgrammingLanguage(models.Model):
-#     name = models.CharField(_("name"), max_length=100, unique=True)
-#
-#     class Meta:
-#         ordering = ("name",)
-#         verbose_name = _("programming language")
-#         verbose_name_plural = _("list of programming languages")
-#
-#     def __str__(self):
-#         return self.name
-
-
-# class VersionControlService(models.Model):
-#     name = models.CharField(_("name"), max_length=100)
-#     host = models.CharField(_("host"), max_length=50, unique=True)
-#
-#     class Meta:
-#         ordering = ("host",)
-#         verbose_name = _("version control service")
-#         verbose_name_plural = _("version control services")
-#
-#     def __str__(self):
-#         return self.name
-
-
-class Repository(SoftDeletableModel, UUIDModel):
+class Repository(UUIDModel):
     version_control_service = models.CharField(
         _("version control service"), max_length=50, choices=VersionControlService.choices
     )
@@ -56,8 +29,6 @@ class Repository(SoftDeletableModel, UUIDModel):
 
     visibility = models.CharField(_("visibility"), max_length=8, choices=enums.VisibilityLevel.choices)
     is_added = models.BooleanField(_("is added"), default=False)
-
-    # objects = managers.Repository()
 
     class Meta:
         ordering = ("-open_issues_count",)
@@ -90,8 +61,6 @@ class Issue(UUIDModel):
     created_at = models.DateTimeField(_("crated at"))
     closed_at = models.DateTimeField(_("closed at"), blank=True, null=True)
     updated_at = models.DateTimeField(_("updated at"))
-
-    # objects = managers.Issue()
 
     class Meta:
         ordering = ("-created_at",)
