@@ -5,17 +5,17 @@ volumes:
   local_postgres_data_backups: {}
 
 services:
-  django:
+  django: &django
     build:
       context: .
       dockerfile: ./compose/local/django/Dockerfile
-    image: &web web
+    image: openwiden_local_django
     container_name: django
     depends_on:
       - postgres
     volumes:
       - .:/app
-    env_file: &env_file
+    env_file:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
     ports:
@@ -36,9 +36,13 @@ services:
 
   redis:
     image: redis:5.0
+    container_name: redis
 
-  tasks:
-    restart: always
-    image: *web
-    env_file: *env_file
-    command: bash -c "python manage.py qcluster"
+  django-q:
+    <<: *django
+    image: openwiden_local_django-q
+    container_name: django-q
+    depends_on:
+      - redis
+    ports: []
+    command: /start-django-q

@@ -31,6 +31,12 @@ COPY ./compose/production/django/start /start
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
 RUN chown django /start
+
+COPY ./compose/production/django-q/start /start-django-q
+RUN sed -i 's/\r$//g' /start-django-q
+RUN chmod +x /start-django-q
+RUN chown django /start-django-q
+
 COPY --chown=django:django . /app
 
 USER django

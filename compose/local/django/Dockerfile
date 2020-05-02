@@ -26,6 +26,10 @@ COPY ./compose/local/django/start /start
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
 
+COPY ./compose/local/django-q/start /start-django-q
+RUN sed -i 's/\r$//g' /start-django-q
+RUN chmod +x /start-django-q
+
 WORKDIR /app
 
 ENTRYPOINT ["/entrypoint"]
