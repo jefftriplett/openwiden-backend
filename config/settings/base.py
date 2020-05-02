@@ -298,5 +298,6 @@ Q_CLUSTER = {
     "queue_limit": 500,
     "cpu_affinity": 1,
     "label": "Django Q",
+    "sync": DEBUG,
     "redis": env("REDIS_URL"),
 }
