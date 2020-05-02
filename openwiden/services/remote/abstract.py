@@ -25,6 +25,9 @@ class RemoteService(ABC):
 
     @abstractmethod
     def get_repository_organization(self, data: dict) -> t.Optional[organizations_models.Organization]:
+        """
+        Returns repository organization or None if repository owner is user.
+        """
         pass
 
     @abstractmethod
@@ -55,14 +58,21 @@ class RemoteService(ABC):
         repositories_data = self.get_user_repos()
         for data in repositories_data:
             serializer = self.repository_sync_serializer(data=data)
+
+            # Check if serializer is valid and try to save repository.
             if serializer.is_valid():
+
+                # Get repository organization (if exist) and build default kwargs for serializer save call
                 organization = self.get_repository_organization(data)
                 kwargs = dict(organization=organization, owner=None, version_control_service=self.oauth_token.provider)
+
+                # Organization is None when repository owner is current user
                 if organization is None:
                     kwargs["owner"] = self.user
+
+                # Sync specified data (create or update new repository)
                 serializer.save(**kwargs)
             else:
-                print(serializer.errors)
                 raise exceptions.RemoteSyncException(
                     _("an error occurred while synchronizing repositories, please, try again.")
                 )
@@ -76,14 +86,13 @@ class RemoteService(ABC):
         if serializer.is_valid():
             return serializer.save(version_control_service=self.oauth_token.provider, user=self.user)
         else:
-            print(serializer.errors)
             raise exceptions.RemoteSyncException(
                 _("an error occurred while synchronizing organizations, please, try again.")
             )
 
     def sync(self):
         """
-        Synchronizes full user's data from remote API.
+        Synchronizes user's data from remote API.
         """
         self.user_repositories_sync()
-        # self.user_organizations_sync()
+        self.user_organizations_sync()

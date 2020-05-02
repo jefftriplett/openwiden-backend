@@ -12,18 +12,21 @@ class GitHubService(RemoteService):
     organization_sync_serializer = GithubOrganizationSync
 
     def get_user_repos(self) -> t.List[dict]:
-        # TODO: pagination
         return self.client.get("user/repos", token=self.token).json()
 
     def get_repository_languages(self, full_name: str) -> dict:
         return self.client.get(f"repos/{full_name}/languages", token=self.token).json()
 
     def get_user_organizations(self) -> t.List[dict]:
-        organizations = self.client.get("user/orgs", token=self.token).json()
+        data = self.client.get("user/orgs", token=self.token).json()
+
+        # GitHub repository list contains only simple data, that's why it's required to call
+        # additional request for each organization to get full data.
         full_data = []
-        for org in organizations:
-            data = self.client.get(org["url"], token=self.token).json()
-            full_data.append(data)
+        for organization in data:
+            d = self.client.get(organization["url"], token=self.token).json()
+            full_data.append(d)
+
         return full_data
 
     def get_repository_organization(self, data: dict) -> t.Optional[organizations_models.Organization]:

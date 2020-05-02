@@ -1,7 +1,7 @@
 import typing as t
 
 from .abstract import RemoteService
-from .serializers import GitlabRepositorySync
+from .serializers import GitlabRepositorySync, GitlabOrganizationSync
 from .enums import GitlabNamespaceKind
 
 from openwiden.organizations import models as organizations_models
@@ -9,17 +9,16 @@ from openwiden.organizations import models as organizations_models
 
 class GitlabService(RemoteService):
     repository_sync_serializer = GitlabRepositorySync
+    organization_sync_serializer = GitlabOrganizationSync
 
     def get_user_repos(self) -> t.List[dict]:
-        # TODO: pagination
-        data = self.client.get("projects/?membership=True", token=self.token).json()
-        return data
+        return self.client.get("projects/?membership=True&archived=False", token=self.token).json()
 
     def get_repository_languages(self, repository_id: str) -> dict:
         return self.client.get(f"projects/{repository_id}/languages", token=self.token).json()
 
     def get_user_organizations(self) -> t.List[dict]:
-        return []
+        return self.client.get("groups/?all_available=False&archived=False", token=self.token).json()
 
     def get_repository_organization(self, data: dict) -> t.Optional[organizations_models.Organization]:
         if data["namespace"]["kind"] == GitlabNamespaceKind.ORGANIZATION:

@@ -95,7 +95,6 @@ class OrganizationSync(serializers.ModelSerializer):
             "description",
             "name",
             "created_at",
-            "updated_at",
             "visibility",
         )
 
@@ -117,7 +116,7 @@ class GithubOrganizationSync(OrganizationSync):
         pass
 
     def to_internal_value(self, data):
-        for new_key, old_key in {"remote_id": "id", "url": "html_url",}.items():
+        for new_key, old_key in {"remote_id": "id", "url": "html_url", "name": "login"}.items():
             data[new_key] = data.pop(old_key)
         return super().to_internal_value(data)
 
@@ -127,6 +126,6 @@ class GitlabOrganizationSync(OrganizationSync):
         pass
 
     def to_internal_value(self, data):
-        for new_key, old_key in {"remote_id": "id"}.items():
+        for new_key, old_key in {"remote_id": "id", "url": "web_url"}.items():
             data[new_key] = data.pop(old_key)
         return super().to_internal_value(data)
