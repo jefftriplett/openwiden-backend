@@ -259,7 +259,7 @@ AUTHLIB_OAUTH_CLIENTS = {
         "authorize_url": "https://github.com/login/oauth/authorize",
         "authorize_params": None,
         "api_base_url": "https://api.github.com/",
-        "client_kwargs": {"scope": "user:email"},
+        "client_kwargs": {"scope": "user:email,read:org,admin:repo_hook"},
     },
     "gitlab": {
         "client_id": GITLAB_APP_ID,
@@ -268,7 +268,7 @@ AUTHLIB_OAUTH_CLIENTS = {
         "access_token_params": None,
         "authorize_url": "https://gitlab.com/oauth/authorize",
         "api_base_url": "https://gitlab.com/api/v4/",
-        "client_kwargs": None,
+        "client_kwargs": {"scope": "api"},
     },
 }
 
