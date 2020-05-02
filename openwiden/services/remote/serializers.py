@@ -1,12 +1,24 @@
 from rest_framework import serializers
 
-from openwiden.repositories import models, enums
+from openwiden.repositories import models as repositories_models, enums
+from openwiden.users import models as users_models
 
 
 class RepositorySync(serializers.ModelSerializer):
     class Meta:
-        model = models.Repository
-        exclude = ("version_control_service",)
+        model = repositories_models.Repository
+        fields = (
+            "remote_id",
+            "name",
+            "description",
+            "url",
+            "star_count",
+            "open_issues_count",
+            "forks_count",
+            "created_at",
+            "updated_at",
+            "visibility",
+        )
 
     def create(self, validated_data):
         repository, created = self.Meta.model.objects.update_or_create(
@@ -43,3 +55,29 @@ class GitlabRepositorySync(RepositorySync):
         ):
             data[new_key] = data.pop(key)
         return super().to_internal_value(data)
+
+
+class GitHubUserSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    login = serializers.CharField()
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    avatar_url = serializers.URLField()
+
+
+class GitlabUserSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    login = serializers.CharField()
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    avatar_url = serializers.URLField()
+
+    def to_internal_value(self, data):
+        data["login"] = data.pop("username")
+        return super().to_internal_value(data)
+
+
+class OAuthTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = users_models.OAuth2Token
+        fields = "__all__"

@@ -1,12 +1,14 @@
 import typing as t
 
-from .abstract import ExternalAPIRepositoryService, serializers
+from .abstract import RemoteService
+from .serializers import GitlabRepositorySync
 
 
-class GitlabRepositoryService(ExternalAPIRepositoryService):
-    serializer = serializers.GitlabRepositorySync
+class GitlabService(RemoteService):
+    repository_sync_serializer = GitlabRepositorySync
 
-    def get_repos(self) -> t.List[dict]:
+    def get_user_repos(self) -> t.List[dict]:
+        # TODO: pagination
         return self.client.get(f"users/{self.oauth_token.remote_id}/projects", token=self.token).json()
 
     def get_repository_languages(self, repository_id: str) -> dict:

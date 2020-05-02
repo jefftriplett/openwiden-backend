@@ -6,12 +6,12 @@ from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
+from django.utils.translation import gettext_lazy as _
 from rest_framework.request import Request
 
 from openwiden.users import models
-from openwiden.users.services import exceptions, models as service_models, serializers
-from openwiden.repositories import tasks as repositories_tasks
 from openwiden import enums
+from . import serializers, exceptions, models as service_models, utils
 
 oauth = OAuth()
 oauth.register("github")
@@ -26,7 +26,7 @@ class OAuthService:
         """
         client = oauth.create_client(provider)
         if client is None:
-            raise exceptions.ProviderNotFound(provider)
+            raise exceptions.RemoteException(_("{provider} is not found.").format(provider=provider))
         return client
 
     @staticmethod
@@ -37,7 +37,7 @@ class OAuthService:
         try:
             return client.authorize_access_token(request)
         except AuthlibBaseError as e:
-            raise exceptions.TokenFetchException(e.description)
+            raise exceptions.RemoteException(e.description)
 
     @staticmethod
     def get_profile(provider: str, request: Request) -> "service_models.Profile":
@@ -57,7 +57,7 @@ class OAuthService:
                 profile_data["email"] = emails[0]["email"]
 
         except AuthlibBaseError as e:
-            raise exceptions.ProfileRetrieveException(e.description)
+            raise exceptions.RemoteException(e.description)
         else:
             # Modify raw profile data if needed
             if provider == enums.VersionControlService.GITHUB:
@@ -65,13 +65,13 @@ class OAuthService:
             elif provider == enums.VersionControlService.GITLAB:
                 s = serializers.GitlabUserSerializer(data=profile_data)
             else:
-                raise exceptions.ProviderNotImplemented(provider)
+                raise exceptions.RemoteException(_("{provider} is not implemented.").format(provider=provider))
 
             # Validate profile data before return
             if s.is_valid():
                 return service_models.Profile(**s.data, **token)
             else:
-                raise exceptions.ProfileValidateException(error=s.errors)
+                raise exceptions.RemoteException(error=s.errors)
 
     @staticmethod
     def oauth(provider: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
@@ -172,7 +172,9 @@ class OAuthService:
         # or raise an error on validation error
         if s.is_valid():
             oauth_token = s.save()
-            repositories_tasks.external_repositories_sync(oauth_token)
+            service = utils.get_service(oauth_token)
+            service.sync()
+            # repositories_tasks.external_repositories_sync(oauth_token)
             return oauth_token
         else:
-            raise exceptions.UserServiceException(str(s.errors))
+            raise exceptions.RemoteException(str(s.errors))
