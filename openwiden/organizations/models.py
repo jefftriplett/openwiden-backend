@@ -12,14 +12,12 @@ class Organization(UUIDModel):
     )
     remote_id = models.PositiveIntegerField(_("remote id"))
     name = models.CharField(_("name"), max_length=255)
+    description = models.CharField(_("description"), max_length=255, blank=True, null=True)
 
     url = models.URLField(_("url"), blank=True, null=True)
     avatar_url = models.URLField(_("avatar url"), blank=True, null=True)
 
-    description = models.CharField(_("description"), max_length=255, blank=True, null=True)
-
     created_at = models.DateTimeField(_("created at"), blank=True, null=True)
-    updated_at = models.DateTimeField(_("updated at"), blank=True, null=True)
 
     users = models.ManyToManyField(User, "users", "user", verbose_name=_("organization users"))
 
