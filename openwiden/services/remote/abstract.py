@@ -3,10 +3,12 @@ from abc import ABC, abstractmethod
 
 from django.utils.translation import gettext_lazy as _
 
-from openwiden.users import models as users_models
 from openwiden.services.remote import serializers, exceptions, oauth
+from openwiden.users import models as users_models
 from openwiden.repositories import services as repositories_services
+from openwiden.repositories import models as repositories_models
 from openwiden.organizations import services as organizations_services
+from openwiden.organizations import models as organizations_models
 
 
 class RemoteService(ABC):
@@ -39,7 +41,7 @@ class RemoteService(ABC):
         pass
 
     @abstractmethod
-    def get_repository_languages(self, full_name_or_id: str) -> dict:
+    def get_repository_languages(self, repository: repositories_models.Repository) -> dict:
         """
         Returns repository languages data by calling remote API.
         """
@@ -88,6 +90,13 @@ class RemoteService(ABC):
                 raise exceptions.RemoteSyncException(
                     _("an error occurred while synchronizing repositories, please, try again.")
                 )
+
+    def sync_repository(self, repository: repositories_models.Repository):
+        repository.programming_languages = self.get_repository_languages(repository)
+        repository.save()
+
+    def sync_organization(self, organization: organizations_models.Organization):
+        pass
 
     # def user_organizations_sync(self) -> None:
     #     """

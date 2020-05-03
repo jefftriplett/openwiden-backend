@@ -36,9 +36,7 @@ class OAuth2Token(models.Model):
         return self.access_token
 
     def to_token(self) -> dict:
-        return dict(
-            access_token=self.access_token,
-            token_type=self.token_type,
-            refresh_token=self.refresh_token,
-            expires_at=self.expires_at,
-        )
+        data = dict(access_token=self.access_token, token_type=self.token_type, refresh_token=self.refresh_token,)
+        if self.expires_at:
+            data["expires_at"] = self.expires_at
+        return data

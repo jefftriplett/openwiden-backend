@@ -1,13 +1,17 @@
 import typing as t
 
-# from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+
 # from django.db import models as m
 from datetime import datetime
+
+from django_q.tasks import async_task
 
 from openwiden.repositories import models
 from openwiden import enums
 from openwiden.users import models as users_models
 from openwiden.organizations import models as organizations_models
+from openwiden.services import remote, exceptions
 
 
 class Repository:
@@ -71,6 +75,15 @@ class Repository:
 
         return repository, created
 
+    @staticmethod
+    def add(repository: models.Repository, oauth_token: users_models.OAuth2Token) -> str:
+        if repository.is_added:
+            raise exceptions.ServiceException(_("{repository} already added.").format(repository=repository))
+
+        repository.is_added = True
+        remote_service = remote.get_service(oauth_token)
+        return async_task(remote_service.sync_repository, repository=repository)
+
     # @staticmethod
     # def all() -> m.QuerySet:
     #     """
@@ -78,32 +91,13 @@ class Repository:
     #     """
     #     return models.Repository.objects.all()
     #
-    # @staticmethod
-    # def is_available_to_add(repository: models.Repository) -> t.Tuple[bool, t.Optional[str]]:
-    #     """
-    #     Returns repository status and message, that describes why it's not (if it is).
-    #     """
-    #     if repository.is_added is False:
-    #         if repository.visibility == enums.VisibilityLevel.public:
-    #             return True, None
-    #         else:
-    #             return False, _("{visibility} should be public.").format(visibility=repository.visibility)
-    #     else:
-    #         return False, _("{repository} already added.").format(repository=repository)
-    #
+
     # @staticmethod
     # def added(visibility: str = enums.VisibilityLevel.public) -> m.QuerySet:
     #     """
     #     Returns filtered by "is_added" field repositories QuerySet.
     #     """
     #     return models.Repository.objects.filter(is_added=True, visibility=visibility)
-    #
-    # @staticmethod
-    # def add(repository: models.Repository):
-    #     """
-    #     Adds the specified repository explicitly.
-    #     """
-    #     pass
     #
     # @staticmethod
     # def delete(repository: models.Repository):

@@ -3,6 +3,7 @@ import typing as t
 from .abstract import RemoteService
 from .serializers import GitHubRepositorySync, GithubOrganizationSync
 from .enums import GitHubOwnerType
+from openwiden.repositories import models as repositories_models
 
 
 class GitHubService(RemoteService):
@@ -12,8 +13,9 @@ class GitHubService(RemoteService):
     def get_user_repos(self) -> t.List[dict]:
         return self.client.get("user/repos", token=self.token).json()
 
-    def get_repository_languages(self, full_name: str) -> dict:
-        return self.client.get(f"repos/{full_name}/languages", token=self.token).json()
+    def get_repository_languages(self, repository: repositories_models.Repository) -> list:
+        owner = self.oauth_token.login if repository.owner else repository.organization.name
+        return list(self.client.get(f"repos/{owner}/{repository.name}/languages", token=self.token).json().keys())
 
     def get_user_organizations(self) -> t.List[dict]:
         data = self.client.get("user/orgs", token=self.token).json()

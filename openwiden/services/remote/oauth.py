@@ -1,7 +1,10 @@
+import json
+
 import requests
 import typing as t
 from uuid import uuid4
 
+from authlib.common.encoding import to_unicode
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
@@ -14,9 +17,24 @@ from openwiden.users import models
 from openwiden import enums
 from . import serializers, exceptions, models as service_models, utils
 
+
+def gitlab_compliance_fix(session):
+    """
+    OAuth fix for Gitlab, because Gitlab does not return expires_at.
+    """
+
+    def _fix(response):
+        token = response.json()
+        token["expires_at"] = 60 * 60 * 24  # 1 day in seconds
+        response._content = to_unicode(json.dumps(token)).encode("utf-8")
+        return response
+
+    session.register_compliance_hook("access_token_response", _fix)
+
+
 oauth = OAuth()
 oauth.register("github")
-oauth.register("gitlab")
+oauth.register("gitlab", compliance_fix=gitlab_compliance_fix)
 
 
 class OAuthService:
@@ -47,6 +65,7 @@ class OAuthService:
         """
         client = OAuthService.get_client(provider)
         token = OAuthService.get_token(client, request)
+        print(token)
 
         try:
             profile_data = client.get("user", token=token).json()
