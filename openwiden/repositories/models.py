@@ -39,7 +39,7 @@ class Repository(UUIDModel):
     updated_at = models.DateTimeField(_("updated at"))
 
     programming_languages = ArrayField(
-        models.CharField(_("language"), max_length=50), default=list, verbose_name=_("programming languages")
+        models.CharField(_("language"), max_length=50), blank=True, null=True, verbose_name=_("programming languages")
     )
 
     visibility = models.CharField(_("visibility"), max_length=8, choices=enums.VisibilityLevel.choices)
