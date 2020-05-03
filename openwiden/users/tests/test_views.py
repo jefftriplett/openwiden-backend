@@ -1,57 +1,59 @@
-# from unittest import mock
-#
-# from faker import Faker
-# from urllib.parse import urlencode
-# from django.test import override_settings
-# from rest_framework import status
-#
-# from openwiden.users import exceptions, serializers, views
-# from openwiden.users.tests import factories, fixtures
-# from openwiden.tests.cases import ViewTestCase
-# from openwiden.users.services import exceptions as service_exceptions
-#
-# fake = Faker()
-#
-#
-# @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
-# class OAuthLoginViewTestCase(ViewTestCase):
-#     url_namespace = "auth:login"
-#
-#     def test_oauth_provider_not_found(self):
-#         expected_message = exceptions.OAuthProviderNotFound("test").detail
-#         with self.assertRaisesMessage(exceptions.OAuthProviderNotFound, expected_message):
-#             views.OAuthLoginView.get_client("test")
-#
-#     @mock.patch("openwiden.users.services.oauth.requests.get")
-#     def test_github_provider(self, p):
-#         p.return_value = "test"
-#         url = self.get_url(provider="github")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_302_FOUND)
-#
-#     @mock.patch("openwiden.users.services.oauth.requests.get")
-#     def test_gitlab_provider(self, p):
-#         p.return_value = "test"
-#         url = self.get_url(query=dict(redirect_uri="http://example.com/"), provider="gitlab")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_302_FOUND)
-#
-#     def test_gitlab_provider_no_redirect_uri(self):
-#         url = self.get_url(provider="gitlab")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-#         self.assertEqual(r.data, {"detail": exceptions.GitLabOAuthMissedRedirectURI().detail})
-#
-#     def test_github_provider_redirect_uri_is_correct(self):
-#         redirect_uri = "http://localhost:3000/repositories/"
-#         query = {"redirect_uri": redirect_uri}
-#         query_params = urlencode(query)
-#         url = self.get_url(query=query, provider="github")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_302_FOUND)
-#         self.assertIn(query_params, r.url)
-#
-#
+import pytest
+from rest_framework.response import Response
+
+from openwiden import enums
+from openwiden.users import views, exceptions
+
+
+pytestmark = pytest.mark.django_db
+
+
+class MockClient:
+    @staticmethod
+    def authorize_redirect(request, redirect_uri):
+        return Response("http://fake-redirect.com/", 302)
+
+    @staticmethod
+    def get_mock_client(self, provider):
+        return MockClient()
+
+
+class TestOAuthLoginView:
+    def test_get_client_success(self, settings, authlib_settings_github):
+        provider = enums.VersionControlService.GITHUB
+        settings.AUTHLIB_OAUTH_CLIENTS = {provider: authlib_settings_github}
+
+        client = views.OAuthLoginView.get_client(provider)
+
+        assert client.name == provider
+
+    def test_get_client_raises_oauth_provider_not_found(self, settings):
+        settings.AUTHLIB_OAUTH_CLIENTS = {}
+        provider = "test"
+
+        with pytest.raises(exceptions.OAuthProviderNotFound) as e:
+            views.OAuthLoginView.get_client(provider)
+            assert e.value == exceptions.OAuthProviderNotFound(provider).detail
+
+    def test_get(self, api_rf, user, settings, authlib_settings_gitlab, authlib_settings_github, monkeypatch):
+        monkeypatch.setattr(views.OAuthLoginView, "get_client", MockClient.get_mock_client)
+
+        view = views.OAuthLoginView()
+        request = api_rf.get("fake")
+        request.user = user
+        view.request = request
+        settings.AUTHLIB_OAUTH_CLIENTS = {"github": authlib_settings_github, "gitlab": authlib_settings_gitlab}
+
+        response = view.get(request, enums.VersionControlService.GITHUB)
+
+        assert response.status_code == 302
+
+        with pytest.raises(exceptions.GitLabOAuthMissedRedirectURI) as e:
+            view.get(request, enums.VersionControlService.GITLAB)
+
+            assert e.value == exceptions.GitLabOAuthMissedRedirectURI().detail
+
+
 # @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
 # class OAuthCompleteViewTestCase(ViewTestCase):
 #     url_namespace = "auth:complete"
