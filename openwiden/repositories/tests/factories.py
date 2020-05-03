@@ -10,23 +10,6 @@ from faker import Faker
 fake = Faker()
 
 
-# class ProgrammingLanguage(factory.DjangoModelFactory):
-#     name = fuzzy.FuzzyChoice(["Python", "C++", "C", "Go", "PHP", "Ruby", "C#", "Java", "JavaScript", "Perl"])
-#
-#     class Meta:
-#         model = models.ProgrammingLanguage
-#         django_get_or_create = ("name",)
-
-
-# class VersionControlService(factory.DjangoModelFactory):
-#     name = factory.Faker("text", max_nb_chars=100)
-#     host = factory.Iterator(["github.com", "gitlab.com"])
-#
-#     class Meta:
-#         model = models.VersionControlService
-#         django_get_or_create = ("host",)
-
-
 class Repository(factory.DjangoModelFactory):
     version_control_service = fuzzy.FuzzyChoice(enums.VersionControlService.choices, getter=lambda c: c[0])
     remote_id = fuzzy.FuzzyInteger(1, 10000000)
