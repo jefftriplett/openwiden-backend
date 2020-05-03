@@ -71,6 +71,7 @@ THIRD_PARTY_APPS = (
 )
 
 LOCAL_APPS = (
+    "openwiden",
     "openwiden.users",
     "openwiden.repositories",
     "openwiden.organizations",

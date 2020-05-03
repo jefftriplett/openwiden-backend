@@ -5,4 +5,4 @@ set -o pipefail
 set -o nounset
 
 
-python manage.py qcluster
+python manage.py qcluster_auto_reload
