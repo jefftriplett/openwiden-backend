@@ -29,7 +29,7 @@ class RepositoryFilterTestCase(TestCase):
             filters.Repository.Meta.fields,
             (
                 "version_control_service",
-                "star_count_gte",
+                "stars_count_gte",
                 "open_issues_count_gte",
                 "forks_count_gte",
                 "created_at",
@@ -45,7 +45,7 @@ class RepositoryFilterTestCase(TestCase):
         self.assertTrue(f.qs.filter(name__in=["Test 1", "Test 2", "Test 3"]).count(), 3)
 
     def test_star_count_gte_filter(self):
-        query = {"star_count_gte": 20}
+        query = {"stars_count_gte": 20}
         f = filters.Repository(query, models.Repository.objects.all())
         self.assertEqual(f.qs.count(), 3)
         self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)

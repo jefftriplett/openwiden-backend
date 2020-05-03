@@ -12,6 +12,7 @@ class ProgrammingLanguage(serializers.ModelSerializer):
 class Repository(serializers.ModelSerializer):
     version_control_service = serializers.CharField(source="version_control_service.host")
     programming_language = ProgrammingLanguage()
+    stars_count = serializers.IntegerField(source="star_count")
 
     class Meta:
         model = models.Repository
@@ -21,7 +22,7 @@ class Repository(serializers.ModelSerializer):
             "name",
             "description",
             "url",
-            "star_count",
+            "stars_count",
             "open_issues_count",
             "forks_count",
             "created_at",
