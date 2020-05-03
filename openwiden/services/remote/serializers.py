@@ -22,14 +22,6 @@ class RepositorySync(serializers.ModelSerializer):
             "visibility",
         )
 
-    def create(self, validated_data):
-        repository, created = self.Meta.model.objects.update_or_create(
-            version_control_service=validated_data["version_control_service"],
-            remote_id=validated_data["remote_id"],
-            defaults=validated_data,
-        )
-        return repository
-
 
 class GitHubRepositorySync(RepositorySync):
     class Meta(RepositorySync.Meta):
@@ -97,18 +89,6 @@ class OrganizationSync(serializers.ModelSerializer):
             "created_at",
             "visibility",
         )
-
-    def create(self, validated_data):
-        user = validated_data.pop("user")
-
-        instance, created = organization_models.Organization.objects.update_or_create(
-            version_control_service=validated_data["version_control_service"],
-            remote_id=validated_data["remote_id"],
-            defaults=validated_data,
-        )
-
-        instance.users.add(user)
-        return instance
 
 
 class GithubOrganizationSync(OrganizationSync):

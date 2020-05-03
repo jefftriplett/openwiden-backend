@@ -4,8 +4,6 @@ from .abstract import RemoteService
 from .serializers import GitlabRepositorySync, GitlabOrganizationSync
 from .enums import GitlabNamespaceKind
 
-from openwiden.organizations import models as organizations_models
-
 
 class GitlabService(RemoteService):
     repository_sync_serializer = GitlabRepositorySync
@@ -20,12 +18,7 @@ class GitlabService(RemoteService):
     def get_user_organizations(self) -> t.List[dict]:
         return self.client.get("groups/?all_available=False&archived=False", token=self.token).json()
 
-    def get_repository_organization(self, data: dict) -> t.Optional[organizations_models.Organization]:
-        if data["namespace"]["kind"] == GitlabNamespaceKind.ORGANIZATION:
-            organization, created = organizations_models.Organization.objects.get_or_create(
-                version_control_service=self.provider,
-                remote_id=data["namespace"]["id"],
-                defaults=dict(name=data["namespace"]["name"]),
-            )
-            return organization
+    def parse_organization_id_and_name(self, repository_data: dict) -> t.Optional[t.Tuple[int, str]]:
+        if repository_data["namespace"]["kind"] == GitlabNamespaceKind.ORGANIZATION:
+            return repository_data["namespace"]["id"], repository_data["namespace"]["name"]
         return None

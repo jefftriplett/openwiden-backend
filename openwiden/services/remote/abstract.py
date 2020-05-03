@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 from django.utils.translation import gettext_lazy as _
 
 from openwiden.users import models as users_models
-from openwiden.organizations import models as organizations_models
 from openwiden.services.remote import serializers, exceptions, oauth
+from openwiden.repositories import services as repositories_services
+from openwiden.organizations import services as organizations_services
 
 
 class RemoteService(ABC):
@@ -24,7 +25,7 @@ class RemoteService(ABC):
         self.client = oauth.OAuthService.get_client(self.provider)
 
     @abstractmethod
-    def get_repository_organization(self, data: dict) -> t.Optional[organizations_models.Organization]:
+    def parse_organization_id_and_name(self, repository_data: dict) -> t.Optional[t.Tuple[int, str]]:
         """
         Returns repository organization or None if repository owner is user.
         """
@@ -61,34 +62,53 @@ class RemoteService(ABC):
 
             # Check if serializer is valid and try to save repository.
             if serializer.is_valid():
+                repository_kwargs = dict(version_control_service=self.provider, **serializer.validated_data)
 
-                # Get repository organization (if exist) and build default kwargs for serializer save call
-                organization = self.get_repository_organization(data)
-                kwargs = dict(organization=organization, owner=None, version_control_service=self.oauth_token.provider)
+                # Parse repository data to check repository owner type - organization or user
+                # and create or update organization if organization data exist.
+                organization_data = self.parse_organization_id_and_name(data)
+                if organization_data:
 
-                # Organization is None when repository owner is current user
-                if organization is None:
-                    kwargs["owner"] = self.user
+                    # Sync organization with specified data
+                    remote_id, name = organization_data
+                    organization = organizations_services.Organization.sync(
+                        version_control_service=self.provider, remote_id=remote_id, name=name,
+                    )[0]
 
-                # Sync specified data (create or update new repository)
-                serializer.save(**kwargs)
+                    # Add organization to repository sync kwargs
+                    repository_kwargs["organization"] = organization
+
+                    # Add current user to the organization
+                    organizations_services.Organization.add_user(organization, self.user)
+                else:
+                    repository_kwargs["owner"] = self.user
+
+                # Sync repository
+                repositories_services.Repository.sync(**repository_kwargs)
             else:
                 raise exceptions.RemoteSyncException(
                     _("an error occurred while synchronizing repositories, please, try again.")
                 )
 
-    def user_organizations_sync(self) -> t.List[organizations_models.Organization]:
+    def user_organizations_sync(self) -> None:
         """
         Synchronizes user's organizations from remote API.
         """
-        data = self.get_user_organizations()
-        serializer = self.organization_sync_serializer(data=data, many=True)
-        if serializer.is_valid():
-            return serializer.save(version_control_service=self.oauth_token.provider, user=self.user)
-        else:
-            raise exceptions.RemoteSyncException(
-                _("an error occurred while synchronizing organizations, please, try again.")
-            )
+        organizations_data = self.get_user_organizations()
+
+        for data in organizations_data:
+            serializer = self.organization_sync_serializer(data=data)
+
+            # Try to sync organization with validated data
+            if serializer.is_valid():
+                organization = organizations_services.Organization.sync(
+                    version_control_service=self.provider, **serializer.validated_data,
+                )[0]
+                organizations_services.Organization.add_user(organization, self.user)
+            else:
+                raise exceptions.RemoteSyncException(
+                    _("an error occurred while synchronizing organizations, please, try again.")
+                )
 
     def sync(self):
         """

@@ -4,8 +4,6 @@ from .abstract import RemoteService
 from .serializers import GitHubRepositorySync, GithubOrganizationSync
 from .enums import GitHubOwnerType
 
-from openwiden.organizations import models as organizations_models
-
 
 class GitHubService(RemoteService):
     repository_sync_serializer = GitHubRepositorySync
@@ -29,12 +27,7 @@ class GitHubService(RemoteService):
 
         return full_data
 
-    def get_repository_organization(self, data: dict) -> t.Optional[organizations_models.Organization]:
-        if data["owner"]["type"] == GitHubOwnerType.ORGANIZATION:
-            organization, updated = organizations_models.Organization.objects.get_or_create(
-                version_control_service=self.provider,
-                remote_id=data["owner"]["id"],
-                defaults=dict(name=data["owner"]["login"]),
-            )
-            return organization
+    def parse_organization_id_and_name(self, repository_data: dict) -> t.Optional[t.Tuple[int, str]]:
+        if repository_data["owner"]["type"] == GitHubOwnerType.ORGANIZATION:
+            return repository_data["owner"]["id"], repository_data["owner"]["login"]
         return None
