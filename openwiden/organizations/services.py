@@ -25,7 +25,7 @@ class Organization:
                 name=name,
                 description=description,
                 url=url,
-                avatar_ur=avatar_url,
+                avatar_url=avatar_url,
                 created_at=created_at,
                 visibility=visibility,
             ),

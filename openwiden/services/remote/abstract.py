@@ -52,24 +52,23 @@ class RemoteService(ABC):
         """
         pass
 
-    def user_repositories_sync(self) -> None:
+    def sync(self) -> None:
         """
-        Synchronizes user's repositories from remote API.
+        Synchronizes user's repositories and organizations for a new created oauth token.
         """
         repositories_data = self.get_user_repos()
         for data in repositories_data:
-            serializer = self.repository_sync_serializer(data=data)
+            # Parse repository data to check repository owner type - organization or user
+            # and create or update organization if organization data exist.
+            organization_data = self.parse_organization_id_and_name(data)
 
             # Check if serializer is valid and try to save repository.
+            serializer = self.repository_sync_serializer(data=data)
             if serializer.is_valid():
                 repository_kwargs = dict(version_control_service=self.provider, **serializer.validated_data)
 
-                # Parse repository data to check repository owner type - organization or user
-                # and create or update organization if organization data exist.
-                organization_data = self.parse_organization_id_and_name(data)
+                # Sync organization with specified data
                 if organization_data:
-
-                    # Sync organization with specified data
                     remote_id, name = organization_data
                     organization = organizations_services.Organization.sync(
                         version_control_service=self.provider, remote_id=remote_id, name=name,
@@ -90,29 +89,22 @@ class RemoteService(ABC):
                     _("an error occurred while synchronizing repositories, please, try again.")
                 )
 
-    def user_organizations_sync(self) -> None:
-        """
-        Synchronizes user's organizations from remote API.
-        """
-        organizations_data = self.get_user_organizations()
-
-        for data in organizations_data:
-            serializer = self.organization_sync_serializer(data=data)
-
-            # Try to sync organization with validated data
-            if serializer.is_valid():
-                organization = organizations_services.Organization.sync(
-                    version_control_service=self.provider, **serializer.validated_data,
-                )[0]
-                organizations_services.Organization.add_user(organization, self.user)
-            else:
-                raise exceptions.RemoteSyncException(
-                    _("an error occurred while synchronizing organizations, please, try again.")
-                )
-
-    def sync(self):
-        """
-        Synchronizes user's data from remote API.
-        """
-        self.user_repositories_sync()
-        self.user_organizations_sync()
+    # def user_organizations_sync(self) -> None:
+    #     """
+    #     Synchronizes user's organizations from remote API.
+    #     """
+    #     organizations_data = self.get_user_organizations()
+    #
+    #     for data in organizations_data:
+    #         serializer = self.organization_sync_serializer(data=data)
+    #
+    #         # Try to sync organization with validated data
+    #         if serializer.is_valid():
+    #             organization = organizations_services.Organization.sync(
+    #                 version_control_service=self.provider, **serializer.validated_data,
+    #             )[0]
+    #             organizations_services.Organization.add_user(organization, self.user)
+    #         else:
+    #             raise exceptions.RemoteSyncException(
+    #                 _("an error occurred while synchronizing organizations, please, try again.")
+    #             )

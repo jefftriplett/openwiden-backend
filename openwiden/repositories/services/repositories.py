@@ -2,6 +2,8 @@ import typing as t
 
 # from django.utils.translation import gettext_lazy as _
 # from django.db import models as m
+from datetime import datetime
+
 from openwiden.repositories import models
 from openwiden import enums
 from openwiden.users import models as users_models
@@ -15,6 +17,8 @@ class Repository:
         remote_id: int,
         name: str,
         url: str,
+        created_at: datetime,
+        updated_at: datetime,
         description: str = None,
         owner: users_models.User = None,
         organization: organizations_models.Organization = None,
@@ -38,6 +42,8 @@ class Repository:
             forks_count=forks_count,
             programming_languages=programming_languages,
             visibility=visibility,
+            created_at=created_at,
+            updated_at=updated_at,
         )
 
         # Try to create or update repository
