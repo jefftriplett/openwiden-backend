@@ -4,7 +4,7 @@ from rest_framework import views, permissions as drf_permissions, status, viewse
 from rest_framework.response import Response
 
 from openwiden import enums
-from openwiden.users import exceptions, filters, models, permissions, serializers, services
+from openwiden.users import exceptions, models, permissions, serializers, services
 from openwiden.services import remote
 from openwiden.services.remote import exceptions as remote_service_exceptions
 
@@ -59,7 +59,6 @@ class OAuthCompleteView(views.APIView):
     """
 
     permission_classes = (drf_permissions.AllowAny,)
-    filter_backends = (filters.OAuthCompleteFilter,)
 
     def get(self, request, provider: str):
         try:
