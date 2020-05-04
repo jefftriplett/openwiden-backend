@@ -19,8 +19,6 @@ class Organization(UUIDModel):
 
     created_at = models.DateTimeField(_("created at"), blank=True, null=True)
 
-    users = models.ManyToManyField(User, "users", "user", verbose_name=_("organization users"))
-
     visibility = models.CharField(
         max_length=8,
         blank=True,
@@ -39,3 +37,19 @@ class Organization(UUIDModel):
 
     def __str__(self):
         return self.name
+
+
+class Member(UUIDModel):
+    organization = models.ForeignKey(Organization, models.CASCADE, "members", "member", verbose_name=_("organization"))
+    user = models.ForeignKey(User, models.CASCADE, "+", verbose_name=_("user"))
+
+    is_admin = models.BooleanField(_("has admin permissions"), default=False)
+
+    class Meta:
+        order_with_respect_to = "organization"
+        verbose_name = _("member")
+        verbose_name_plural = _("list of members")
+        constraints = (models.UniqueConstraint(fields=("user", "organization"), name="unique_member"),)
+
+    def __str__(self):
+        return self.user.username
