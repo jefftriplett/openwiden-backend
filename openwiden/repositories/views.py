@@ -35,7 +35,7 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
     def add(self, request, *args, **kwargs):
         repository = self.get_object()
         try:
-            task_id = services.Repository.add(repository=repository, user=self.request.user)
+            task_id = services.Repository.add(repo=repository, user=self.request.user)
         except ServiceException as e:
             return Response(e.description, status=status.HTTP_400_BAD_REQUEST)
         else:

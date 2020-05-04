@@ -76,24 +76,27 @@ class Repository:
         return repository, created
 
     @staticmethod
-    def add(repository: models.Repository, user: users_models.User) -> str:
-        oauth_token = users_services.OAuthToken.get_token(user, repository.version_control_service)
+    def add(repo: models.Repository, user: users_models.User) -> str:
+        oauth_token = users_services.OAuthToken.get_token(user, repo.version_control_service)
 
         # Check if repository is already added and raise an error if yes
-        if repository.is_added:
+        if repo.is_added:
             raise exceptions.ServiceException(_("Repository already added."))
-        elif repository.visibility == enums.VisibilityLevel.private:
+        elif repo.visibility == enums.VisibilityLevel.private:
             raise exceptions.ServiceException(_("Repository is private and cannot be added."))
 
         # Set is_added True for now, but save in sync action (if success)
-        repository.is_added = True
+        repo.is_added = True
 
         # Call repository sync action
         remote_service = remote.get_service(oauth_token)
-        return async_task(remote_service.sync_repository, repository=repository)
+        return async_task(remote_service.sync_repo, repo=repo)
 
     @staticmethod
     def get_user_repos(user: users_models.User) -> m.QuerySet:
+        """
+        Returns user's repos filters by owner or organization membership.
+        """
         return models.Repository.objects.filter(m.Q(owner=user) | m.Q(organization__member__user=user))
 
     @staticmethod
@@ -111,5 +114,5 @@ class Repository:
         return cls.added(enums.VisibilityLevel.public)
 
     @staticmethod
-    def delete(repository: models.Repository):
+    def delete(repo: models.Repository):
         pass

@@ -5,8 +5,8 @@ from django.utils.translation import gettext_lazy as _
 
 from openwiden.services.remote import serializers, exceptions, oauth
 from openwiden.users import models as users_models
-from openwiden.repositories import services as repositories_services
-from openwiden.repositories import models as repositories_models
+from openwiden.repositories import services as repo_services
+from openwiden.repositories import models as repo_models
 from openwiden.organizations import services as org_services
 from openwiden.organizations import models as org_models
 
@@ -16,8 +16,9 @@ class RemoteService(ABC):
     Abstract class for all services implementation.
     """
 
-    repository_sync_serializer: t.Type[serializers.RepositorySync] = None
-    organization_sync_serializer: t.Type[serializers.OrganizationSync] = None
+    repo_sync_serializer: t.Type[serializers.RepositorySync] = None
+    org_sync_serializer: t.Type[serializers.OrganizationSync] = None
+    issue_sync_serializer: t.Type[serializers.IssueSync] = None
 
     def __init__(self, oauth_token: users_models.OAuth2Token):
         self.oauth_token = oauth_token
@@ -27,7 +28,7 @@ class RemoteService(ABC):
         self.client = oauth.OAuthService.get_client(self.provider)
 
     @abstractmethod
-    def parse_organization_slug(self, repository_data: dict) -> t.Optional[str]:
+    def parse_org_slug(self, repo_data: dict) -> t.Optional[str]:
         """
         Returns repository organization id or None if repository owner is user.
         """
@@ -41,14 +42,21 @@ class RemoteService(ABC):
         pass
 
     @abstractmethod
-    def get_repository_languages(self, repository: repositories_models.Repository) -> dict:
+    def get_repo_languages(self, repo: repo_models.Repository) -> dict:
         """
         Returns repository languages data by calling remote API.
         """
         pass
 
     @abstractmethod
-    def get_organization(self, slug: str) -> dict:
+    def get_repo_issues(self, repo: repo_models.Repository) -> t.List[dict]:
+        """
+        Returns repository issues data by calling remote API.
+        """
+        pass
+
+    @abstractmethod
+    def get_org(self, slug: str) -> dict:
         """
         Returns organization data by slug field.
         GitHub: name.
@@ -71,31 +79,53 @@ class RemoteService(ABC):
         for data in repositories_data:
 
             # Check if serializer is valid and try to save repository.
-            serializer = self.repository_sync_serializer(data=data)
+            serializer = self.repo_sync_serializer(data=data)
             if serializer.is_valid():
                 repository_kwargs = dict(version_control_service=self.provider, **serializer.validated_data)
 
                 # Sync organization or just add user as owner
-                organization_slug = self.parse_organization_slug(data)
+                organization_slug = self.parse_org_slug(data)
                 if organization_slug:
                     organization = self.sync_org(slug=organization_slug)
                     repository_kwargs["organization"] = organization
                 else:
                     repository_kwargs["owner"] = self.user
 
-                # Sync repository
-                repositories_services.Repository.sync(**repository_kwargs)
+                # Sync repository locally
+                repo_services.Repository.sync(**repository_kwargs)
             else:
                 raise exceptions.RemoteSyncException(
                     _("an error occurred while synchronizing repository, please, try again.")
                 )
 
-    def sync_repository(self, repository: repositories_models.Repository):
+    def sync_repo(self, repo: repo_models.Repository):
         """
-        Synchronizes repository: languages, issues.
+        Synchronizes repository.
         """
-        repository.programming_languages = self.get_repository_languages(repository)
-        repository.save(update_fields=("programming_languages",))
+        self.sync_repo_issues(repo)
+        repo.programming_languages = self.get_repo_languages(repo)
+        repo.save(update_fields=("programming_languages", "is_added"))
+
+    def sync_repo_issues(self, repo: repo_models.Repository):
+        """
+        Synchronizes repository issues.
+        """
+        issues = self.get_repo_issues(repo)
+
+        if issues:
+            serializer = self.issue_sync_serializer(data=issues, many=True)
+            if serializer.is_valid():
+                for data in serializer.validated_data:
+                    repo_services.Issue.sync(repo, **data)
+            else:
+                raise exceptions.RemoteSyncException(
+                    _("an error occurred while synchronizing issues, please, try again. Errors: {e}").format(
+                        e=serializer.errors
+                    )
+                )
+
+    def create_repo_webhook(self, repo: repo_models.Repository):
+        pass
 
     def sync_org(self, *, org: org_models.Organization = None, slug: str = None):
         """
@@ -104,15 +134,15 @@ class RemoteService(ABC):
         assert org or slug, "organization instance or slug should be specified."
 
         # Get organization data and pass for validate
-        org_data = self.get_organization(slug or org.name)
-        org_serializer = self.organization_sync_serializer(data=org_data)
+        org_data = self.get_org(slug or org.name)
+        org_serializer = self.org_sync_serializer(data=org_data)
 
         if org_serializer.is_valid():
             organization = org_services.Organization.sync(
                 version_control_service=self.provider, **org_serializer.validated_data
             )[0]
             # Sync organization and membership for a current user
-            self.sync_organization_membership(organization)
+            self.sync_org_membership(organization)
         else:
             raise exceptions.RemoteSyncException(
                 _("an error occurred while synchronizing organization, please, try again.")
@@ -120,7 +150,7 @@ class RemoteService(ABC):
 
         return organization
 
-    def sync_organization_membership(self, organization: org_models.Organization) -> None:
+    def sync_org_membership(self, organization: org_models.Organization) -> None:
         """
         Synchronizes organization membership for a current user.
         """

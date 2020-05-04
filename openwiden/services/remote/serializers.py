@@ -111,3 +111,49 @@ class GitlabOrganizationSync(OrganizationSync):
         for new_key, old_key in {"remote_id": "id", "url": "web_url"}.items():
             data[new_key] = data.pop(old_key)
         return super().to_internal_value(data)
+
+
+class IssueSync(serializers.ModelSerializer):
+    class Meta:
+        model = repositories_models.Issue
+        fields = (
+            "remote_id",
+            "title",
+            "description",
+            "state",
+            "labels",
+            "url",
+            "created_at",
+            "updated_at",
+            "closed_at",
+        )
+
+
+class GitHubIssueSync(IssueSync):
+    class Meta(IssueSync.Meta):
+        pass
+
+    def to_internal_value(self, data):
+        for new_key, old_key in {"remote_id": "id", "description": "body", "url": "html_url"}.items():
+            data[new_key] = data.pop(old_key)
+
+        # Parse labels
+        if data["labels"]:
+            data["labels"] = [label["name"] for label in data["labels"]]
+
+        return super().to_internal_value(data)
+
+
+class GitlabIssueSync(IssueSync):
+    class Meta(IssueSync.Meta):
+        pass
+
+    def to_internal_value(self, data):
+        for new_key, old_key in {"remote_id": "id", "url": "web_url"}.items():
+            data[new_key] = data.pop(old_key)
+
+        # Change "opened" state to "open"
+        if data["state"] == "opened":
+            data["state"] = "open"
+
+        return super().to_internal_value(data)
