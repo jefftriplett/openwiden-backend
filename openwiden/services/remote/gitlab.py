@@ -5,6 +5,7 @@ from .abstract import RemoteService
 from .serializers import GitlabRepositorySync, GitlabOrganizationSync
 from .enums import GitlabNamespaceKind
 from openwiden.organizations import models as org_models
+from openwiden.repositories import models as repo_models
 from django.utils.translation import gettext_lazy as _
 
 
@@ -15,8 +16,13 @@ class GitlabService(RemoteService):
     def get_user_repos(self) -> t.List[dict]:
         return self.client.get("projects/?membership=True&archived=False&visibility=public", token=self.token).json()
 
-    def get_repository_languages(self, repository_id: str) -> dict:
-        return self.client.get(f"projects/{repository_id}/languages", token=self.token).json()
+    def get_repository_languages(self, repo: repo_models.Repository) -> dict:
+        r = self.client.get(f"projects/{repo.remote_id}/languages", token=self.token)
+
+        if r.status_code == 200:
+            return r.json()
+        else:
+            raise exceptions.RemoteSyncException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
 
     def parse_organization_slug(self, repository_data: dict) -> t.Optional[str]:
         if repository_data["namespace"]["kind"] == GitlabNamespaceKind.ORGANIZATION:

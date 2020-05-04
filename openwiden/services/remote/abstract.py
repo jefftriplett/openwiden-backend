@@ -49,15 +49,23 @@ class RemoteService(ABC):
 
     @abstractmethod
     def get_organization(self, slug: str) -> dict:
+        """
+        Returns organization data by slug field.
+        GitHub: name.
+        Gitlab: id.
+        """
         pass
 
     @abstractmethod
     def check_org_membership(self, organization: org_models.Organization) -> t.Tuple[bool, bool]:
+        """
+        Checks organization membership for a current user and returns tuple: is_member & is_admin.
+        """
         pass
 
     def sync(self) -> None:
         """
-        Synchronizes user's repositories and organizations for a new created oauth token.
+        Synchronizes user's repositories and organizations.
         """
         repositories_data = self.get_user_repos()
         for data in repositories_data:
@@ -83,8 +91,11 @@ class RemoteService(ABC):
                 )
 
     def sync_repository(self, repository: repositories_models.Repository):
+        """
+        Synchronizes repository: languages, issues.
+        """
         repository.programming_languages = self.get_repository_languages(repository)
-        repository.save(update_fields=("programming_languages", "is_added",))
+        repository.save(update_fields=("programming_languages",))
 
     def sync_org(self, *, org: org_models.Organization = None, slug: str = None):
         """
