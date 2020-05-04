@@ -65,7 +65,6 @@ class OAuthService:
         """
         client = OAuthService.get_client(provider)
         token = OAuthService.get_token(client, request)
-        print(token)
 
         try:
             profile_data = client.get("user", token=token).json()
@@ -91,7 +90,7 @@ class OAuthService:
             if s.is_valid():
                 return service_models.Profile(**s.data, **token)
             else:
-                raise exceptions.RemoteException(error=s.errors)
+                raise exceptions.RemoteException(_("Unexpected error occurred."), error=s.errors)
 
     @staticmethod
     def oauth(provider: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
