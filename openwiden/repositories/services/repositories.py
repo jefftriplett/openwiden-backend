@@ -26,10 +26,10 @@ class Repository:
         description: str = None,
         owner: users_models.User = None,
         organization: organizations_models.Organization = None,
-        star_count: int = 0,
+        stars_count: int = 0,
         open_issues_count: int = 0,
         forks_count: int = 0,
-        programming_languages: t.List[str] = None,
+        programming_languages: dict = None,
         visibility: str = enums.VisibilityLevel.private,
     ) -> t.Tuple[models.Repository, bool]:
         """
@@ -41,7 +41,7 @@ class Repository:
             description=description,
             owner=owner,
             organization=organization,
-            star_count=star_count,
+            stars_count=stars_count,
             open_issues_count=open_issues_count,
             forks_count=forks_count,
             programming_languages=programming_languages,

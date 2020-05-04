@@ -14,7 +14,7 @@ class RepositorySync(serializers.ModelSerializer):
             "name",
             "description",
             "url",
-            "star_count",
+            "stars_count",
             "open_issues_count",
             "forks_count",
             "created_at",
@@ -32,7 +32,8 @@ class GitHubRepositorySync(RepositorySync):
         Note: visibility parameter is not yet implemented:
         https://developer.github.com/changes/2019-12-03-internal-visibility-changes/
         """
-        data["remote_id"] = data.pop("id")
+        for new_key, old_key in {"remote_id": "id", "stars_count": "stargazers_count"}.items():
+            data[new_key] = data.pop(old_key)
         data["visibility"] = enums.VisibilityLevel.private if data["private"] else enums.VisibilityLevel.public
         return super().to_internal_value(data)
 
@@ -45,6 +46,7 @@ class GitlabRepositorySync(RepositorySync):
         for new_key, key in (
             ("remote_id", "id"),
             ("url", "web_url"),
+            ("stars_count", "star_count"),
             ("updated_at", "last_activity_at"),
         ):
             data[new_key] = data.pop(key)

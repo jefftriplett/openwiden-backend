@@ -15,7 +15,7 @@ class Repository(UUIDModel):
     )
     remote_id = models.PositiveIntegerField(_("remote repository id"))
     name = models.CharField(_("name"), max_length=255)
-    description = models.TextField(_("description"), blank=True)
+    description = models.TextField(_("description"), blank=True, null=True)
     url = models.URLField(_("url"))
 
     owner = models.ForeignKey(
@@ -31,7 +31,7 @@ class Repository(UUIDModel):
         verbose_name=_("organization"),
     )
 
-    star_count = models.PositiveIntegerField(_("star count"), default=0)
+    stars_count = models.PositiveIntegerField(_("stars count"), default=0)
     open_issues_count = models.PositiveSmallIntegerField(_("open issues count"), default=0)
     forks_count = models.PositiveSmallIntegerField(_("forks count"), default=0)
 
