@@ -1,10 +1,7 @@
-import json
-
 import requests
 import typing as t
 from uuid import uuid4
 
-from authlib.common.encoding import to_unicode
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
@@ -18,23 +15,42 @@ from openwiden import enums
 from . import serializers, exceptions, models as service_models, utils
 
 
-def gitlab_compliance_fix(session):
+# def gitlab_compliance_fix(session):
+#     """
+#     OAuth fix for Gitlab, because Gitlab does not return expires_at.
+#     """
+#
+#     def _fix(response):
+#         token = response.json()
+#         token["expires_at"] = 60 * 60 * 24  # 1 day in seconds
+#         response._content = to_unicode(json.dumps(token)).encode("utf-8")
+#         return response
+#
+#     session.register_compliance_hook("access_token_response", _fix)
+
+
+def update_token(provider, token, refresh_token=None, access_token=None):
     """
-    OAuth fix for Gitlab, because Gitlab does not return expires_at.
+    OAuth token update handler for authlib.
     """
+    if refresh_token:
+        qs = models.OAuth2Token.objects.filter(provider=provider, refresh_token=refresh_token)
+    elif access_token:
+        qs = models.OAuth2Token.objects.filter(provider=provider, access_token=access_token)
+    else:
+        return None
 
-    def _fix(response):
-        token = response.json()
-        token["expires_at"] = 60 * 60 * 24  # 1 day in seconds
-        response._content = to_unicode(json.dumps(token)).encode("utf-8")
-        return response
+    if qs.exists():
+        oauth_token = qs.first()
+        oauth_token.access_token = token["access_token"]
+        oauth_token.refresh_token = token["refresh_token"]
+        oauth_token.expires_at = token["expires_at"]
+        oauth_token.save(update_fields=("access_token", "refresh_token", "expires_at"))
 
-    session.register_compliance_hook("access_token_response", _fix)
 
-
-oauth = OAuth()
+oauth = OAuth(update_token=update_token)
 oauth.register("github")
-oauth.register("gitlab", compliance_fix=gitlab_compliance_fix)
+oauth.register("gitlab")  # compliance_fix=gitlab_compliance_fix
 
 
 class OAuthService:
