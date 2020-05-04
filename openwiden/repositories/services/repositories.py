@@ -1,15 +1,15 @@
 import typing as t
 
 from django.utils.translation import gettext_lazy as _
+from django.db import models as m
 
-# from django.db import models as m
 from datetime import datetime
 
 from django_q.tasks import async_task
 
 from openwiden.repositories import models
 from openwiden import enums
-from openwiden.users import models as users_models
+from openwiden.users import models as users_models, services as users_services
 from openwiden.organizations import models as organizations_models
 from openwiden.services import remote, exceptions
 
@@ -76,32 +76,40 @@ class Repository:
         return repository, created
 
     @staticmethod
-    def add(repository: models.Repository, oauth_token: users_models.OAuth2Token) -> str:
-        if repository.is_added:
-            raise exceptions.ServiceException(_("{repository} already added.").format(repository=repository))
+    def add(repository: models.Repository, user: users_models.User) -> str:
+        oauth_token = users_services.OAuthToken.get_token(user, repository.version_control_service)
 
+        # Check if repository is already added and raise an error if yes
+        if repository.is_added:
+            raise exceptions.ServiceException(_("Repository already added."))
+        elif repository.visibility == enums.VisibilityLevel.private:
+            raise exceptions.ServiceException(_("Repository is private and cannot be added."))
+
+        # Set is_added True for now, but save in sync action (if success)
         repository.is_added = True
+
+        # Call repository sync action
         remote_service = remote.get_service(oauth_token)
         return async_task(remote_service.sync_repository, repository=repository)
 
-    # @staticmethod
-    # def all() -> m.QuerySet:
-    #     """
-    #     Returns all repositories QuerySet.
-    #     """
-    #     return models.Repository.objects.all()
-    #
+    @staticmethod
+    def get_user_repos(user: users_models.User) -> m.QuerySet:
+        return models.Repository.objects.filter(m.Q(owner=user) | m.Q(organization__member__user=user))
 
-    # @staticmethod
-    # def added(visibility: str = enums.VisibilityLevel.public) -> m.QuerySet:
-    #     """
-    #     Returns filtered by "is_added" field repositories QuerySet.
-    #     """
-    #     return models.Repository.objects.filter(is_added=True, visibility=visibility)
-    #
-    # @staticmethod
-    # def delete(repository: models.Repository):
-    #     """
-    #     Soft deletes the specified repository.
-    #     """
-    #     pass
+    @staticmethod
+    def added(visibility: str = enums.VisibilityLevel.public) -> m.QuerySet:
+        """
+        Returns repositories QuerySet filtered by "is_added" field and optional visibility (default is public).
+        """
+        return models.Repository.objects.filter(is_added=True, visibility=visibility)
+
+    @classmethod
+    def added_and_public(cls) -> m.QuerySet:
+        """
+        Returns added and public visible repositories also known as "OpenWiden".
+        """
+        return cls.added(enums.VisibilityLevel.public)
+
+    @staticmethod
+    def delete(repository: models.Repository):
+        pass

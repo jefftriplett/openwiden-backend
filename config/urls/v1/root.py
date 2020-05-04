@@ -11,11 +11,9 @@ router.register("repositories", repository_views.Repository, basename="repositor
 repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
 repository_router.register("issues", repository_views.Issue, basename="issue")
 
-# Programming languages
-# router.register("programming_languages", repository_views.ProgrammingLanguage, basename="programming_language")
-
 # User
 router.register("users", user_views.UserViewSet, basename="user")
+router.register("user/repositories", repository_views.UserRepositories, basename="user-repos")
 
 urlpatterns = [
     path("auth/", include(("config.urls.v1.auth", "auth"), namespace="auth")),

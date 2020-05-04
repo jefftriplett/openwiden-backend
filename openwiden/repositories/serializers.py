@@ -14,7 +14,7 @@ class Repository(serializers.ModelSerializer):
             "name",
             "description",
             "url",
-            "star_count",
+            "stars_count",
             "open_issues_count",
             "forks_count",
             "created_at",

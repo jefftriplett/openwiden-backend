@@ -7,7 +7,7 @@ from openwiden import enums
 class Repository(filters.FilterSet):
     version_control_service = filters.ChoiceFilter(choices=enums.VersionControlService.choices)
 
-    stars_count_gte = filters.NumberFilter(field_name="star_count", lookup_expr="gte")
+    stars_count_gte = filters.NumberFilter(field_name="stars_count", lookup_expr="gte")
     open_issues_count_gte = filters.NumberFilter(field_name="open_issues_count", lookup_expr="gte")
     forks_count_gte = filters.NumberFilter(field_name="forks_count", lookup_expr="gte")
 
