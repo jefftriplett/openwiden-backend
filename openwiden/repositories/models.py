@@ -1,12 +1,12 @@
 from django.contrib.postgres.fields import ArrayField, HStoreField
 from django.db import models
 from model_utils.models import UUIDModel
-from model_utils import Choices
 from django.utils.translation import gettext_lazy as _
 
 from openwiden import enums
 from openwiden.organizations.models import Organization
 from openwiden.users.models import User
+from openwiden.repositories import enums as repo_enums
 
 
 class Repository(UUIDModel):
@@ -56,8 +56,6 @@ class Repository(UUIDModel):
 
 
 class Issue(UUIDModel):
-    STATE_CHOICES = Choices(("open", "Open"), ("closed", "Closed"),)
-
     repository = models.ForeignKey(
         Repository, models.CASCADE, related_name="issues", related_query_name="issue", verbose_name=_("repository")
     )
@@ -66,8 +64,8 @@ class Issue(UUIDModel):
     title = models.CharField(_("title"), max_length=255)
     description = models.TextField(_("description"))
 
-    state = models.CharField(_("state"), max_length=30, choices=STATE_CHOICES)
-    labels = ArrayField(models.CharField(_("label"), max_length=50))
+    state = models.CharField(_("state"), max_length=30, choices=repo_enums.IssueState.choices)
+    labels = ArrayField(models.CharField(max_length=50), blank=True, null=True, verbose_name=_("labels"))
 
     url = models.URLField(_("url"))
 

@@ -2,7 +2,7 @@ import factory
 from django.utils.timezone import get_current_timezone
 from factory import fuzzy
 
-from openwiden.repositories import models
+from openwiden.repositories import models, enums as repo_enums
 from openwiden import enums
 
 from faker import Faker
@@ -33,7 +33,7 @@ class Issue(factory.DjangoModelFactory):
     remote_id = fuzzy.FuzzyInteger(1, 10000000)
     title = factory.Faker("text")
     description = factory.Faker("text")
-    state = fuzzy.FuzzyChoice(models.Issue.STATE_CHOICES)
+    state = fuzzy.FuzzyChoice(repo_enums.IssueState.choices)
     labels = ["bug", "back-end"]
     url = factory.Faker("url")
     created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
