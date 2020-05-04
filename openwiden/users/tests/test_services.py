@@ -1,3 +1,43 @@
+import pytest
+
+from openwiden.users import services
+
+
+class TestUserService:
+    def test_get_jwt(self, monkeypatch, mock_user, create_mock_refresh_token):
+        expected = dict(access="12345", refresh="67890")
+
+        def get_mock_refresh_token(*args):
+            return create_mock_refresh_token(**expected)
+
+        monkeypatch.setattr(services.RefreshToken, "for_user", get_mock_refresh_token)
+
+        assert services.UserService.get_jwt(mock_user) == expected
+
+
+class TestOAuthTokenService:
+    def test_get_token(self, monkeypatch, mock_oauth_token, mock_user):
+        def return_mock_oauth_token(**kwargs):
+            return mock_oauth_token
+
+        monkeypatch.setattr(services.models.OAuth2Token.objects, "get", return_mock_oauth_token)
+
+        oauth_token = services.OAuthToken.get_token(mock_user, "test")
+
+        assert oauth_token == mock_oauth_token
+
+    def test_get_token_raises_service_exception(self, monkeypatch, mock_user):
+        def raise_does_not_exist(**kwargs):
+            raise services.models.OAuth2Token.DoesNotExist
+
+        monkeypatch.setattr(services.models.OAuth2Token.objects, "get", raise_does_not_exist)
+
+        with pytest.raises(services.exceptions.ServiceException) as e:
+            services.OAuthToken.get_token(mock_user, "test")
+
+            assert e.value == services.error_messages.OAUTH_TOKEN_DOES_NOT_EXIST.format(provider="test")
+
+
 # import typing as t
 # from unittest import mock
 #
