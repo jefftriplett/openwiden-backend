@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, HStoreField
 from django.db import models
 from model_utils.models import UUIDModel
 from model_utils import Choices
@@ -38,9 +38,7 @@ class Repository(UUIDModel):
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
 
-    programming_languages = ArrayField(
-        models.CharField(_("language"), max_length=50), blank=True, null=True, verbose_name=_("programming languages")
-    )
+    programming_languages = HStoreField(verbose_name=_("programming languages"), blank=True, null=True)
 
     visibility = models.CharField(_("visibility"), max_length=8, choices=enums.VisibilityLevel.choices)
     is_added = models.BooleanField(_("is added"), default=False)
