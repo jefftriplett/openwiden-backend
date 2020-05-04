@@ -33,5 +33,14 @@ class Organization:
         return organization, created
 
     @staticmethod
-    def add_user(organization: models.Organization, user: users_models.User):
-        organization.users.add(user)
+    def sync_member(
+        organization: models.Organization, user: users_models.User, is_admin: bool
+    ) -> t.Tuple[models.Member, bool]:
+        member, created = models.Member.objects.update_or_create(
+            organization=organization, user=user, is_admin=is_admin
+        )
+        return member, created
+
+    @staticmethod
+    def remove_member(org: models.Organization, user: users_models.User):
+        org.member_set.filter(user=user).delete()
