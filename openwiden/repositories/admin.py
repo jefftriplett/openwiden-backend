@@ -12,11 +12,10 @@ class DisabledAddModelAdmin(admin.ModelAdmin):
         return False
 
 
+class IssueInline(admin.TabularInline):
+    model = models.Issue
+
+
 @admin.register(models.Repository)
 class RepositoryAdmin(DisabledAddModelAdmin):
-    pass
-
-
-@admin.register(models.Issue)
-class IssueAdmin(DisabledAddModelAdmin):
-    pass
+    inlines = (IssueInline,)
