@@ -17,11 +17,11 @@ class Repository(factory.DjangoModelFactory):
     description = factory.Faker("text")
     url = factory.Faker("url")
     forks_count = fuzzy.FuzzyInteger(1, 1000)
-    star_count = fuzzy.FuzzyInteger(1, 90000)
+    stars_count = fuzzy.FuzzyInteger(1, 90000)
     created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     updated_at = factory.Faker("date_time", tzinfo=get_current_timezone())
     open_issues_count = fuzzy.FuzzyInteger(1, 1000)
-    programming_languages = factory.List([fake.pystr() for _ in range(3)])
+    programming_languages = factory.Dict({fake.pystr(): fake.pyfloat() for _ in range(3)})
 
     class Meta:
         model = models.Repository
