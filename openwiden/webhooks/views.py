@@ -20,6 +20,9 @@ class RepositoryWebhookView(views.APIView):
         webhook = get_object_or_404(services.RepositoryWebhook.all(), id=webhook_id)
 
         # Check required headers
+        # TODO:
+        #  - Gitlab header check X-Gitlab-Token
+        #  - Call sync actions for income data (rewrite remote sync actions)
         if "HTTP_X_HUB_SIGNATURE" not in request.META:
             return Response("HTTP_X_HUB_SIGNATURE header is missing.", status=status.HTTP_400_BAD_REQUEST)
         elif "HTTP_X_GITHUB_EVENT" not in request.META:
