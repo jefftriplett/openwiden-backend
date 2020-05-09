@@ -18,7 +18,6 @@ router.register("user/repositories", repository_views.UserRepositories, basename
 
 urlpatterns = [
     path("auth/", include(("config.urls.v1.auth", "auth"), namespace="auth")),
-    path("user/", user_views.user_by_token_view, name="user"),
     path("webhooks/<webhook_id>/receive/", webhook_views.repository_webhook_view, name="repository-webhook"),
 ]
 

@@ -1,6 +1,7 @@
 from authlib.integrations.django_client import DjangoRemoteApp
 
 from rest_framework import views, permissions as drf_permissions, status, viewsets, mixins
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from openwiden import enums
@@ -84,15 +85,9 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
             return serializers.UserUpdateSerializer
         return super().get_serializer_class()
 
-
-class UserByTokenView(views.APIView):
-    """
-    Returns current user's oauth tokens.
-    """
-
-    def get(self, request):
-        data = serializers.UserWithVCSAccountsSerializer(instance=request.user).data
-        return Response(data=data)
-
-
-user_by_token_view = UserByTokenView.as_view()
+    @action(detail=False)
+    def me(self, request):
+        """
+        Returns current authenticated user's information.
+        """
+        return Response(serializers.UserWithVCSAccountsSerializer(instance=request.user).data)
