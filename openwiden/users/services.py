@@ -16,10 +16,13 @@ class UserService:
 
 class VCSAccount:
     @staticmethod
-    def get_token(user: models.User, provider: str) -> models.VCSAccount:
+    def find(user: models.User, vcs: str) -> models.VCSAccount:
+        """
+        Returns version control service account by specified user and vcs name.
+        """
         try:
-            oauth_token = models.VCSAccount.objects.get(user=user, provider=provider)
+            vcs_account = models.VCSAccount.objects.get(user=user, vcs=vcs)
         except models.VCSAccount.DoesNotExist:
-            raise exceptions.ServiceException(error_messages.OAUTH_TOKEN_DOES_NOT_EXIST.format(provider=provider))
+            raise exceptions.ServiceException(error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs=vcs))
         else:
-            return oauth_token
+            return vcs_account

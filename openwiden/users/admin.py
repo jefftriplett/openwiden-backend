@@ -1,12 +1,11 @@
 from django.contrib import admin
-from .models import User, VCSAccount
+from openwiden.users import models
 
 
-@admin.register(User)
+class VCSAccountInline(admin.TabularInline):
+    model = models.VCSAccount
+
+
+@admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(VCSAccount)
-class OAuth2TokenAdmin(admin.ModelAdmin):
-    pass
+    inlines = (VCSAccountInline,)

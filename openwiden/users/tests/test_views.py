@@ -20,20 +20,20 @@ class MockClient:
 
 class TestOAuthLoginView:
     def test_get_client_success(self, settings, authlib_settings_github):
-        provider = enums.VersionControlService.GITHUB
-        settings.AUTHLIB_OAUTH_CLIENTS = {provider: authlib_settings_github}
+        vcs = enums.VersionControlService.GITHUB
+        settings.AUTHLIB_OAUTH_CLIENTS = {vcs: authlib_settings_github}
 
-        client = views.OAuthLoginView.get_client(provider)
+        client = views.OAuthLoginView.get_client(vcs)
 
-        assert client.name == provider
+        assert client.name == vcs
 
     def test_get_client_raises_oauth_provider_not_found(self, settings):
         settings.AUTHLIB_OAUTH_CLIENTS = {}
-        provider = "test"
+        vcs = "test"
 
-        with pytest.raises(exceptions.OAuthProviderNotFound) as e:
-            views.OAuthLoginView.get_client(provider)
-            assert e.value == exceptions.OAuthProviderNotFound(provider).detail
+        with pytest.raises(exceptions.VCSNotFound) as e:
+            views.OAuthLoginView.get_client(vcs)
+            assert e.value == exceptions.VCSNotFound(vcs).detail
 
     def test_get(self, api_rf, user, settings, authlib_settings_gitlab, authlib_settings_github, monkeypatch):
         monkeypatch.setattr(views.OAuthLoginView, "get_client", MockClient.get_mock_client)
@@ -126,12 +126,12 @@ class TestOAuthLoginView:
 #
 #     def test_success(self):
 #         user = factories.UserFactory.create()
-#         factories.OAuth2TokenFactory.create(user=user, provider="github")
-#         factories.OAuth2TokenFactory.create(user=user, provider="gitlab")
+#         factories.VCSAccountFactory.create(user=user, provider="github")
+#         factories.VCSAccountFactory.create(user=user, provider="gitlab")
 #         self.set_auth_header(user)
 #
-#         expected_data = serializers.UserWithOAuthTokensSerializer(user).data
-#         mock_get = mock.MagicMock("users.views.UserWithOAuthTokensSerializer.data")
+#         expected_data = serializers.UserWithVCSAccountsSerializer(user).data
+#         mock_get = mock.MagicMock("users.views.UserWithVCSAccountsSerializer.data")
 #         mock_get.return_value = expected_data
 #         r = self.client.get(self.get_url())
 #

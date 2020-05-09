@@ -7,7 +7,7 @@ from .gitlab import GitlabService
 
 def get_service(oauth_token: models.VCSAccount) -> RemoteService:
     """
-    Returns remote API service class instance depends on specified oauth_token.
+    Returns remote API service class instance depends on specified vcs_account.
     """
     if oauth_token.provider == enums.VersionControlService.GITHUB:
         return GitHubService(oauth_token)

@@ -25,25 +25,25 @@ class OAuthLoginView(views.APIView):
     permission_classes = (drf_permissions.AllowAny,)
 
     @staticmethod
-    def get_client(provider: str) -> DjangoRemoteApp:
+    def get_client(vcs: str) -> DjangoRemoteApp:
         """
-        Returns client or raises OAuthProviderNotFound exception.
+        Returns client or raises VCSNotFound exception.
         """
         try:
-            client: DjangoRemoteApp = remote.OAuthService.get_client(provider)
+            client: DjangoRemoteApp = remote.OAuthService.get_client(vcs)
         except remote_service_exceptions.RemoteException:
-            raise exceptions.OAuthProviderNotFound(provider)
+            raise exceptions.VCSNotFound(vcs)
         else:
             return client
 
-    def get(self, request, provider):
-        client: DjangoRemoteApp = self.get_client(provider)
+    def get(self, request, vcs):
+        client: DjangoRemoteApp = self.get_client(vcs)
 
         redirect_uri = request.GET.get("redirect_uri")
 
         # GitLab OAuth requires redirect_uri,
         # that's why additional check should be passed
-        if provider == enums.VersionControlService.GITLAB:
+        if vcs == enums.VersionControlService.GITLAB:
             if redirect_uri is None:
                 raise exceptions.GitLabOAuthMissedRedirectURI()
 
@@ -60,9 +60,9 @@ class OAuthCompleteView(views.APIView):
 
     permission_classes = (drf_permissions.AllowAny,)
 
-    def get(self, request, provider: str):
+    def get(self, request, vcs: str):
         try:
-            user = remote.OAuthService.oauth(provider, self.request.user, request)
+            user = remote.OAuthService.oauth(vcs, self.request.user, request)
         except remote_service_exceptions.RemoteException as e:
             return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
         else:
@@ -91,7 +91,7 @@ class UserByTokenView(views.APIView):
     """
 
     def get(self, request):
-        data = serializers.UserWithOAuthTokensSerializer(instance=request.user).data
+        data = serializers.UserWithVCSAccountsSerializer(instance=request.user).data
         return Response(data=data)
 
 

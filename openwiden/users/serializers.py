@@ -27,7 +27,7 @@ class UserUpdateSerializer(UserSerializer):
         )
 
 
-class OAuth2TokenSerializer(serializers.ModelSerializer):
+class VCSAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = VCSAccount
         fields = (
@@ -36,8 +36,8 @@ class OAuth2TokenSerializer(serializers.ModelSerializer):
         )
 
 
-class UserWithOAuthTokensSerializer(UserSerializer):
-    oauth2_tokens = OAuth2TokenSerializer(many=True)
+class UserWithVCSAccountsSerializer(UserSerializer):
+    vcs_accounts = VCSAccountSerializer(many=True)
 
     class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ("oauth2_tokens",)
+        fields = UserSerializer.Meta.fields + ("vcs_accounts",)

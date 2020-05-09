@@ -15,27 +15,27 @@ class TestUserService:
         assert services.UserService.get_jwt(mock_user) == expected
 
 
-class TestOAuthTokenService:
-    def test_get_token(self, monkeypatch, mock_oauth_token, mock_user):
-        def return_mock_oauth_token(**kwargs):
-            return mock_oauth_token
+class TestVCSAccountService:
+    def test_find(self, monkeypatch, mock_vcs_account, mock_user):
+        def return_mock_vcs_account(**kwargs):
+            return mock_vcs_account
 
-        monkeypatch.setattr(services.models.VCSAccount.objects, "get", return_mock_oauth_token)
+        monkeypatch.setattr(services.models.VCSAccount.objects, "get", return_mock_vcs_account)
 
-        oauth_token = services.OAuthToken.get_token(mock_user, "test")
+        oauth_token = services.VCSAccount.find(mock_user, "test")
 
-        assert oauth_token == mock_oauth_token
+        assert oauth_token == mock_vcs_account
 
-    def test_get_token_raises_service_exception(self, monkeypatch, mock_user):
+    def test_find_raises_service_exception(self, monkeypatch, mock_user):
         def raise_does_not_exist(**kwargs):
             raise services.models.VCSAccount.DoesNotExist
 
         monkeypatch.setattr(services.models.VCSAccount.objects, "get", raise_does_not_exist)
 
         with pytest.raises(services.exceptions.ServiceException) as e:
-            services.OAuthToken.get_token(mock_user, "test")
+            services.VCSAccount.find(mock_user, "test")
 
-            assert e.value == services.error_messages.OAUTH_TOKEN_DOES_NOT_EXIST.format(provider="test")
+            assert e.value == services.error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs="test")
 
 
 # import typing as t
@@ -70,7 +70,7 @@ class TestOAuthTokenService:
 #     def setUp(self) -> None:
 #         self.provider = fake.random_element(enums.VersionControlService.values)
 #         self.user = factories.UserFactory()
-#         self.oauth_token = factories.OAuth2TokenFactory(user=self.user, provider=self.provider)
+#         self.vcs_account = factories.VCSAccountFactory(user=self.user, provider=self.provider)
 #
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.get_token")
@@ -158,16 +158,16 @@ class TestOAuthTokenService:
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
 #     def test_oauth_token_exist_authenticated_user_change_oauth_token_user(self, p_get_profile):
 #         """
-#         Authenticated user -> change oauth_token.user -> login is the same -> return same user
+#         Authenticated user -> change vcs_account.user -> login is the same -> return same user
 #         """
 #         new_user = factories.UserFactory()
-#         profile = fixtures.create_random_profile(login=self.oauth_token.login, id=self.oauth_token.remote_id)
+#         profile = fixtures.create_random_profile(login=self.vcs_account.login, id=self.vcs_account.remote_id)
 #         p_get_profile.return_value = profile
 #         user = services.OAuthService.oauth(self.provider, new_user, mock.MagicMock())
-#         self.oauth_token.refresh_from_db()
+#         self.vcs_account.refresh_from_db()
 #         self.assertEqual(user.id, new_user.id)
-#         self.assertEqual(self.oauth_token.login, profile.login)
-#         self.assertEqual(str(self.oauth_token.user.id), user.id)
+#         self.assertEqual(self.vcs_account.login, profile.login)
+#         self.assertEqual(str(self.vcs_account.user.id), user.id)
 #         self.assertEqual(p_get_profile.call_count, 1)
 #
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
@@ -175,14 +175,14 @@ class TestOAuthTokenService:
 #         """
 #         Authenticated user -> oauth token user is the same -> change login -> return same user
 #         """
-#         profile = fixtures.create_random_profile(id=self.oauth_token.remote_id)
+#         profile = fixtures.create_random_profile(id=self.vcs_account.remote_id)
 #         old_login = self.user.username
 #         p_get_profile.return_value = profile
 #         user = services.OAuthService.oauth(self.provider, self.user, mock.MagicMock())
-#         self.oauth_token.refresh_from_db()
-#         self.assertEqual(self.oauth_token.user.id, user.id)
-#         self.assertEqual(self.oauth_token.login, profile.login)
-#         self.assertNotEqual(self.oauth_token.login, old_login)
+#         self.vcs_account.refresh_from_db()
+#         self.assertEqual(self.vcs_account.user.id, user.id)
+#         self.assertEqual(self.vcs_account.login, profile.login)
+#         self.assertNotEqual(self.vcs_account.login, old_login)
 #         self.assertEqual(p_get_profile.call_count, 1)
 #
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
@@ -190,30 +190,30 @@ class TestOAuthTokenService:
 #         """
 #         Authenticated user -> oauth token user is the same -> login is the same -> return same user
 #         """
-#         profile = fixtures.create_random_profile(id=self.oauth_token.remote_id, login=self.oauth_token.login)
-#         old_login, old_user_id = self.oauth_token.login, self.oauth_token.user.id
+#         profile = fixtures.create_random_profile(id=self.vcs_account.remote_id, login=self.vcs_account.login)
+#         old_login, old_user_id = self.vcs_account.login, self.vcs_account.user.id
 #         p_get_profile.return_value = profile
 #         user = services.OAuthService.oauth(self.provider, self.user, mock.MagicMock())
-#         self.oauth_token.refresh_from_db()
-#         self.assertEqual(self.oauth_token.user.id, user.id)
-#         self.assertEqual(self.oauth_token.login, profile.login)
-#         self.assertEqual(old_login, self.oauth_token.login)
-#         self.assertEqual(old_user_id, str(self.oauth_token.user.id))
+#         self.vcs_account.refresh_from_db()
+#         self.assertEqual(self.vcs_account.user.id, user.id)
+#         self.assertEqual(self.vcs_account.login, profile.login)
+#         self.assertEqual(old_login, self.vcs_account.login)
+#         self.assertEqual(old_user_id, str(self.vcs_account.user.id))
 #         self.assertEqual(p_get_profile.call_count, 1)
 #
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
 #     def test_oauth_token_exist_anonymous_user(self, p_get_profile):
 #         """
-#         Anonymous -> login is the same -> return oauth_token.user
+#         Anonymous -> login is the same -> return vcs_account.user
 #         """
-#         oauth_token = factories.OAuth2TokenFactory(user=self.user, provider=self.provider)
-#         profile = fixtures.create_random_profile(id=oauth_token.remote_id)
+#         vcs_account = factories.VCSAccountFactory(user=self.user, provider=self.provider)
+#         profile = fixtures.create_random_profile(id=vcs_account.remote_id)
 #         self.user = AnonymousUser()
 #         p_get_profile.return_value = profile
 #         user = services.OAuthService.oauth(self.provider, self.user, mock.MagicMock())
-#         oauth_token.refresh_from_db()
-#         self.assertEqual(oauth_token.user.id, user.id)
-#         self.assertEqual(oauth_token.login, profile.login)
+#         vcs_account.refresh_from_db()
+#         self.assertEqual(vcs_account.user.id, user.id)
+#         self.assertEqual(vcs_account.login, profile.login)
 #         self.assertEqual(p_get_profile.call_count, 1)
 #
 #     @mock.patch("openwiden.users.services.oauth.OAuthService.new_token")

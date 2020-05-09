@@ -16,9 +16,9 @@ class UserFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ("username",)
 
 
-class OAuth2TokenFactory(factory.DjangoModelFactory):
+class VCSAccountFactory(factory.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
-    provider = fuzzy.FuzzyChoice(enums.VersionControlService.choices, getter=lambda c: c[0])
+    vcs = fuzzy.FuzzyChoice(enums.VersionControlService.values)
     remote_id = fuzzy.FuzzyInteger(1)
     login = factory.Faker("first_name")
     token_type = factory.Faker("pystr")
@@ -28,4 +28,4 @@ class OAuth2TokenFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = models.VCSAccount
-        django_get_or_create = ("provider", "remote_id")
+        django_get_or_create = ("vcs", "remote_id")

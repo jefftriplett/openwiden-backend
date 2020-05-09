@@ -117,7 +117,7 @@ class OAuthService:
         try:
             oauth2_token = models.VCSAccount.objects.get(provider=provider, remote_id=profile.id)
         except models.VCSAccount.DoesNotExist:
-            # Handle case when oauth_token does not exists (first provider auth)
+            # Handle case when vcs_account does not exists (first provider auth)
             # Check if user is not authenticated and create it first.
             if user.is_anonymous:
                 # Check if username is already exists with profile's login
@@ -152,28 +152,28 @@ class OAuthService:
             )
             return user
         else:
-            # If user is authenticated, then check that oauth_token's user
+            # If user is authenticated, then check that vcs_account's user
             # is the same and if not -> just change it for current user.
             # Explanation:
             # github auth -> new user was created -> logout
             # gitlab auth -> new user was created and now we have a two user accounts,
             # but for the same user, that's wrong, because we want to have one account, but for
             # multiple services (github, gitlab etc.).
-            # Now, if the second user will repeat auth with github, then oauth_token user will be
+            # Now, if the second user will repeat auth with github, then vcs_account user will be
             # changed for the second user. Now we have one user account with two oauth_tokens as expected.
             if user.is_authenticated:
                 if oauth2_token.user.username != user.username:
                     oauth2_token.user = user
 
-            # Change oauth_token login if it's changed in github, gitlab etc.
+            # Change vcs_account login if it's changed in github, gitlab etc.
             if oauth2_token.login != profile.login:
                 oauth2_token.login = profile.login
 
-            # Save changes for oauth_token
+            # Save changes for vcs_account
             oauth2_token.save()
 
-            # Return oauth_token's user, because we can handle case when
-            # user is not authenticated, but oauth_token for specified profile does exist.
+            # Return vcs_account's user, because we can handle case when
+            # user is not authenticated, but vcs_account for specified profile does exist.
             return oauth2_token.user
 
     @staticmethod
