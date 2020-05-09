@@ -53,5 +53,5 @@ class Member(UUIDModel):
         verbose_name_plural = _("list of members")
         constraints = (models.UniqueConstraint(fields=("vcs_account", "organization"), name="unique_member"),)
 
-    # def __str__(self):
-    #     return self.user.username
+    def __str__(self):
+        return self.vcs_account.login
