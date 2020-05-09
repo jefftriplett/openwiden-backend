@@ -35,6 +35,15 @@ def mock_repo() -> "MockRepository":
     return MockRepository()
 
 
+@pytest.fixture
+def mock_issue() -> "MockIssue":
+    return MockIssue()
+
+
 class MockRepository:
     def save(self, **kwargs):
         pass
+
+
+class MockIssue:
+    pass
