@@ -5,6 +5,8 @@ from openwiden.repositories import views as repository_views
 from openwiden.users import views as user_views
 from openwiden.webhooks import views as webhook_views
 
+app_name = "v1"
+
 router = routers.DefaultRouter()
 
 # Repositories
@@ -17,7 +19,7 @@ router.register("users", user_views.UserViewSet, basename="user")
 router.register("user/repositories", repository_views.UserRepositories, basename="user-repos")
 
 urlpatterns = [
-    path("auth/", include(("config.urls.v1.auth", "auth"), namespace="auth")),
+    path("auth/", include("config.urls.v1.auth", namespace="auth")),
     path("webhooks/<webhook_id>/receive/", webhook_views.repository_webhook_view, name="repository-webhook"),
 ]
 

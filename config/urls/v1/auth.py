@@ -1,9 +1,10 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
 from openwiden.users import views
 
+app_name = "auth"
+
 urlpatterns = [
-    path("login/<str:provider>/", views.OAuthLoginView.as_view(), name="login"),
-    path("complete/<str:provider>/", views.OAuthCompleteView.as_view(), name="complete"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("login/<str:vcs>/", views.oauth_login_view, name="login"),
+    path("complete/<str:vcs>/", views.oauth_complete_view, name="complete"),
+    path("refresh_token/", views.token_refresh_view, name="refresh_token"),
 ]

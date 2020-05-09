@@ -10,7 +10,7 @@ from openwiden.views import schema_view
 
 urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
-    path("api/v1/", include("config.urls.v1.root")),
+    path("api/v1/", include("config.urls.v1.root", namespace="api-v1")),
     # The 'api-root' from django rest-frameworks default router
     # http://www.django-rest-framework.org/api-guide/routers/#defaultrouter
     re_path(r"^$", RedirectView.as_view(url=reverse_lazy("api-root"), permanent=False)),

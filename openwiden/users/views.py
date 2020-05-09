@@ -4,10 +4,14 @@ from rest_framework import views, permissions as drf_permissions, status, viewse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from openwiden import enums
 from openwiden.users import exceptions, models, permissions, serializers, services
 from openwiden.services import remote
 from openwiden.services.remote import exceptions as remote_service_exceptions
+
+token_refresh_view = TokenRefreshView.as_view()
 
 
 class OAuthLoginView(views.APIView):
