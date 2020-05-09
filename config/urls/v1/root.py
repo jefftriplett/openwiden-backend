@@ -10,17 +10,17 @@ app_name = "v1"
 router = routers.DefaultRouter()
 
 # Repositories
-router.register("repositories", repository_views.Repository, basename="repository")
+router.register("repositories", repository_views.Repository, basename="repo")
 repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
-repository_router.register("issues", repository_views.Issue, basename="issue")
+repository_router.register("issues", repository_views.Issue, basename="repo-issue")
 
 # User
 router.register("users", user_views.UserViewSet, basename="user")
-router.register("user/repositories", repository_views.UserRepositories, basename="user-repos")
+router.register("user/repositories", repository_views.UserRepositories, basename="user-repo")
 
 urlpatterns = [
     path("auth/", include("config.urls.v1.auth", namespace="auth")),
-    path("webhooks/<webhook_id>/receive/", webhook_views.repository_webhook_view, name="repository-webhook"),
+    path("webhooks/<webhook_id>/receive/", webhook_views.repository_webhook_view, name="repo-webhook"),
 ]
 
 urlpatterns += router.urls
