@@ -20,12 +20,11 @@ class RemoteService(ABC):
     org_sync_serializer: t.Type[serializers.OrganizationSync] = None
     issue_sync_serializer: t.Type[serializers.IssueSync] = None
 
-    def __init__(self, oauth_token: users_models.VCSAccount):
-        self.oauth_token = oauth_token
-        self.provider = oauth_token.provider
-        self.token = self.oauth_token.to_token()
-        self.user = self.oauth_token.user
-        self.client = oauth.OAuthService.get_client(self.provider)
+    def __init__(self, vcs_account: users_models.VCSAccount):
+        self.vcs_account = vcs_account
+        self.vcs = vcs_account.vcs
+        self.token = self.vcs_account.to_token()
+        self.client = oauth.OAuthService.get_client(self.vcs)
 
     @abstractmethod
     def parse_org_slug(self, repo_data: dict) -> t.Optional[str]:
@@ -81,7 +80,7 @@ class RemoteService(ABC):
             # Check if serializer is valid and try to save repository.
             serializer = self.repo_sync_serializer(data=data)
             if serializer.is_valid():
-                repository_kwargs = dict(version_control_service=self.provider, **serializer.validated_data)
+                repository_kwargs = dict(vcs=self.vcs, **serializer.validated_data)
 
                 # Sync organization or just add user as owner
                 organization_slug = self.parse_org_slug(data)
@@ -89,7 +88,7 @@ class RemoteService(ABC):
                     organization = self.sync_org(slug=organization_slug)
                     repository_kwargs["organization"] = organization
                 else:
-                    repository_kwargs["owner"] = self.user
+                    repository_kwargs["owner"] = self.vcs_account
 
                 # Sync repository locally
                 repo_services.Repository.sync(**repository_kwargs)
@@ -138,9 +137,8 @@ class RemoteService(ABC):
         org_serializer = self.org_sync_serializer(data=org_data)
 
         if org_serializer.is_valid():
-            organization = org_services.Organization.sync(
-                version_control_service=self.provider, **org_serializer.validated_data
-            )[0]
+            organization = org_services.Organization.sync(vcs=self.vcs, **org_serializer.validated_data)[0]
+
             # Sync organization and membership for a current user
             self.sync_org_membership(organization)
         else:
@@ -157,6 +155,6 @@ class RemoteService(ABC):
         is_member, is_admin = self.check_org_membership(organization)
 
         if is_member:
-            org_services.Organization.sync_member(organization, self.user, is_admin)
+            org_services.Member.sync(organization, self.vcs_account, is_admin)
         else:
-            org_services.Organization.remove_member(organization, self.user)
+            org_services.Organization.remove_member(organization, self.vcs_account)

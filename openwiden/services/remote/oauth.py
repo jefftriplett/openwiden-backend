@@ -29,14 +29,14 @@ from . import serializers, exceptions, models as service_models, utils
 #     session.register_compliance_hook("access_token_response", _fix)
 
 
-def update_token(provider, token, refresh_token=None, access_token=None):
+def update_token(vcs, token, refresh_token=None, access_token=None):
     """
     OAuth token update handler for authlib.
     """
     if refresh_token:
-        qs = models.VCSAccount.objects.filter(provider=provider, refresh_token=refresh_token)
+        qs = models.VCSAccount.objects.filter(vcs=vcs, refresh_token=refresh_token)
     elif access_token:
-        qs = models.VCSAccount.objects.filter(provider=provider, access_token=access_token)
+        qs = models.VCSAccount.objects.filter(vcs=vcs, access_token=access_token)
     else:
         return None
 
@@ -55,13 +55,13 @@ oauth.register("gitlab")  # compliance_fix=gitlab_compliance_fix
 
 class OAuthService:
     @staticmethod
-    def get_client(provider: str) -> DjangoRemoteApp:
+    def get_client(vcs: str) -> DjangoRemoteApp:
         """
         Returns authlib client instance or None if not found.
         """
-        client = oauth.create_client(provider)
+        client = oauth.create_client(vcs)
         if client is None:
-            raise exceptions.RemoteException(_("{provider} is not found.").format(provider=provider))
+            raise exceptions.RemoteException(_("{vcs} is not found.").format(vcs=vcs))
         return client
 
     @staticmethod
@@ -75,11 +75,11 @@ class OAuthService:
             raise exceptions.RemoteException(e.description)
 
     @staticmethod
-    def get_profile(provider: str, request: Request) -> "service_models.Profile":
+    def get_profile(vcs: str, request: Request) -> "service_models.Profile":
         """
         Returns profile mapped cls with a data from provider's API.
         """
-        client = OAuthService.get_client(provider)
+        client = OAuthService.get_client(vcs)
         token = OAuthService.get_token(client, request)
 
         try:
@@ -95,27 +95,28 @@ class OAuthService:
             raise exceptions.RemoteException(e.description)
         else:
             # Modify raw profile data if needed
-            if provider == enums.VersionControlService.GITHUB:
-                s = serializers.GitHubUserSerializer(data=profile_data)
-            elif provider == enums.VersionControlService.GITLAB:
-                s = serializers.GitlabUserSerializer(data=profile_data)
+            if vcs == enums.VersionControlService.GITHUB:
+                serializer = serializers.GitHubUserSerializer(data=profile_data)
+            elif vcs == enums.VersionControlService.GITLAB:
+                serializer = serializers.GitlabUserSerializer(data=profile_data)
             else:
-                raise exceptions.RemoteException(_("{provider} is not implemented.").format(provider=provider))
+                raise exceptions.RemoteException(_("{vcs} is not implemented.").format(vcs=vcs))
 
             # Validate profile data before return
-            if s.is_valid():
-                return service_models.Profile(**s.data, **token)
+            if serializer.is_valid():
+                return service_models.Profile(**serializer.data, **token)
             else:
-                raise exceptions.RemoteException(_("Unexpected error occurred."), error=s.errors)
+                raise exceptions.RemoteException(_("Unexpected error occurred."), error=serializer.errors)
 
     @staticmethod
-    def oauth(provider: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
+    def oauth(vcs: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
         """
         Returns user (new or existed) by provider and service provider profile data.
         """
-        profile = OAuthService.get_profile(provider, request)
+        profile = OAuthService.get_profile(vcs, request)
+
         try:
-            oauth2_token = models.VCSAccount.objects.get(provider=provider, remote_id=profile.id)
+            vcs_account = models.VCSAccount.objects.get(vcs=vcs, remote_id=profile.id)
         except models.VCSAccount.DoesNotExist:
             # Handle case when vcs_account does not exists (first provider auth)
             # Check if user is not authenticated and create it first.
@@ -140,9 +141,9 @@ class OAuthService:
 
             # Create new oauth token instance for user:
             # New if anonymous or existed if is authenticated.
-            OAuthService.new_token(
+            OAuthService.new_vcs_account(
                 user=user,
-                provider=provider,
+                vcs=vcs,
                 remote_id=profile.id,
                 login=profile.login,
                 access_token=profile.access_token,
@@ -161,25 +162,30 @@ class OAuthService:
             # multiple services (github, gitlab etc.).
             # Now, if the second user will repeat auth with github, then vcs_account user will be
             # changed for the second user. Now we have one user account with two oauth_tokens as expected.
+            update_fields = ()
+
             if user.is_authenticated:
-                if oauth2_token.user.username != user.username:
-                    oauth2_token.user = user
+                if vcs_account.user.username != user.username:
+                    vcs_account.user = user
+                    update_fields += ("user",)
 
             # Change vcs_account login if it's changed in github, gitlab etc.
-            if oauth2_token.login != profile.login:
-                oauth2_token.login = profile.login
+            if vcs_account.login != profile.login:
+                vcs_account.login = profile.login
+                update_fields += ("login",)
 
             # Save changes for vcs_account
-            oauth2_token.save()
+            if update_fields:
+                vcs_account.save(update_fields=update_fields)
 
             # Return vcs_account's user, because we can handle case when
             # user is not authenticated, but vcs_account for specified profile does exist.
-            return oauth2_token.user
+            return vcs_account.user
 
     @staticmethod
-    def new_token(
+    def new_vcs_account(
         user: models.User,
-        provider: str,
+        vcs: str,
         remote_id: int,
         login: str,
         access_token: str,
@@ -193,7 +199,7 @@ class OAuthService:
         """
         data = dict(
             user=user.id,
-            provider=provider,
+            vcs=vcs,
             remote_id=remote_id,
             login=login,
             access_token=access_token,
@@ -203,8 +209,7 @@ class OAuthService:
         )
         s = serializers.OAuthTokenSerializer(data=data)
 
-        # Trigger some actions if oauth is saved
-        # or raise an error on validation error
+        # Trigger some actions if vcs account is saved or raise an error if data is invalid
         if s.is_valid():
             oauth_token = s.save()
             async_task(utils.get_service(oauth_token).sync)

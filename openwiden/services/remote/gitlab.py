@@ -51,7 +51,7 @@ class GitlabService(RemoteService):
             raise exceptions.RemoteSyncException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
 
     def check_org_membership(self, organization: org_models.Organization) -> t.Tuple[bool, bool]:
-        r = self.client.get(f"groups/{organization.remote_id}/members/{self.oauth_token.remote_id}", token=self.token)
+        r = self.client.get(f"groups/{organization.remote_id}/members/{self.vcs_account.remote_id}", token=self.token)
 
         if r.status_code == 200:
             return True, r.json()["access_level"] >= 40

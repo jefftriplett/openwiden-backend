@@ -28,7 +28,7 @@ class GitHubService(RemoteService):
         """
         Returns repo owner for required API calls.
         """
-        return self.oauth_token.login if repo.owner else repo.organization.name
+        return self.vcs_account.login if repo.owner else repo.organization.name
 
     def get_user_repos(self) -> t.List[dict]:
         repositories = self.client.get(
