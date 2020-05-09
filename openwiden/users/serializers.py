@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from .models import User, VCSAccount
+from openwiden.users import models
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = models.User
         fields = (
             "id",
             "username",
@@ -29,7 +29,7 @@ class UserUpdateSerializer(UserSerializer):
 
 class VCSAccountSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VCSAccount
+        model = models.VCSAccount
         fields = (
             "provider",
             "login",
