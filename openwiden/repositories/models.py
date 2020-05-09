@@ -17,7 +17,7 @@ class Repository(UUIDModel):
     url = models.URLField(_("url"))
 
     owner = models.ForeignKey(
-        VCSAccount, models.CASCADE, "repositories", "repository", blank=True, null=True, verbose_name=_("owner")
+        VCSAccount, models.SET_NULL, "repositories", "repository", blank=True, null=True, verbose_name=_("owner")
     )
     organization = models.ForeignKey(
         Organization,
