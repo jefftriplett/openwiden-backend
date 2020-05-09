@@ -7,9 +7,7 @@ from openwiden.users.models import VCSAccount
 
 
 class Organization(UUIDModel):
-    version_control_service = models.CharField(
-        _("version control service"), max_length=50, choices=enums.VersionControlService.choices
-    )
+    vcs = models.CharField(_("version control service"), max_length=50, choices=enums.VersionControlService.choices)
     remote_id = models.PositiveIntegerField(_("remote id"))
     name = models.CharField(_("name"), max_length=255)
     description = models.CharField(_("description"), max_length=255, blank=True, null=True)
@@ -31,9 +29,7 @@ class Organization(UUIDModel):
         ordering = ("name",)
         verbose_name = _("organization")
         verbose_name_plural = _("list of organizations")
-        constraints = (
-            models.UniqueConstraint(fields=("version_control_service", "remote_id",), name="unique_organization"),
-        )
+        constraints = (models.UniqueConstraint(fields=("vcs", "remote_id",), name="unique_org"),)
 
     def __str__(self):
         return self.name
@@ -57,5 +53,5 @@ class Member(UUIDModel):
         verbose_name_plural = _("list of members")
         constraints = (models.UniqueConstraint(fields=("vcs_account", "organization"), name="unique_member"),)
 
-    def __str__(self):
-        return self.user.username
+    # def __str__(self):
+    #     return self.user.username
