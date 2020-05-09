@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from openwiden import enums
 from openwiden.organizations.models import Organization
-from openwiden.users.models import User
+from openwiden.users.models import VCSAccount
 from openwiden.repositories import enums as repo_enums
 
 
@@ -19,7 +19,7 @@ class Repository(UUIDModel):
     url = models.URLField(_("url"))
 
     owner = models.ForeignKey(
-        User, models.SET_NULL, "repositories", "repository", blank=True, null=True, verbose_name=_("owner")
+        VCSAccount, models.CASCADE, "repositories", "repository", blank=True, null=True, verbose_name=_("owner")
     )
     organization = models.ForeignKey(
         Organization,

@@ -5,7 +5,7 @@ from .github import GitHubService
 from .gitlab import GitlabService
 
 
-def get_service(oauth_token: models.OAuth2Token) -> RemoteService:
+def get_service(oauth_token: models.VCSAccount) -> RemoteService:
     """
     Returns remote API service class instance depends on specified oauth_token.
     """

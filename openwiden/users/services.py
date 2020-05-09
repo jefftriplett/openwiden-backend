@@ -14,12 +14,12 @@ class UserService:
         return dict(access=str(refresh.access_token), refresh=str(refresh))
 
 
-class OAuthToken:
+class VCSAccount:
     @staticmethod
-    def get_token(user: models.User, provider: str) -> models.OAuth2Token:
+    def get_token(user: models.User, provider: str) -> models.VCSAccount:
         try:
-            oauth_token = models.OAuth2Token.objects.get(user=user, provider=provider)
-        except models.OAuth2Token.DoesNotExist:
+            oauth_token = models.VCSAccount.objects.get(user=user, provider=provider)
+        except models.VCSAccount.DoesNotExist:
             raise exceptions.ServiceException(error_messages.OAUTH_TOKEN_DOES_NOT_EXIST.format(provider=provider))
         else:
             return oauth_token

@@ -20,7 +20,7 @@ class TestOAuthTokenService:
         def return_mock_oauth_token(**kwargs):
             return mock_oauth_token
 
-        monkeypatch.setattr(services.models.OAuth2Token.objects, "get", return_mock_oauth_token)
+        monkeypatch.setattr(services.models.VCSAccount.objects, "get", return_mock_oauth_token)
 
         oauth_token = services.OAuthToken.get_token(mock_user, "test")
 
@@ -28,9 +28,9 @@ class TestOAuthTokenService:
 
     def test_get_token_raises_service_exception(self, monkeypatch, mock_user):
         def raise_does_not_exist(**kwargs):
-            raise services.models.OAuth2Token.DoesNotExist
+            raise services.models.VCSAccount.DoesNotExist
 
-        monkeypatch.setattr(services.models.OAuth2Token.objects, "get", raise_does_not_exist)
+        monkeypatch.setattr(services.models.VCSAccount.objects, "get", raise_does_not_exist)
 
         with pytest.raises(services.exceptions.ServiceException) as e:
             services.OAuthToken.get_token(mock_user, "test")

@@ -3,7 +3,7 @@ from model_utils.models import UUIDModel
 from django.utils.translation import gettext_lazy as _
 
 from openwiden import enums
-from openwiden.users.models import User
+from openwiden.users.models import VCSAccount
 
 
 class Organization(UUIDModel):
@@ -41,7 +41,13 @@ class Organization(UUIDModel):
 
 class Member(UUIDModel):
     organization = models.ForeignKey(Organization, models.CASCADE, "members", "member", verbose_name=_("organization"))
-    user = models.ForeignKey(User, models.CASCADE, "+", verbose_name=_("user"))
+    vcs_account = models.ForeignKey(
+        VCSAccount,
+        models.CASCADE,
+        "org_memberships",
+        "org_membership",
+        verbose_name=_("version control service account"),
+    )
 
     is_admin = models.BooleanField(_("has admin permissions"), default=False)
 
@@ -49,7 +55,7 @@ class Member(UUIDModel):
         order_with_respect_to = "organization"
         verbose_name = _("member")
         verbose_name_plural = _("list of members")
-        constraints = (models.UniqueConstraint(fields=("user", "organization"), name="unique_member"),)
+        constraints = (models.UniqueConstraint(fields=("vcs_account", "organization"), name="unique_member"),)
 
     def __str__(self):
         return self.user.username

@@ -16,13 +16,13 @@ def user() -> users_models.User:
 
 
 @pytest.fixture
-def oauth_token() -> users_models.OAuth2Token:
+def oauth_token() -> users_models.VCSAccount:
     return users_factories.OAuth2TokenFactory()
 
 
 @pytest.fixture
 def create_oauth_token():
-    def factory(**kwargs) -> users_models.OAuth2Token:
+    def factory(**kwargs) -> users_models.VCSAccount:
         return users_factories.OAuth2TokenFactory(**kwargs)
 
     return factory

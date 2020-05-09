@@ -27,5 +27,5 @@ class OAuth2TokenFactory(factory.DjangoModelFactory):
     expires_at = fuzzy.FuzzyInteger(100, 36000)
 
     class Meta:
-        model = models.OAuth2Token
+        model = models.VCSAccount
         django_get_or_create = ("provider", "remote_id")

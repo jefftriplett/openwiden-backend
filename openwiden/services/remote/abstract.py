@@ -20,7 +20,7 @@ class RemoteService(ABC):
     org_sync_serializer: t.Type[serializers.OrganizationSync] = None
     issue_sync_serializer: t.Type[serializers.IssueSync] = None
 
-    def __init__(self, oauth_token: users_models.OAuth2Token):
+    def __init__(self, oauth_token: users_models.VCSAccount):
         self.oauth_token = oauth_token
         self.provider = oauth_token.provider
         self.token = self.oauth_token.to_token()

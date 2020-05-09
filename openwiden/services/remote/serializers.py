@@ -75,7 +75,7 @@ class GitlabUserSerializer(serializers.Serializer):
 
 class OAuthTokenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = users_models.OAuth2Token
+        model = users_models.VCSAccount
         fields = "__all__"
 
 

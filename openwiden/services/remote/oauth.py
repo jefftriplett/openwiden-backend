@@ -34,9 +34,9 @@ def update_token(provider, token, refresh_token=None, access_token=None):
     OAuth token update handler for authlib.
     """
     if refresh_token:
-        qs = models.OAuth2Token.objects.filter(provider=provider, refresh_token=refresh_token)
+        qs = models.VCSAccount.objects.filter(provider=provider, refresh_token=refresh_token)
     elif access_token:
-        qs = models.OAuth2Token.objects.filter(provider=provider, access_token=access_token)
+        qs = models.VCSAccount.objects.filter(provider=provider, access_token=access_token)
     else:
         return None
 
@@ -115,8 +115,8 @@ class OAuthService:
         """
         profile = OAuthService.get_profile(provider, request)
         try:
-            oauth2_token = models.OAuth2Token.objects.get(provider=provider, remote_id=profile.id)
-        except models.OAuth2Token.DoesNotExist:
+            oauth2_token = models.VCSAccount.objects.get(provider=provider, remote_id=profile.id)
+        except models.VCSAccount.DoesNotExist:
             # Handle case when oauth_token does not exists (first provider auth)
             # Check if user is not authenticated and create it first.
             if user.is_anonymous:

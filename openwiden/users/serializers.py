@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import User, OAuth2Token
+from .models import User, VCSAccount
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -29,7 +29,7 @@ class UserUpdateSerializer(UserSerializer):
 
 class OAuth2TokenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OAuth2Token
+        model = VCSAccount
         fields = (
             "provider",
             "login",
