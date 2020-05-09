@@ -31,3 +31,21 @@ def create_vcs_account():
 @pytest.fixture
 def api_rf() -> APIRequestFactory:
     return APIRequestFactory()
+
+
+@pytest.fixture
+def mock_user() -> "MockUser":
+    return MockUser()
+
+
+@pytest.fixture
+def mock_view() -> "MockView":
+    return MockView()
+
+
+class MockUser:
+    pass
+
+
+class MockView:
+    pass

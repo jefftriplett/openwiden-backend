@@ -1,8 +1,9 @@
+from django.http import Http404
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from openwiden.repositories import serializers, models, filters, services
+from openwiden.repositories import serializers, models, filters, services, error_messages
 from openwiden.services.exceptions import ServiceException
 
 
@@ -16,11 +17,16 @@ class Repository(viewsets.ReadOnlyModelViewSet):
 
 class Issue(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Issue
-    lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
+    lookup_field = "id"
 
     def get_queryset(self):
-        return models.Issue.objects.filter(repository=self.kwargs["repository_id"])
+        try:
+            repository = models.Repository.objects.get(id=self.kwargs["repository_id"])
+        except models.Repository.DoesNotExist:
+            raise Http404(error_messages.REPOSITORY_DOES_NOT_EXIST.format(id=self.kwargs["repository_id"]))
+        else:
+            return repository.issues.all()
 
 
 class UserRepositories(viewsets.ReadOnlyModelViewSet):
@@ -32,10 +38,10 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
         return services.Repository.get_user_repos(self.request.user)
 
     @action(detail=True, methods=["POST"])
-    def add(self, request, *args, **kwargs):
+    def add(self, request):
         repository = self.get_object()
         try:
-            task_id = services.Repository.add(repo=repository, user=self.request.user)
+            task_id = services.Repository.add(repo=repository, user=request.user)
         except ServiceException as e:
             return Response(e.description, status=status.HTTP_400_BAD_REQUEST)
         else:

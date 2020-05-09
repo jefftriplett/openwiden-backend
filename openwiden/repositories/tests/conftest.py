@@ -28,3 +28,12 @@ def create_issue():
         return factories.Issue(**kwargs)
 
     return factory
+
+
+@pytest.fixture
+def mock_repo() -> "MockRepository":
+    return MockRepository()
+
+
+class MockRepository:
+    pass
