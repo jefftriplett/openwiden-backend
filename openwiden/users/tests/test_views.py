@@ -2,7 +2,7 @@ import pytest
 from rest_framework.response import Response
 
 from openwiden import enums
-from openwiden.users import views, exceptions
+from openwiden.users import views, exceptions, serializers
 
 
 pytestmark = pytest.mark.django_db
@@ -27,7 +27,7 @@ class TestOAuthLoginView:
 
         assert client.name == vcs
 
-    def test_get_client_raises_oauth_provider_not_found(self, settings):
+    def test_get_client_raises_vcs_not_found(self, settings):
         settings.AUTHLIB_OAUTH_CLIENTS = {}
         vcs = "test"
 
@@ -35,106 +35,77 @@ class TestOAuthLoginView:
             views.OAuthLoginView.get_client(vcs)
             assert e.value == exceptions.VCSNotFound(vcs).detail
 
-    def test_get(self, api_rf, user, settings, authlib_settings_gitlab, authlib_settings_github, monkeypatch):
+    def test_get(self, api_rf, monkeypatch):
         monkeypatch.setattr(views.OAuthLoginView, "get_client", MockClient.get_mock_client)
 
         view = views.OAuthLoginView()
-        request = api_rf.get("fake")
-        request.user = user
-        view.request = request
-        settings.AUTHLIB_OAUTH_CLIENTS = {"github": authlib_settings_github, "gitlab": authlib_settings_gitlab}
+        request = api_rf.get("/fake-url/")
 
-        response = view.get(request, enums.VersionControlService.GITHUB)
+        response = view.get(request, "vcs")
 
         assert response.status_code == 302
 
         with pytest.raises(exceptions.GitLabOAuthMissedRedirectURI) as e:
             view.get(request, enums.VersionControlService.GITLAB)
-
             assert e.value == exceptions.GitLabOAuthMissedRedirectURI().detail
 
+        request = api_rf.get("/fake-url/?redirect_uri=http://example.com")
 
-# @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER, "gitlab": fixtures.GITLAB_PROVIDER})
-# class OAuthCompleteViewTestCase(ViewTestCase):
-#     url_namespace = "auth:complete"
-#
-#     @mock.patch("openwiden.users.services.oauth.OAuthService.get_profile")
-#     def test_raises_get_profile_exception(self, p_get_profile):
-#         p_get_profile.side_effect = service_exceptions.ProfileRetrieveException("test")
-#         url = self.get_url(provider="test")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-#         self.assertEqual(r.data, {"detail": str(service_exceptions.ProfileRetrieveException("test"))})
-#         self.assertEqual(p_get_profile.call_count, 1)
-#
-#     @mock.patch("openwiden.users.services.user.UserService.get_jwt")
-#     @mock.patch("openwiden.users.services.oauth.OAuthService.oauth")
-#     def test_success(self, p_oauth, p_get_jwt):
-#         user = factories.UserFactory.create()
-#         expected_jwt = {"access": "123", "refresh": "123"}
-#         p_oauth.return_value = user
-#         p_get_jwt.return_value = expected_jwt
-#         mock_client = mock.MagicMock()
-#         profile = fixtures.create_random_profile()
-#         mock_client.get.return_value = profile
-#         url = self.get_url(provider="github")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
-#         self.assertEqual(r.data, expected_jwt)
-#         self.assertEqual(p_oauth.call_count, 1)
-#         self.assertEqual(p_get_jwt.call_count, 1)
-#
-#
-# class UsersViewSetTestCase(ViewTestCase):
-#     url_namespace = "user"
-#
-#     def setUp(self) -> None:
-#         self.user = factories.UserFactory.create()
-#         self.set_auth_header(self.user)
-#
-#     def test_list(self):
-#         url = self.get_url(postfix="list")
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_200_OK)
-#         first_result = r.data["results"][0]
-#         self.assertEqual(first_result["id"], self.user.id)
-#         self.assertEqual(first_result["username"], self.user.username)
-#
-#     def test_detail(self):
-#         url = self.get_url(postfix="detail", id=self.user.id)
-#         r = self.client.get(url)
-#         self.assertEqual(r.status_code, status.HTTP_200_OK)
-#
-#     def test_update(self):
-#         username = fake.user_name()
-#         first_name = fake.first_name()
-#         last_name = fake.last_name()
-#         data = {"username": username, "first_name": first_name, "last_name": last_name}
-#         url = self.get_url(postfix="detail", id=self.user.id)
-#         r = self.client.patch(url, data=data)
-#         self.assertEqual(r.status_code, status.HTTP_200_OK)
-#         self.assertEqual(r.data["first_name"], first_name)
-#
-#     def test_create(self):
-#         url = self.get_url(postfix="list")
-#         r = self.client.post(url)
-#         self.assertEqual(r.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-#
-#
-# class UserRetrieveByTokenViewTestCase(ViewTestCase):
-#     url_namespace = "user"
-#
-#     def test_success(self):
-#         user = factories.UserFactory.create()
-#         factories.VCSAccountFactory.create(user=user, provider="github")
-#         factories.VCSAccountFactory.create(user=user, provider="gitlab")
-#         self.set_auth_header(user)
-#
-#         expected_data = serializers.UserWithVCSAccountsSerializer(user).data
-#         mock_get = mock.MagicMock("users.views.UserWithVCSAccountsSerializer.data")
-#         mock_get.return_value = expected_data
-#         r = self.client.get(self.get_url())
-#
-#         self.assertEqual(r.status_code, status.HTTP_200_OK)
-#         self.assertEqual(r.data, expected_data)
-#         self.assertEqual(len(r.data["oauth2_tokens"]), 2)
+        response = view.get(request, enums.VersionControlService.GITLAB)
+        assert response.status_code == 302
+
+
+def test_oauth_complete_view(api_rf, monkeypatch, mock_user):
+    def return_mock_user(*args):
+        return mock_user
+
+    mock_jwt_tokens = dict(access="12345", refresh="67890")
+
+    def return_mock_jwt_tokens(*args):
+        return mock_jwt_tokens
+
+    monkeypatch.setattr(views.remote.OAuthService, "oauth", return_mock_user)
+    monkeypatch.setattr(views.services.UserService, "get_jwt", return_mock_jwt_tokens)
+
+    view = views.OAuthCompleteView()
+    request = api_rf.get("/fake-url/")
+    request.user = mock_user
+    view.request = request
+
+    response = view.get(request, "vcs")
+
+    assert response.status_code == 200
+    assert response.data == mock_jwt_tokens
+
+    def raise_remote_exception(*args):
+        raise views.remote_service_exceptions.RemoteException("description")
+
+    monkeypatch.setattr(views.remote.OAuthService, "oauth", raise_remote_exception)
+
+    response = view.get(request, "vcs")
+    assert response.status_code == 400
+    assert response.data == {"detail": "description"}
+
+
+class TestUserViewSet:
+    def test_get_serializer_cls(self, api_rf):
+        view = views.UserViewSet()
+        view.action = "list"
+
+        assert view.get_serializer_class() == view.serializer_class
+
+        view.action = "update"
+
+        assert view.get_serializer_class() == serializers.UserUpdateSerializer
+
+    def test_me(self, api_rf, monkeypatch, mock_user):
+        monkeypatch.setattr(views.serializers.UserWithVCSAccountsSerializer, "data", {})
+
+        view = views.UserViewSet()
+        request = api_rf.get("/fake-url/")
+        request.user = mock_user
+
+        response = view.me(request)
+
+        assert response.status_code == 200
+        assert response.data == {}
