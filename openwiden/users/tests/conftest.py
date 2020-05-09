@@ -30,20 +30,11 @@ def authlib_settings_gitlab() -> dict:
 
 
 @pytest.fixture
-def mock_vcs_account() -> "MockVCSAccount":
-    return MockVCSAccount()
-
-
-@pytest.fixture
 def create_mock_refresh_token():
     def factory(access: str, refresh: str) -> MockRefreshToken:
         return MockRefreshToken(access=access, refresh=refresh)
 
     return factory
-
-
-class MockVCSAccount:
-    pass
 
 
 class MockRefreshToken:

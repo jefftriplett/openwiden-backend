@@ -17,6 +17,14 @@ def user() -> users_models.User:
 
 
 @pytest.fixture
+def create_user():
+    def factory(**kwargs):
+        return users_factories.UserFactory(**kwargs)
+
+    return factory
+
+
+@pytest.fixture
 def vcs_account() -> users_models.VCSAccount:
     return users_factories.VCSAccountFactory()
 
@@ -70,9 +78,29 @@ def mock_view() -> "MockView":
     return MockView()
 
 
+@pytest.fixture
+def mock_vcs_account() -> "MockVCSAccount":
+    return MockVCSAccount()
+
+
+@pytest.fixture
+def mock_remote_service() -> "MockRemoteService":
+    return MockRemoteService()
+
+
+class MockVCSAccount:
+    pass
+
+
 class MockUser:
     pass
 
 
 class MockView:
     pass
+
+
+class MockRemoteService:
+    @staticmethod
+    def sync_repo():
+        pass
