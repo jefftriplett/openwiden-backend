@@ -36,4 +36,5 @@ def mock_repo() -> "MockRepository":
 
 
 class MockRepository:
-    pass
+    def save(self, **kwargs):
+        pass

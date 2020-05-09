@@ -3,6 +3,8 @@ from django.utils.timezone import get_current_timezone
 from factory import fuzzy
 
 from openwiden.repositories import models, enums as repo_enums
+from openwiden.users.tests.factories import VCSAccountFactory
+from openwiden.organizations.tests import factories as org_factories
 from openwiden import enums
 
 from faker import Faker
@@ -16,6 +18,8 @@ class Repository(factory.DjangoModelFactory):
     name = factory.Faker("text", max_nb_chars=255)
     description = factory.Faker("text")
     url = factory.Faker("url")
+    owner = factory.SubFactory(VCSAccountFactory)
+    organization = factory.SubFactory(org_factories.Organization)
     forks_count = fuzzy.FuzzyInteger(1, 1000)
     stars_count = fuzzy.FuzzyInteger(1, 90000)
     created_at = factory.Faker("date_time", tzinfo=get_current_timezone())

@@ -1,13 +1,12 @@
 import typing as t
 
-from django.utils.translation import gettext_lazy as _
 from django.db import models as m
 
 from datetime import datetime
 
 from django_q.tasks import async_task
 
-from openwiden.repositories import models
+from openwiden.repositories import models, error_messages
 from openwiden import enums
 from openwiden.users import models as users_models, services as users_services
 from openwiden.organizations import models as organizations_models
@@ -17,7 +16,7 @@ from openwiden.services import remote, exceptions
 class Repository:
     @staticmethod
     def sync(
-        version_control_service: str,
+        vcs: str,
         remote_id: int,
         name: str,
         url: str,
@@ -52,22 +51,17 @@ class Repository:
 
         # Try to create or update repository
         try:
-            repository, created = (
-                models.Repository.objects.get(version_control_service=version_control_service, remote_id=remote_id),
-                False,
-            )
+            repository, created = models.Repository.objects.get(vcs=vcs, remote_id=remote_id), False
         except models.Repository.DoesNotExist:
             repository, created = (
-                models.Repository.objects.create(
-                    version_control_service=version_control_service, remote_id=remote_id, is_added=False, **fields,
-                ),
+                models.Repository.objects.create(vcs=vcs, remote_id=remote_id, is_added=False, **fields,),
                 True,
             )
         else:
             # Update values if repository exist
             for k, v in fields.items():
                 setattr(repository, k, v)
-            repository.save()
+            repository.save(update_fields=fields.keys())
 
         # TODO: notify
         if created:
@@ -77,19 +71,22 @@ class Repository:
 
     @staticmethod
     def add(repo: models.Repository, user: users_models.User) -> str:
-        oauth_token = users_services.OAuthToken.get_token(user, repo.version_control_service)
+        """
+        Adds existed repository by sync related objects (issues, for example) and changes status for "is_added".
+        """
+        vcs_account = users_services.VCSAccount.find(user, repo.vcs)
 
         # Check if repository is already added and raise an error if yes
         if repo.is_added:
-            raise exceptions.ServiceException(_("Repository already added."))
+            raise exceptions.ServiceException(error_messages.REPOSITORY_ALREADY_ADDED)
         elif repo.visibility == enums.VisibilityLevel.private:
-            raise exceptions.ServiceException(_("Repository is private and cannot be added."))
+            raise exceptions.ServiceException(error_messages.REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED)
 
         # Set is_added True for now, but save in sync action (if success)
         repo.is_added = True
 
         # Call repository sync action
-        remote_service = remote.get_service(oauth_token)
+        remote_service = remote.get_service(vcs_account)
         return async_task(remote_service.sync_repo, repo=repo)
 
     @staticmethod
@@ -97,7 +94,9 @@ class Repository:
         """
         Returns user's repos filters by owner or organization membership.
         """
-        return models.Repository.objects.filter(m.Q(owner=user) | m.Q(organization__member__user=user))
+        return models.Repository.objects.filter(
+            m.Q(owner__user=user) | m.Q(organization__member__vcs_account__user=user)
+        )
 
     @staticmethod
     def added(visibility: str = enums.VisibilityLevel.public) -> m.QuerySet:
