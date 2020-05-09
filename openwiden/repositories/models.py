@@ -10,9 +10,7 @@ from openwiden.repositories import enums as repo_enums
 
 
 class Repository(UUIDModel):
-    version_control_service = models.CharField(
-        _("version control service"), max_length=50, choices=enums.VersionControlService.choices
-    )
+    vcs = models.CharField(_("version control service"), max_length=50, choices=enums.VersionControlService.choices)
     remote_id = models.PositiveIntegerField(_("remote repository id"))
     name = models.CharField(_("name"), max_length=255)
     description = models.TextField(_("description"), blank=True, null=True)
@@ -47,9 +45,7 @@ class Repository(UUIDModel):
         ordering = ("-open_issues_count",)
         verbose_name = _("repository")
         verbose_name_plural = _("repositories")
-        constraints = (
-            models.UniqueConstraint(fields=["version_control_service", "remote_id"], name="unique_repository",),
-        )
+        constraints = (models.UniqueConstraint(fields=("vcs", "remote_id",), name="unique_repository",),)
 
     def __str__(self):
         return self.name
