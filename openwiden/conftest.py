@@ -88,6 +88,16 @@ def mock_remote_service() -> "MockRemoteService":
     return MockRemoteService()
 
 
+@pytest.fixture
+def mock_org() -> "MockOrganization":
+    return MockOrganization()
+
+
+@pytest.fixture
+def mock_member() -> "MockMember":
+    return MockMember()
+
+
 class MockVCSAccount:
     pass
 
@@ -104,3 +114,11 @@ class MockRemoteService:
     @staticmethod
     def sync_repo():
         pass
+
+
+class MockOrganization:
+    pass
+
+
+class MockMember:
+    pass
