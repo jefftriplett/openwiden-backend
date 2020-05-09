@@ -3,6 +3,7 @@ from rest_framework.test import APIRequestFactory
 
 from openwiden.users import models as users_models
 from openwiden.users.tests import factories as users_factories
+from openwiden.organizations.tests import factories as org_factories
 
 
 @pytest.fixture(autouse=True)
@@ -24,6 +25,32 @@ def vcs_account() -> users_models.VCSAccount:
 def create_vcs_account():
     def factory(**kwargs) -> users_models.VCSAccount:
         return users_factories.VCSAccountFactory(**kwargs)
+
+    return factory
+
+
+@pytest.fixture
+def org():
+    return org_factories.Organization()
+
+
+@pytest.fixture
+def create_org():
+    def factory(**kwargs):
+        return org_factories.Organization(**kwargs)
+
+    return factory
+
+
+@pytest.fixture
+def member():
+    return org_factories.Member()
+
+
+@pytest.fixture
+def create_member():
+    def factory(**kwargs):
+        return org_factories.Member(**kwargs)
 
     return factory
 
