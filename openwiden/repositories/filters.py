@@ -5,7 +5,7 @@ from openwiden import enums
 
 
 class Repository(filters.FilterSet):
-    version_control_service = filters.ChoiceFilter(choices=enums.VersionControlService.choices)
+    vcs = filters.ChoiceFilter(choices=enums.VersionControlService.choices)
 
     stars_count_gte = filters.NumberFilter(field_name="stars_count", lookup_expr="gte")
     open_issues_count_gte = filters.NumberFilter(field_name="open_issues_count", lookup_expr="gte")
@@ -17,7 +17,7 @@ class Repository(filters.FilterSet):
     class Meta:
         model = models.Repository
         fields = (
-            "version_control_service",
+            "vcs",
             "stars_count_gte",
             "open_issues_count_gte",
             "forks_count_gte",

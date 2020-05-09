@@ -11,7 +11,7 @@ fake = Faker()
 
 
 class Repository(factory.DjangoModelFactory):
-    version_control_service = fuzzy.FuzzyChoice(enums.VersionControlService.choices, getter=lambda c: c[0])
+    vcs = fuzzy.FuzzyChoice(enums.VersionControlService.choices, getter=lambda c: c[0])
     remote_id = fuzzy.FuzzyInteger(1, 10000000)
     name = factory.Faker("text", max_nb_chars=255)
     description = factory.Faker("text")
@@ -25,7 +25,7 @@ class Repository(factory.DjangoModelFactory):
 
     class Meta:
         model = models.Repository
-        django_get_or_create = ("version_control_service", "remote_id")
+        django_get_or_create = ("vcs", "remote_id")
 
 
 class Issue(factory.DjangoModelFactory):
