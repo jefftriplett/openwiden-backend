@@ -1,0 +1,1 @@
+GITLAB_WEBHOOK_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"

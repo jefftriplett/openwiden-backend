@@ -9,6 +9,8 @@ from openwiden.repositories import services as repo_services
 from openwiden.repositories import models as repo_models
 from openwiden.organizations import services as org_services
 from openwiden.organizations import models as org_models
+from openwiden.webhooks import services as webhook_services
+from openwiden.webhooks import models as webhook_models
 
 
 class RemoteService(ABC):
@@ -21,10 +23,11 @@ class RemoteService(ABC):
     issue_sync_serializer: t.Type[serializers.IssueSync] = None
 
     def __init__(self, vcs_account: users_models.VCSAccount):
-        self.vcs_account = vcs_account
-        self.vcs = vcs_account.vcs
-        self.token = self.vcs_account.to_token()
-        self.client = oauth.OAuthService.get_client(self.vcs)
+        if vcs_account:
+            self.vcs_account = vcs_account
+            self.vcs = vcs_account.vcs
+            self.token = self.vcs_account.to_token()
+            self.client = oauth.OAuthService.get_client(self.vcs)
 
     @abstractmethod
     def parse_org_slug(self, repo_data: dict) -> t.Optional[str]:
@@ -102,6 +105,7 @@ class RemoteService(ABC):
         Synchronizes repository.
         """
         self.sync_repo_issues(repo)
+        self.sync_repo_webhook(repo)
         repo.programming_languages = self.get_repo_languages(repo)
         repo.save(update_fields=("programming_languages", "is_added"))
 
@@ -123,8 +127,31 @@ class RemoteService(ABC):
                     )
                 )
 
-    def create_repo_webhook(self, repo: repo_models.Repository):
+    @abstractmethod
+    def create_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
         pass
+
+    @abstractmethod
+    def update_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
+        pass
+
+    @abstractmethod
+    def repo_webhook_exist(self, repo: repo_models.Repository, webhook_id: int) -> bool:
+        pass
+
+    def sync_repo_webhook(self, repo: repo_models.Repository):
+        """
+        Synchronizes repository webhook.
+        """
+        webhook, created = webhook_services.RepositoryWebhook.get_or_create(repo)
+        if created:
+            self.create_repo_webhook(webhook)
+        else:
+            if webhook.remote_id:
+                if self.repo_webhook_exist(repo, webhook.remote_id):
+                    self.update_repo_webhook(webhook)
+            else:
+                self.create_repo_webhook(webhook)
 
     def sync_org(self, *, org: org_models.Organization = None, slug: str = None):
         """
@@ -158,3 +185,7 @@ class RemoteService(ABC):
             org_services.Member.sync(organization, self.vcs_account, is_admin)
         else:
             org_services.Organization.remove_member(organization, self.vcs_account)
+
+    @abstractmethod
+    def handle_webhook_data(self, webhook: webhook_models.RepositoryWebhook, event: str, data):
+        pass
