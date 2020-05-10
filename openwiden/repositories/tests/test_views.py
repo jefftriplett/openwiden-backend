@@ -52,6 +52,11 @@ class TestIssueViewSet:
 class TestUserRepositoriesViewSet:
     view_cls = views.UserRepositories
 
+    def test_attrs(self):
+        assert self.view_cls.serializer_class == serializers.UserRepository
+        assert self.view_cls.permission_classes == (permissions.IsAuthenticated,)
+        assert self.view_cls.lookup_field == "id"
+
     @mock.patch.object(views.services.Repository, "get_user_repos")
     def test_get_queryset(self, patched_get_user_repos, api_rf, mock_user):
         qs = models.Repository.objects.none()

@@ -30,7 +30,7 @@ class Issue(viewsets.ReadOnlyModelViewSet):
 
 
 class UserRepositories(viewsets.ReadOnlyModelViewSet):
-    serializer_class = serializers.Repository
+    serializer_class = serializers.UserRepository
     lookup_field = "id"
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -38,7 +38,7 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
         return services.Repository.get_user_repos(self.request.user)
 
     @action(detail=True, methods=["POST"])
-    def add(self, request):
+    def add(self, request, **kwargs):
         repository = self.get_object()
         try:
             task_id = services.Repository.add(repo=repository, user=request.user)

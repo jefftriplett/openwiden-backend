@@ -4,13 +4,11 @@ from openwiden.repositories import models
 
 
 class Repository(serializers.ModelSerializer):
-    version_control_service = serializers.CharField()
-
     class Meta:
         model = models.Repository
         fields = (
             "id",
-            "version_control_service",
+            "vcs",
             "name",
             "description",
             "url",
@@ -36,3 +34,8 @@ class Issue(serializers.ModelSerializer):
             "closed_at",
             "updated_at",
         )
+
+
+class UserRepository(Repository):
+    class Meta(Repository.Meta):
+        fields = Repository.Meta.fields + ("visibility", "is_added")
