@@ -31,7 +31,7 @@ class VCSAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.VCSAccount
         fields = (
-            "provider",
+            "vcs",
             "login",
         )
 
