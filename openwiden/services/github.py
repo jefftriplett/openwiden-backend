@@ -7,6 +7,7 @@ from openwiden.repositories import models as repo_models
 from openwiden.organizations import models as org_models
 from django.utils.translation import gettext_lazy as _
 from openwiden import exceptions
+from openwiden.webhooks import models as webhook_models
 
 
 class GitHubService(RemoteService):
@@ -75,3 +76,15 @@ class GitHubService(RemoteService):
             raise exceptions.ServiceException(
                 _("an error occurred while check organization membership, please, try again.")
             )
+
+    def create_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
+        pass
+
+    def update_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
+        pass
+
+    def repo_webhook_exist(self, repo: repo_models.Repository, webhook_id: int) -> bool:
+        pass
+
+    def handle_webhook_data(self, webhook: webhook_models.RepositoryWebhook, event: str, data):
+        pass

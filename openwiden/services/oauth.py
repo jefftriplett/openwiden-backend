@@ -7,12 +7,11 @@ from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext_lazy as _
-from django_q.tasks import async_task
 from rest_framework.request import Request
 
 from openwiden.users import models
 from openwiden import enums, exceptions
-from openwiden.services import serializers, utils, models as service_models
+from openwiden.services import serializers, models as service_models
 
 
 # def gitlab_compliance_fix(session):
@@ -209,10 +208,8 @@ class OAuthService:
         )
         s = serializers.OAuthTokenSerializer(data=data)
 
-        # Trigger some actions if vcs account is saved or raise an error if data is invalid
+        # Save vcs account instance
         if s.is_valid():
-            oauth_token = s.save()
-            async_task(utils.get_service(oauth_token).sync)
-            return oauth_token
+            return s.save()
         else:
             raise exceptions.ServiceException(str(s.errors))

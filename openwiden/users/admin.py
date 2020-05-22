@@ -2,8 +2,13 @@ from django.contrib import admin
 from openwiden.users import models
 
 
-class VCSAccountInline(admin.TabularInline):
+class VCSAccountInline(admin.StackedInline):
     model = models.VCSAccount
+    extra = 0
+    readonly_fields = ("vcs", "remote_id", "login")
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 @admin.register(models.User)

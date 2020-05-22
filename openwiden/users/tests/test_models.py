@@ -25,4 +25,4 @@ def test_vcs_account_to_token(create_vcs_account):
 
 
 def test_vcs_account_str(vcs_account):
-    assert str(vcs_account) == vcs_account.access_token
+    assert str(vcs_account) == vcs_account.login

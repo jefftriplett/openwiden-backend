@@ -33,7 +33,7 @@ class VCSAccount(models.Model):
         constraints = (models.UniqueConstraint(fields=("vcs", "remote_id"), name="unique_vcs_account"),)
 
     def __str__(self):
-        return self.access_token
+        return f"{self.login}"
 
     def to_token(self) -> dict:
         """
