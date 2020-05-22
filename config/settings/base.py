@@ -287,6 +287,7 @@ SIMPLE_JWT = {
 SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
     "SECURITY_DEFINITIONS": {"JWT": {"type": "apiKey", "name": "Authorization", "in": "header"},},
+    "DEFAULT_INFO": "openwiden.views.openapi_info",
 }
 
 # Cors headers

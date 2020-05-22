@@ -1,0 +1,965 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "OpenWiden API",
+        "description": "OpenWiden - An Open Source Project Search Platform.",
+        "contact": {
+            "email": "stefanitsky.mozdor@gmail.com"
+        },
+        "license": {
+            "name": "GNU General Public License v3"
+        },
+        "version": "v1"
+    },
+    "basePath": "/api/v1",
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "securityDefinitions": {
+        "JWT": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "security": [
+        {
+            "JWT": []
+        }
+    ],
+    "paths": {
+        "/auth/complete/{vcs}/": {
+            "get": {
+                "operationId": "auth_complete_read",
+                "description": "Creates or updates user for specified provider.",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "auth"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "vcs",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/auth/login/{vcs}/": {
+            "get": {
+                "operationId": "auth_login_read",
+                "summary": "Redirects user for auth via available provider.",
+                "description": "# GitLab\nFor GitLab `redirect_uri` is required.\nGitLab tries to find redirect_uri from the list, specified in the app `Callback URL` settings.\nThis is why if redirect_uri was not specified in the query parameters, an error will occur from GitLab.\n\nFor example:\n### http://0.0.0.0:8000/users/login/gitlab/?redirect_uri=http://0.0.0.0:8000/users/complete/gitlab/",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "auth"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "vcs",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/auth/refresh_token/": {
+            "post": {
+                "operationId": "auth_refresh_token_create",
+                "description": "Takes a refresh type JSON web token and returns an access type JSON web\ntoken if the refresh token is valid.",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TokenRefresh"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/TokenRefresh"
+                        }
+                    }
+                },
+                "tags": [
+                    "auth"
+                ]
+            },
+            "parameters": []
+        },
+        "/repositories/": {
+            "get": {
+                "operationId": "repositories_list",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "vcs",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "stars_count_gte",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "number"
+                    },
+                    {
+                        "name": "open_issues_count_gte",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "number"
+                    },
+                    {
+                        "name": "forks_count_gte",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "number"
+                    },
+                    {
+                        "name": "created_at",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "updated_at",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "required": [
+                                "count",
+                                "results"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "next": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "previous": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/Repository"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "repositories"
+                ]
+            },
+            "parameters": []
+        },
+        "/repositories/{id}/": {
+            "get": {
+                "operationId": "repositories_read",
+                "description": "",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Repository"
+                        }
+                    }
+                },
+                "tags": [
+                    "repositories"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "A UUID string identifying this repository.",
+                    "required": true,
+                    "type": "string",
+                    "format": "uuid"
+                }
+            ]
+        },
+        "/repositories/{repository_id}/issues/": {
+            "get": {
+                "operationId": "repositories_issues_list",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "required": [
+                                "count",
+                                "results"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "next": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "previous": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/Issue"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "repositories"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "repository_id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/repositories/{repository_id}/issues/{id}/": {
+            "get": {
+                "operationId": "repositories_issues_read",
+                "description": "",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Issue"
+                        }
+                    }
+                },
+                "tags": [
+                    "repositories"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "repository_id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/user/repositories/": {
+            "get": {
+                "operationId": "user_repositories_list",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "required": [
+                                "count",
+                                "results"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "next": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "previous": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/UserRepository"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "user"
+                ]
+            },
+            "parameters": []
+        },
+        "/user/repositories/{id}/": {
+            "get": {
+                "operationId": "user_repositories_read",
+                "description": "",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/UserRepository"
+                        }
+                    }
+                },
+                "tags": [
+                    "user"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/user/repositories/{id}/add/": {
+            "post": {
+                "operationId": "user_repositories_add",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserRepository"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/UserRepository"
+                        }
+                    }
+                },
+                "tags": [
+                    "user"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/users/": {
+            "get": {
+                "operationId": "users_list",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "required": [
+                                "count",
+                                "results"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "next": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "previous": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/User"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "users"
+                ]
+            },
+            "parameters": []
+        },
+        "/users/me/": {
+            "get": {
+                "operationId": "users_me",
+                "description": "Returns current authenticated user's information.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "required": [
+                                "count",
+                                "results"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "next": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "previous": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "x-nullable": true
+                                },
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/User"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "users"
+                ]
+            },
+            "parameters": []
+        },
+        "/users/{id}/": {
+            "get": {
+                "operationId": "users_read",
+                "description": "",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    }
+                },
+                "tags": [
+                    "users"
+                ]
+            },
+            "put": {
+                "operationId": "users_update",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/UserUpdate"
+                        }
+                    }
+                },
+                "tags": [
+                    "users"
+                ]
+            },
+            "patch": {
+                "operationId": "users_partial_update",
+                "description": "",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/UserUpdate"
+                        }
+                    }
+                },
+                "tags": [
+                    "users"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "A UUID string identifying this user.",
+                    "required": true,
+                    "type": "string",
+                    "format": "uuid"
+                }
+            ]
+        },
+        "/webhooks/{id}/receive/": {
+            "post": {
+                "operationId": "webhooks_receive_create",
+                "description": "",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "webhooks"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        }
+    },
+    "definitions": {
+        "TokenRefresh": {
+            "required": [
+                "refresh"
+            ],
+            "type": "object",
+            "properties": {
+                "refresh": {
+                    "title": "Refresh",
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "Repository": {
+            "required": [
+                "vcs",
+                "name",
+                "url",
+                "created_at",
+                "updated_at"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                },
+                "vcs": {
+                    "title": "Version control service",
+                    "type": "string",
+                    "enum": [
+                        "github",
+                        "gitlab"
+                    ]
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "stars_count": {
+                    "title": "Stars count",
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 0
+                },
+                "open_issues_count": {
+                    "title": "Open issues count",
+                    "type": "integer",
+                    "maximum": 32767,
+                    "minimum": 0
+                },
+                "forks_count": {
+                    "title": "Forks count",
+                    "type": "integer",
+                    "maximum": 32767,
+                    "minimum": 0
+                },
+                "created_at": {
+                    "title": "Created at",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updated_at": {
+                    "title": "Updated at",
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "Issue": {
+            "required": [
+                "title",
+                "state",
+                "url",
+                "created_at",
+                "updated_at"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                },
+                "title": {
+                    "title": "Title",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "state": {
+                    "title": "State",
+                    "type": "string",
+                    "enum": [
+                        "open",
+                        "closed"
+                    ]
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "title": "Labels",
+                        "type": "string",
+                        "maxLength": 50,
+                        "minLength": 1
+                    },
+                    "x-nullable": true
+                },
+                "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "created_at": {
+                    "title": "Crated at",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "closed_at": {
+                    "title": "Closed at",
+                    "type": "string",
+                    "format": "date-time",
+                    "x-nullable": true
+                },
+                "updated_at": {
+                    "title": "Updated at",
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "UserRepository": {
+            "required": [
+                "vcs",
+                "name",
+                "url",
+                "created_at",
+                "updated_at",
+                "visibility"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                },
+                "vcs": {
+                    "title": "Version control service",
+                    "type": "string",
+                    "enum": [
+                        "github",
+                        "gitlab"
+                    ]
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "stars_count": {
+                    "title": "Stars count",
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 0
+                },
+                "open_issues_count": {
+                    "title": "Open issues count",
+                    "type": "integer",
+                    "maximum": 32767,
+                    "minimum": 0
+                },
+                "forks_count": {
+                    "title": "Forks count",
+                    "type": "integer",
+                    "maximum": 32767,
+                    "minimum": 0
+                },
+                "created_at": {
+                    "title": "Created at",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updated_at": {
+                    "title": "Updated at",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "visibility": {
+                    "title": "Visibility",
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "private",
+                        "internal"
+                    ]
+                },
+                "is_added": {
+                    "title": "Is added",
+                    "type": "boolean"
+                }
+            }
+        },
+        "User": {
+            "required": [
+                "username"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "type": "string",
+                    "format": "uuid",
+                    "readOnly": true
+                },
+                "username": {
+                    "title": "Username",
+                    "description": "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                    "type": "string",
+                    "pattern": "^[\\w.@+-]+$",
+                    "maxLength": 150,
+                    "minLength": 1
+                },
+                "first_name": {
+                    "title": "First name",
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "last_name": {
+                    "title": "Last name",
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "email": {
+                    "title": "Email address",
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                },
+                "date_joined": {
+                    "title": "Date joined",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "avatar": {
+                    "title": "User avatar",
+                    "type": "string",
+                    "readOnly": true,
+                    "format": "uri"
+                }
+            }
+        },
+        "UserUpdate": {
+            "required": [
+                "username"
+            ],
+            "type": "object",
+            "properties": {
+                "username": {
+                    "title": "Username",
+                    "description": "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                    "type": "string",
+                    "pattern": "^[\\w.@+-]+$",
+                    "maxLength": 150,
+                    "minLength": 1
+                },
+                "first_name": {
+                    "title": "First name",
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "last_name": {
+                    "title": "Last name",
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "avatar": {
+                    "title": "User avatar",
+                    "type": "string",
+                    "readOnly": true,
+                    "format": "uri"
+                }
+            }
+        }
+    }
+}

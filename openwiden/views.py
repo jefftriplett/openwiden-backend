@@ -8,17 +8,15 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="OpenWiden API",
-        default_version="v1",
-        description="OpenWiden - An Open Source Project Search Platform.",
-        contact=openapi.Contact(email="stefanitsky.mozdor@gmail.com"),
-        license=openapi.License(name="GNU General Public License v3"),
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
+openapi_info = openapi.Info(
+    title="OpenWiden API",
+    default_version="v1",
+    description="OpenWiden - An Open Source Project Search Platform.",
+    contact=openapi.Contact(email="stefanitsky.mozdor@gmail.com"),
+    license=openapi.License(name="GNU General Public License v3"),
 )
+
+schema_view = get_schema_view(info=openapi_info, public=True, permission_classes=(permissions.AllowAny,),)
 
 
 def exception_handler(exception, context) -> t.Optional[Response]:
