@@ -80,4 +80,14 @@ class TestIssueService:
     def test_sync(self, patched_update_or_create, mock_issue, mock_repo):
         patched_update_or_create.return_value = mock_issue, True
 
-        assert services.Issue.sync(mock_repo, 1, "", "", "", [""], "", now()) == (mock_issue, True)
+        assert services.Issue.sync(
+            repo=mock_repo,
+            remote_id=1,
+            title="title",
+            description=None,
+            state="open",
+            labels=["label"],
+            url="http://example.com",
+            created_at=now(),
+            updated_at=now(),
+        ) == (mock_issue, True)

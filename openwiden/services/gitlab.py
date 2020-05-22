@@ -1,6 +1,9 @@
 import typing as t
 from datetime import datetime
 
+from rest_framework.request import Request
+from rest_framework.response import Response
+
 from . import constants
 from .abstract import RemoteService
 from .serializers import GitlabRepositorySync, GitlabOrganizationSync, GitlabIssueSync
@@ -109,12 +112,13 @@ class GitlabService(RemoteService):
         else:
             raise exceptions.ServiceException(_("error occurred on repository webhook create."))
 
-    def handle_webhook_data(self, webhook: webhook_models.RepositoryWebhook, event: str, data):
-        d = data["object_attributes"]
+    def handle_webhook(self, webhook: webhook_models.RepositoryWebhook, request: Request) -> Response:
+        if request.META["HTTP_X_GITLAB_TOKEN"] != webhook.secret:
+            raise exceptions.ServiceException(_("Invalid HTTP_X_GITLAB_TOKEN header value."))
 
-        print(webhook)
-        print(event)
-        print(d)
+        event = request.META["HTTP_X_GITLAB_EVENT"]
+
+        d = request.data["object_attributes"]
 
         if event == "Issue Hook":
 
@@ -133,3 +137,9 @@ class GitlabService(RemoteService):
                 services.Issue.sync(repo=webhook.repository, **serializer.validated_data)
             else:
                 raise exceptions.ServiceException("issue webhook handle exception: " + str(serializer.errors))
+
+        return Response(f"Ok", headers={"HTTP_X_HUB_SIGNATURE": request.META["HTTP_X_GITLAB_TOKEN"]})
+
+    @classmethod
+    def handle_issue_event(cls, webhook: webhook_models.RepositoryWebhook, data):
+        pass

@@ -3,6 +3,22 @@ from rest_framework import serializers
 from openwiden.repositories import models
 
 
+class SyncIssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Issue
+        fields = (
+            "remote_id",
+            "title",
+            "description",
+            "state",
+            "labels",
+            "url",
+            "created_at",
+            "updated_at",
+            "closed_at",
+        )
+
+
 class Repository(serializers.ModelSerializer):
     class Meta:
         model = models.Repository

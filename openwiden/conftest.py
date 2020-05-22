@@ -1,9 +1,12 @@
 import pytest
 from rest_framework.test import APIRequestFactory
 
+from openwiden import enums
 from openwiden.users import models as users_models
 from openwiden.users.tests import factories as users_factories
 from openwiden.organizations.tests import factories as org_factories
+from openwiden.webhooks import models as webhook_models
+from openwiden.webhooks.tests import factories as webhook_factories
 
 
 @pytest.fixture(autouse=True)
@@ -122,3 +125,21 @@ class MockOrganization:
 
 class MockMember:
     pass
+
+
+@pytest.fixture()
+def repo_webhook() -> webhook_models.RepositoryWebhook:
+    return webhook_factories.RepositoryWebhookFactory()
+
+
+@pytest.fixture()
+def create_repo_webhook():
+    def f(**kwargs) -> webhook_models.RepositoryWebhook:
+        return webhook_factories.RepositoryWebhookFactory(**kwargs)
+
+    return f
+
+
+@pytest.fixture()
+def github_webhook() -> webhook_models.RepositoryWebhook:
+    return webhook_factories.RepositoryWebhookFactory(repository__vcs=enums.VersionControlService.GITHUB)

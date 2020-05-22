@@ -1,5 +1,5 @@
 from openwiden.users import models
-from openwiden import enums
+from openwiden import enums, exceptions
 from .abstract import RemoteService
 from .github import GitHubService
 from .gitlab import GitlabService
@@ -17,4 +17,4 @@ def get_service(vcs_account: models.VCSAccount = None, vcs: str = None) -> Remot
     elif vcs == enums.VersionControlService.GITLAB:
         return GitlabService(vcs_account)
     else:
-        raise NotImplementedError(f"{vcs} is not implemented!")
+        raise exceptions.ServiceException(f"{vcs} is not implemented!")

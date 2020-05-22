@@ -2,6 +2,8 @@ import typing as t
 from abc import ABC, abstractmethod
 
 from django.utils.translation import gettext_lazy as _
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from openwiden.services import serializers, oauth
 from openwiden.users import models as users_models
@@ -187,6 +189,12 @@ class RemoteService(ABC):
         else:
             org_services.Organization.remove_member(organization, self.vcs_account)
 
+    @classmethod
     @abstractmethod
-    def handle_webhook_data(self, webhook: webhook_models.RepositoryWebhook, event: str, data):
+    def handle_webhook(cls, webhook: webhook_models.RepositoryWebhook, request: Request) -> Response:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def handle_issue_event(cls, webhook: webhook_models.RepositoryWebhook, data):
         pass

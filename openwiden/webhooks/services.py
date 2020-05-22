@@ -1,7 +1,5 @@
 import typing as t
 
-import hashlib
-import hmac
 from uuid import uuid4
 
 from django.contrib.sites.models import Site
@@ -15,14 +13,6 @@ class RepositoryWebhook:
     @staticmethod
     def all() -> m.QuerySet:
         return models.RepositoryWebhook.objects.all()
-
-    @staticmethod
-    def compare_signatures(webhook: models.RepositoryWebhook, msg, signature: str) -> bool:
-        """
-        Compares signature for received GitHub webhook.
-        """
-        generated = hmac.new(webhook.secret.encode("utf-8"), msg, hashlib.sha1)
-        return True if hmac.compare_digest(generated.hexdigest(), signature) else False
 
     @staticmethod
     def get_or_create(repo: repo_models.Repository) -> t.Tuple[models.RepositoryWebhook, bool]:

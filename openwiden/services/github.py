@@ -1,9 +1,16 @@
 import typing as t
 
+import hashlib
+import hmac
+
+from rest_framework.request import Request
+from rest_framework.response import Response
+
 from .abstract import RemoteService
 from .serializers import GitHubRepositorySync, GithubOrganizationSync, GitHubIssueSync
 from .enums import GitHubOwnerType
-from openwiden.repositories import models as repo_models
+from .constants import Messages, Headers, Events, IssueEventActions
+from openwiden.repositories import models as repo_models, services as repo_services
 from openwiden.organizations import models as org_models
 from django.utils.translation import gettext_lazy as _
 from openwiden import exceptions
@@ -77,8 +84,37 @@ class GitHubService(RemoteService):
                 _("an error occurred while check organization membership, please, try again.")
             )
 
+    @staticmethod
+    def _compare_signatures(webhook: webhook_models.RepositoryWebhook, msg, signature: str) -> bool:
+        """
+        Compares signature for received GitHub webhook.
+        """
+        generated = hmac.new(webhook.secret.encode("utf-8"), msg, hashlib.sha1)
+        return True if hmac.compare_digest(generated.hexdigest(), signature) else False
+
     def create_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
-        pass
+        data = dict(
+            events=["issues", "repository"],
+            config=dict(
+                url=webhook.url,
+                content_type="json",
+                secret=webhook.secret,
+                insecure_ssl="0",
+            )
+        )
+        owner = self.get_repo_owner(webhook.repository)
+        response = self.client.post(f"/repos/{owner}/{webhook.repository.name}/hooks", token=self.token, json=data)
+        json = response.json()
+
+        if response.status_code == 201:
+            webhook.remote_id = json["id"]
+            webhook.is_active = True
+            webhook.created_at = json["created_at"]
+            webhook.updated_at = json["updated_at"]
+            webhook.issue_events_enabled = True
+            webhook.save(update_fields=("remote_id", "is_active", "created_at", "updated_at", "issue_events_enabled"))
+        else:
+            raise exceptions.ServiceException(Messages.REPO_WEBHOOK_CREATE_ERROR.format(error=json))
 
     def update_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
         pass
@@ -86,5 +122,53 @@ class GitHubService(RemoteService):
     def repo_webhook_exist(self, repo: repo_models.Repository, webhook_id: int) -> bool:
         pass
 
-    def handle_webhook_data(self, webhook: webhook_models.RepositoryWebhook, event: str, data):
-        pass
+    @classmethod
+    def handle_webhook(cls, webhook: webhook_models.RepositoryWebhook, request: Request) -> Response:
+        # Check headers exist or not
+        if request.META.get(Headers.SIGNATURE) is None:
+            raise exceptions.ServiceException(Messages.X_HUB_SIGNATURE_HEADER_IS_MISSING)
+        elif request.META.get(Headers.EVENT) is None:
+            raise exceptions.ServiceException(Messages.X_GITHUB_EVENT_HEADER_IS_MISSING)
+
+        # Check digest required name and get signature
+        digest_name, signature = request.META[Headers.SIGNATURE].split("=")
+        if digest_name != "sha1":
+            raise exceptions.ServiceException(Messages.DIGEST_IS_NOT_SUPPORTED.format(digest_name=digest_name))
+
+        # Compare received signature
+        if not cls._compare_signatures(webhook, request.body, signature):
+            raise exceptions.ServiceException(Messages.X_HUB_SIGNATURE_IS_INVALID)
+
+        event = request.META[Headers.EVENT]
+
+        if event == Events.ISSUES:
+            cls.handle_issue_event(webhook, request.data)
+            return Response("Ok")
+        if event == Events.PING:
+            return Response("Pong")
+        else:
+            raise exceptions.ServiceException(f"unsupported event {event}")
+
+    @classmethod
+    def parse_issue_data(cls, data: dict) -> dict:
+        return dict(
+            remote_id=data["id"],
+            title=data["title"],
+            description=data["body"],
+            state=data["state"],
+            labels=[label["name"] for label in data["labels"]],
+            url=data["html_url"],
+            created_at=data["created_at"],
+            closed_at=data["closed_at"],
+            updated_at=data["updated_at"],
+        )
+
+    @classmethod
+    def handle_issue_event(cls, webhook: webhook_models.RepositoryWebhook, data):
+        action = data["action"]
+        issue_data = cls.parse_issue_data(data["issue"])
+
+        if action == IssueEventActions.DELETED:
+            repo_services.Issue.delete_by_remote_id(webhook.repository, issue_data["remote_id"])
+        else:
+            repo_services.Issue.sync(webhook.repository, **issue_data)
