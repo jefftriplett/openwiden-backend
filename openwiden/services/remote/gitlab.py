@@ -1,7 +1,7 @@
 import typing as t
 from datetime import datetime
 
-from . import exceptions, constants
+from . import constants
 from .abstract import RemoteService
 from .serializers import GitlabRepositorySync, GitlabOrganizationSync, GitlabIssueSync
 from .enums import GitlabNamespaceKind
@@ -10,6 +10,7 @@ from openwiden.repositories import models as repo_models
 from openwiden.webhooks import models as webhook_models
 from django.utils.translation import gettext_lazy as _
 from openwiden.repositories import services
+from openwiden import exceptions
 
 
 class GitlabService(RemoteService):
@@ -26,7 +27,7 @@ class GitlabService(RemoteService):
         if r.status_code == 200:
             return r.json()
         else:
-            raise exceptions.RemoteSyncException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
+            raise exceptions.ServiceException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
 
     def get_repo_issues(self, repo: repo_models.Repository) -> t.List[dict]:
         r = self.client.get(f"projects/{repo.remote_id}/issues?state=opened", token=self.token)
@@ -34,7 +35,7 @@ class GitlabService(RemoteService):
         if r.status_code == 200:
             return r.json()
         else:
-            raise exceptions.RemoteSyncException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
+            raise exceptions.ServiceException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
 
     def parse_org_slug(self, repo_data: dict) -> t.Optional[str]:
         if repo_data["namespace"]["kind"] == GitlabNamespaceKind.ORGANIZATION:
@@ -47,11 +48,11 @@ class GitlabService(RemoteService):
         if r.status_code == 200:
             return r.json()
         elif r.status_code == 404:
-            raise exceptions.RemoteSyncException(
+            raise exceptions.ServiceException(
                 _("Organization with id {org} is private or not found").format(org=organization_id)
             )
         else:
-            raise exceptions.RemoteSyncException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
+            raise exceptions.ServiceException(_("Unexpected error occurred. API response: {r}").format(r=r.json()))
 
     def check_org_membership(self, organization: org_models.Organization) -> t.Tuple[bool, bool]:
         r = self.client.get(f"groups/{organization.remote_id}/members/{self.vcs_account.remote_id}", token=self.token)
@@ -61,7 +62,7 @@ class GitlabService(RemoteService):
         elif r.status_code == 404:
             return False, False
         else:
-            raise exceptions.RemoteSyncException(r.json())
+            raise exceptions.ServiceException(r.json())
 
     def repo_webhook_exist(self, repo: repo_models.Repository, webhook_id: int) -> bool:
         r = self.client.get(f"projects/{repo.remote_id}/hooks/{webhook_id}", token=self.token)
@@ -70,7 +71,7 @@ class GitlabService(RemoteService):
         elif r.status_code == 404:
             return False
         else:
-            raise exceptions.RemoteException(_("unexpected error occurred for repository webhook exist check."))
+            raise exceptions.ServiceException(_("unexpected error occurred for repository webhook exist check."))
 
     def update_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
         d = dict(
@@ -87,7 +88,7 @@ class GitlabService(RemoteService):
             webhook.is_active = True
             webhook.save(update_fields=("updated_at", "is_active"))
         else:
-            raise exceptions.RemoteSyncException(_("error occurred on repository webhook create."))
+            raise exceptions.ServiceException(_("error occurred on repository webhook create."))
 
     def create_repo_webhook(self, webhook: webhook_models.RepositoryWebhook):
         d = dict(
@@ -106,7 +107,7 @@ class GitlabService(RemoteService):
             webhook.issue_events_enabled = True
             webhook.save(update_fields=("remote_id", "created_at", "is_active", "issue_events_enabled"))
         else:
-            raise exceptions.RemoteSyncException(_("error occurred on repository webhook create."))
+            raise exceptions.ServiceException(_("error occurred on repository webhook create."))
 
     def handle_webhook_data(self, webhook: webhook_models.RepositoryWebhook, event: str, data):
         d = data["object_attributes"]
@@ -131,4 +132,4 @@ class GitlabService(RemoteService):
             if serializer.is_valid():
                 services.Issue.sync(repo=webhook.repository, **serializer.validated_data)
             else:
-                raise exceptions.RemoteException("issue webhook handle exception: " + str(serializer.errors))
+                raise exceptions.ServiceException("issue webhook handle exception: " + str(serializer.errors))

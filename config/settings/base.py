@@ -242,6 +242,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "EXCEPTION_HANDLER": "openwiden.views.exception_handler",
 }
 
 # GitHub oauth app

@@ -5,6 +5,7 @@ from django.http import Http404
 from rest_framework import permissions
 
 from openwiden.repositories import views, serializers, filters, models, error_messages
+from openwiden import exceptions
 
 pytestmark = pytest.mark.django_db
 
@@ -84,12 +85,14 @@ class TestUserRepositoriesViewSet:
         assert response.status_code == 200
         assert response.data == {"task_id": task_id}
 
-        patched_add.side_effect = views.ServiceException("test")
+        patched_add.side_effect = exceptions.ServiceException("test")
 
-        response = view.add(request)
+        with pytest.raises(exceptions.ServiceException) as e:
+            response = view.add(request)
 
-        assert response.status_code == 400
-        assert response.data == "test"
+            assert e.value == "test"
+            assert response.status_code == 400
+            assert response.data == "test"
 
-        assert patched_add.call_count == 2
-        assert patched_get_obj.call_count == 2
+            assert patched_add.call_count == 2
+            assert patched_get_obj.call_count == 2

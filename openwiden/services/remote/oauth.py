@@ -11,8 +11,8 @@ from django_q.tasks import async_task
 from rest_framework.request import Request
 
 from openwiden.users import models
-from openwiden import enums
-from . import serializers, exceptions, models as service_models, utils
+from openwiden import enums, exceptions
+from . import serializers, models as service_models, utils
 
 
 # def gitlab_compliance_fix(session):
@@ -61,7 +61,7 @@ class OAuthService:
         """
         client = oauth.create_client(vcs)
         if client is None:
-            raise exceptions.RemoteException(_("{vcs} is not found.").format(vcs=vcs))
+            raise exceptions.ServiceException(_("{vcs} is not found.").format(vcs=vcs))
         return client
 
     @staticmethod
@@ -72,7 +72,7 @@ class OAuthService:
         try:
             return client.authorize_access_token(request)
         except AuthlibBaseError as e:
-            raise exceptions.RemoteException(e.description)
+            raise exceptions.ServiceException(e.description)
 
     @staticmethod
     def get_profile(vcs: str, request: Request) -> "service_models.Profile":
@@ -92,7 +92,7 @@ class OAuthService:
                 profile_data["email"] = emails[0]["email"]
 
         except AuthlibBaseError as e:
-            raise exceptions.RemoteException(e.description)
+            raise exceptions.ServiceException(e.description)
         else:
             # Modify raw profile data if needed
             if vcs == enums.VersionControlService.GITHUB:
@@ -100,13 +100,13 @@ class OAuthService:
             elif vcs == enums.VersionControlService.GITLAB:
                 serializer = serializers.GitlabUserSerializer(data=profile_data)
             else:
-                raise exceptions.RemoteException(_("{vcs} is not implemented.").format(vcs=vcs))
+                raise exceptions.ServiceException(_("{vcs} is not implemented.").format(vcs=vcs))
 
             # Validate profile data before return
             if serializer.is_valid():
                 return service_models.Profile(**serializer.data, **token)
             else:
-                raise exceptions.RemoteException(_("Unexpected error occurred."), error=serializer.errors)
+                raise exceptions.ServiceException(_("Unexpected error occurred."), error=serializer.errors)
 
     @staticmethod
     def oauth(vcs: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
@@ -215,4 +215,4 @@ class OAuthService:
             async_task(utils.get_service(oauth_token).sync)
             return oauth_token
         else:
-            raise exceptions.RemoteException(str(s.errors))
+            raise exceptions.ServiceException(str(s.errors))

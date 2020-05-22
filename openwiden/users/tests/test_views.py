@@ -1,8 +1,9 @@
 import pytest
 from rest_framework.response import Response
 
-from openwiden import enums
-from openwiden.users import views, exceptions, serializers
+from openwiden import enums, exceptions
+from openwiden.users import views, serializers
+from openwiden.users.exceptions import GitLabOAuthMissedRedirectURI
 
 
 pytestmark = pytest.mark.django_db
@@ -27,13 +28,13 @@ class TestOAuthLoginView:
 
         assert client.name == vcs
 
-    def test_get_client_raises_vcs_not_found(self, settings):
+    def test_get_client_raises_service_exception(self, settings):
         settings.AUTHLIB_OAUTH_CLIENTS = {}
         vcs = "test"
 
-        with pytest.raises(exceptions.VCSNotFound) as e:
+        with pytest.raises(exceptions.ServiceException) as e:
             views.OAuthLoginView.get_client(vcs)
-            assert e.value == exceptions.VCSNotFound(vcs).detail
+            assert e.value == exceptions.ServiceException(vcs).description
 
     def test_get(self, api_rf, monkeypatch):
         monkeypatch.setattr(views.OAuthLoginView, "get_client", MockClient.get_mock_client)
@@ -45,9 +46,9 @@ class TestOAuthLoginView:
 
         assert response.status_code == 302
 
-        with pytest.raises(exceptions.GitLabOAuthMissedRedirectURI) as e:
+        with pytest.raises(GitLabOAuthMissedRedirectURI) as e:
             view.get(request, enums.VersionControlService.GITLAB)
-            assert e.value == exceptions.GitLabOAuthMissedRedirectURI().detail
+            assert e.value == GitLabOAuthMissedRedirectURI().detail
 
         request = api_rf.get("/fake-url/?redirect_uri=http://example.com")
 
@@ -78,13 +79,16 @@ def test_oauth_complete_view(api_rf, monkeypatch, mock_user):
     assert response.data == mock_jwt_tokens
 
     def raise_remote_exception(*args):
-        raise views.remote_service_exceptions.RemoteException("description")
+        raise exceptions.ServiceException("description")
 
     monkeypatch.setattr(views.remote.OAuthService, "oauth", raise_remote_exception)
 
-    response = view.get(request, "vcs")
-    assert response.status_code == 400
-    assert response.data == {"detail": "description"}
+    with pytest.raises(exceptions.ServiceException) as e:
+        response = view.get(request, "vcs")
+
+        assert e.value == "description"
+        assert response.status_code == 400
+        assert response.data == {"detail": "description"}
 
 
 class TestUserViewSet:

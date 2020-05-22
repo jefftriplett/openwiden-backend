@@ -1,7 +1,7 @@
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.users import models, error_messages
-from openwiden.services import exceptions
+from openwiden import exceptions
 
 
 class UserService:

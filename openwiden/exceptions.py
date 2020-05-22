@@ -1,6 +1,6 @@
 class ServiceException(Exception):
     """
-    Base service exception for all subclasses.
+    Service exception.
     """
 
     def __init__(self, description: str, error=None):

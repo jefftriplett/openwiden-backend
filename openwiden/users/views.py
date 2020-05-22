@@ -1,6 +1,6 @@
 from authlib.integrations.django_client import DjangoRemoteApp
 
-from rest_framework import views, permissions as drf_permissions, status, viewsets, mixins
+from rest_framework import views, permissions as drf_permissions, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -9,7 +9,6 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from openwiden import enums
 from openwiden.users import exceptions, models, permissions, serializers, services
 from openwiden.services import remote
-from openwiden.services.remote import exceptions as remote_service_exceptions
 
 token_refresh_view = TokenRefreshView.as_view()
 
@@ -34,12 +33,7 @@ class OAuthLoginView(views.APIView):
         """
         Returns client or raises VCSNotFound exception.
         """
-        try:
-            client: DjangoRemoteApp = remote.OAuthService.get_client(vcs)
-        except remote_service_exceptions.RemoteException:
-            raise exceptions.VCSNotFound(vcs)
-        else:
-            return client
+        return remote.OAuthService.get_client(vcs)
 
     def get(self, request, vcs):
         client: DjangoRemoteApp = self.get_client(vcs)
@@ -66,13 +60,9 @@ class OAuthCompleteView(views.APIView):
     permission_classes = (drf_permissions.AllowAny,)
 
     def get(self, request, vcs: str):
-        try:
-            user = remote.OAuthService.oauth(vcs, self.request.user, request)
-        except remote_service_exceptions.RemoteException as e:
-            return Response({"detail": e.description}, status.HTTP_400_BAD_REQUEST)
-        else:
-            jwt_tokens = services.UserService.get_jwt(user)
-            return Response(jwt_tokens)
+        user = remote.OAuthService.oauth(vcs, self.request.user, request)
+        jwt_tokens = services.UserService.get_jwt(user)
+        return Response(jwt_tokens)
 
 
 oauth_complete_view = OAuthCompleteView.as_view()

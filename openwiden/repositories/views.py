@@ -1,10 +1,9 @@
 from django.http import Http404
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from openwiden.repositories import serializers, models, filters, services, error_messages
-from openwiden.services.exceptions import ServiceException
 
 
 class Repository(viewsets.ReadOnlyModelViewSet):
@@ -39,10 +38,5 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["POST"])
     def add(self, request, **kwargs):
-        repository = self.get_object()
-        try:
-            task_id = services.Repository.add(repo=repository, user=request.user)
-        except ServiceException as e:
-            return Response(e.description, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"task_id": task_id})
+        task_id = services.Repository.add(repo=self.get_object(), user=request.user)
+        return Response({"task_id": task_id})

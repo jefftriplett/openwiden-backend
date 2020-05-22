@@ -1,12 +1,12 @@
 import typing as t
 
-from . import exceptions
 from .abstract import RemoteService
 from .serializers import GitHubRepositorySync, GithubOrganizationSync, GitHubIssueSync
 from .enums import GitHubOwnerType
 from openwiden.repositories import models as repo_models
 from openwiden.organizations import models as org_models
 from django.utils.translation import gettext_lazy as _
+from openwiden import exceptions
 
 
 class GitHubService(RemoteService):
@@ -52,7 +52,7 @@ class GitHubService(RemoteService):
             # We can identify pull requests by the pull_request key.
             return [issue for issue in r.json() if "pull_request" not in issue]
         else:
-            raise exceptions.RemoteSyncException(
+            raise exceptions.ServiceException(
                 _("an error occurred for repo issues sync, please, try again. API response: {r}").format(r=r.json())
             )
 
@@ -72,6 +72,6 @@ class GitHubService(RemoteService):
         elif r.status_code == 404:
             return False, False
         else:
-            raise exceptions.RemoteSyncException(
+            raise exceptions.ServiceException(
                 _("an error occurred while check organization membership, please, try again.")
             )

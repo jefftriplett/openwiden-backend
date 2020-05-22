@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 from django.utils.translation import gettext_lazy as _
 
-from openwiden.services.remote import serializers, exceptions, oauth
+from openwiden.services.remote import serializers, oauth
 from openwiden.users import models as users_models
 from openwiden.repositories import services as repo_services
 from openwiden.repositories import models as repo_models
@@ -11,6 +11,7 @@ from openwiden.organizations import services as org_services
 from openwiden.organizations import models as org_models
 from openwiden.webhooks import services as webhook_services
 from openwiden.webhooks import models as webhook_models
+from openwiden import exceptions
 
 
 class RemoteService(ABC):
@@ -96,7 +97,7 @@ class RemoteService(ABC):
                 # Sync repository locally
                 repo_services.Repository.sync(**repository_kwargs)
             else:
-                raise exceptions.RemoteSyncException(
+                raise exceptions.ServiceException(
                     _("an error occurred while synchronizing repository, please, try again.")
                 )
 
@@ -121,7 +122,7 @@ class RemoteService(ABC):
                 for data in serializer.validated_data:
                     repo_services.Issue.sync(repo, **data)
             else:
-                raise exceptions.RemoteSyncException(
+                raise exceptions.ServiceException(
                     _("an error occurred while synchronizing issues, please, try again. Errors: {e}").format(
                         e=serializer.errors
                     )
@@ -169,7 +170,7 @@ class RemoteService(ABC):
             # Sync organization and membership for a current user
             self.sync_org_membership(organization)
         else:
-            raise exceptions.RemoteSyncException(
+            raise exceptions.ServiceException(
                 _("an error occurred while synchronizing organization, please, try again.")
             )
 

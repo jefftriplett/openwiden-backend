@@ -3,9 +3,8 @@ from unittest import mock
 import pytest
 from django.utils.timezone import now
 
-from openwiden import enums
+from openwiden import enums, exceptions
 from openwiden.repositories import services, models, error_messages
-from openwiden.services import exceptions
 
 
 class TestRepositoryService:

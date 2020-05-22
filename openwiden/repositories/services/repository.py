@@ -7,10 +7,10 @@ from datetime import datetime
 from django_q.tasks import async_task
 
 from openwiden.repositories import models, error_messages
-from openwiden import enums
+from openwiden import enums, exceptions
 from openwiden.users import models as users_models, services as users_services
 from openwiden.organizations import models as organizations_models
-from openwiden.services import remote, exceptions
+from openwiden.services import remote
 
 
 class Repository:

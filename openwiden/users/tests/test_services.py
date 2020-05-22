@@ -1,6 +1,7 @@
 import pytest
 
 from openwiden.users import services
+from openwiden import exceptions
 
 
 class TestUserService:
@@ -32,7 +33,7 @@ class TestVCSAccountService:
 
         monkeypatch.setattr(services.models.VCSAccount.objects, "get", raise_does_not_exist)
 
-        with pytest.raises(services.exceptions.ServiceException) as e:
+        with pytest.raises(exceptions.ServiceException) as e:
             services.VCSAccount.find(mock_user, "test")
 
             assert e.value == services.error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs="test")
