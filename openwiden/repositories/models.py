@@ -58,7 +58,7 @@ class Issue(UUIDModel):
     remote_id = models.PositiveIntegerField(_("remote issue id"))
 
     title = models.CharField(_("title"), max_length=255)
-    description = models.TextField(_("description"))
+    description = models.TextField(_("description"), blank=True, null=True)
 
     state = models.CharField(_("state"), max_length=30, choices=repo_enums.IssueState.choices)
     labels = ArrayField(models.CharField(max_length=50), blank=True, null=True, verbose_name=_("labels"))
