@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from django.utils.timezone import now
 
-from openwiden import enums, exceptions
+from openwiden import enums, exceptions, services as remote_services
 from openwiden.repositories import services, models, error_messages
 
 
@@ -28,7 +28,7 @@ class TestRepositoryService:
         assert patched_get.call_count == 2
         assert patched_create.call_count == 1
 
-    @mock.patch.object(services.repository.remote, "get_service")
+    @mock.patch.object(remote_services, "get_service")
     @mock.patch.object(services.repository, "async_task")
     @mock.patch.object(services.repository.users_services.VCSAccount, "find")
     def test_add(self, p_find, p_task, p_get_service, mock_repo, mock_vcs_account, mock_remote_service, mock_user):

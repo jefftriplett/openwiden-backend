@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from openwiden import enums, exceptions
 from openwiden.users import views, serializers
 from openwiden.users.exceptions import GitLabOAuthMissedRedirectURI
+from openwiden.services.oauth import OAuthService
 
 
 pytestmark = pytest.mark.django_db
@@ -65,7 +66,7 @@ def test_oauth_complete_view(api_rf, monkeypatch, mock_user):
     def return_mock_jwt_tokens(*args):
         return mock_jwt_tokens
 
-    monkeypatch.setattr(views.remote.OAuthService, "oauth", return_mock_user)
+    monkeypatch.setattr(OAuthService, "oauth", return_mock_user)
     monkeypatch.setattr(views.services.UserService, "get_jwt", return_mock_jwt_tokens)
 
     view = views.OAuthCompleteView()
@@ -81,7 +82,7 @@ def test_oauth_complete_view(api_rf, monkeypatch, mock_user):
     def raise_remote_exception(*args):
         raise exceptions.ServiceException("description")
 
-    monkeypatch.setattr(views.remote.OAuthService, "oauth", raise_remote_exception)
+    monkeypatch.setattr(OAuthService, "oauth", raise_remote_exception)
 
     with pytest.raises(exceptions.ServiceException) as e:
         response = view.get(request, "vcs")

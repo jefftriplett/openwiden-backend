@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 from django.utils.translation import gettext_lazy as _
 
-from openwiden.services.remote import serializers, oauth
+from openwiden.services import serializers, oauth
 from openwiden.users import models as users_models
 from openwiden.repositories import services as repo_services
 from openwiden.repositories import models as repo_models

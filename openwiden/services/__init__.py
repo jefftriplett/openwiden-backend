@@ -1,4 +1,4 @@
-from openwiden.exceptions import ServiceException
-from . import remote
+from .utils import get_service
+from .oauth import OAuthService
 
-__all__ = ["ServiceException", "remote"]
+__all__ = ["get_service", "OAuthService"]

@@ -8,8 +8,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from openwiden import enums
+from openwiden.services import get_service
 from openwiden.webhooks import services
-from openwiden.services import remote
 
 
 @method_decorator(csrf_exempt, "dispatch")
@@ -39,7 +39,7 @@ class RepositoryWebhookView(views.APIView):
 
             event = request.META["HTTP_X_GITHUB_EVENT"]
 
-            remote.utils.get_service(vcs).handle_webhook_data(webhook, event, request.data)
+            get_service(vcs).handle_webhook_data(webhook, event, request.data)
 
             return Response(f"Ok {event} / {request.data}")
         elif vcs == enums.VersionControlService.GITLAB:
@@ -47,7 +47,7 @@ class RepositoryWebhookView(views.APIView):
             print("secret: ", token)
 
             event = request.META["HTTP_X_GITLAB_EVENT"]
-            remote.utils.get_service(vcs=vcs).handle_webhook_data(webhook, event, request.data)
+            get_service(vcs=vcs).handle_webhook_data(webhook, event, request.data)
 
             return Response(f"Ok", headers={"HTTP_X_HUB_SIGNATURE": token})
 

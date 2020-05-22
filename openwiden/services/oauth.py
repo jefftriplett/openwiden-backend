@@ -12,7 +12,7 @@ from rest_framework.request import Request
 
 from openwiden.users import models
 from openwiden import enums, exceptions
-from . import serializers, models as service_models, utils
+from openwiden.services import serializers, utils, models as service_models
 
 
 # def gitlab_compliance_fix(session):
