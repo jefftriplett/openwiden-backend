@@ -40,22 +40,5 @@ black:
 black_check:
 	$(WEB_CONTAINER) black --check .
 
-# Tests
-with_test_settings:
-	DJANGO_CONFIGURATION=Test $(WEB_CONTAINER) $(c)
-
-test:
-	@make with_test_settings c="coverage run manage.py test --settings=config.settings.test"
-
-test_cov:
-	@make with_test_settings c="coverage erase"
-	@make test
-	@make with_test_settings c="coverage report -m"
-	@make with_test_settings c="coverage html"
-
-run_tests:
-	@make test
-	@make black_check
-	@make flake8
-	@make with_test_settings c="coverage xml"
-	@make with_test_settings c="codecov"
+tests:
+	$(WEB_CONTAINER) pytest --cov-config=.coveragerc --cov=./

@@ -5,10 +5,9 @@ omit = *migrations*,
        *test*,
        *admin*,
        ./manage.py,
-       ./openwiden/config/*,
-       ./openwiden/wsgi.py,
-       ./openwiden/asgi.py,
-       *__init__*
+       ./config/*,
+       ./docs/*,
+       *__init__*,
 
 [report]
 omit = *migrations*,
@@ -16,7 +15,7 @@ omit = *migrations*,
        *test*,
        *admin*,
        ./manage.py,
-       ./openwiden/config/*,
-       ./openwiden/wsgi.py,
-       ./openwiden/asgi.py,
-       *__init__*
+       ./config/*,
+       ./docs/*,
+       *__init__*,
+
