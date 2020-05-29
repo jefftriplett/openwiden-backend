@@ -7,6 +7,8 @@ from openwiden.users.tests import factories as users_factories
 from openwiden.organizations.tests import factories as org_factories
 from openwiden.webhooks import models as webhook_models
 from openwiden.webhooks.tests import factories as webhook_factories
+from openwiden.repositories import models as repo_models
+from openwiden.repositories.tests import factories as repo_factories
 
 
 @pytest.fixture(autouse=True)
@@ -143,3 +145,16 @@ def create_repo_webhook():
 @pytest.fixture()
 def github_webhook() -> webhook_models.RepositoryWebhook:
     return webhook_factories.RepositoryWebhookFactory(repository__vcs=enums.VersionControlService.GITHUB)
+
+
+@pytest.fixture
+def repository() -> repo_models.Repository:
+    return repo_factories.Repository()
+
+
+@pytest.fixture
+def create_repository():
+    def factory(**kwargs) -> repo_models.Repository:
+        return repo_factories.Repository(**kwargs)
+
+    return factory

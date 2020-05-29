@@ -2,11 +2,48 @@ import pytest
 
 from openwiden import exceptions
 from openwiden.repositories import models
-from openwiden.services.github import GitHubService
+from openwiden.services.github import GitHubService, convert_lines_count_to_percent
+from openwiden.services import oauth
 from openwiden.services import constants
 
-
 pytestmark = pytest.mark.django_db
+
+test_lines_count_data = [
+    ({"Python": 300, "JavaScript": 700}, {"Python": 30, "JavaScript": 70}),
+    ({"C++": 1100, "C": 28900, "Python": 70000}, {"C++": 1.1, "C": 28.9, "Python": 70}),
+]
+
+
+@pytest.mark.parametrize("lines_count,expected", test_lines_count_data)
+def test_convert_lines_count_to_percent(lines_count, expected):
+    assert convert_lines_count_to_percent(lines_count) == expected
+
+
+def test_get_repo_owner(create_repository, org, vcs_account):
+    org_repo = create_repository(owner=None, organization=org)
+    owner_repo = create_repository(organization=None)
+    service = GitHubService(vcs_account)
+
+    assert service.get_repo_owner(org_repo) == org_repo.organization.name
+    assert service.get_repo_owner(owner_repo) == vcs_account.login
+
+
+def test_get_user_repos(vcs_account, monkeypatch):
+    class MockResponse:
+        def json(self):
+            return [{"id": 1, "archived": False}, {"id": 2, "archived": True}]
+
+    class MockClient:
+        def get(self, *args, **kwargs):
+            return MockResponse()
+
+    def get_mock_client(vcs: str):
+        return MockClient()
+
+    monkeypatch.setattr(oauth.OAuthService, "get_client", get_mock_client)
+    service = GitHubService(vcs_account=vcs_account)
+
+    assert service.get_user_repos() == [{"id": 1, "archived": False}]
 
 
 class TestHandleWebhook:
@@ -50,8 +87,3 @@ class TestHandleWebhook:
         GitHubService.handle_webhook(github_webhook, request)
 
         assert models.Issue.objects.filter(remote_id=mock_issue_edit_data["issue"]["id"]).exists() is True
-
-
-class TestWebhook:
-    def test_create_webhook(self):
-        pass

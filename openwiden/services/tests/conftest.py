@@ -9,7 +9,7 @@ from openwiden.services import constants
 def create_request():
     def f(signature="sha1=12345", event="issue") -> Request:
         return RequestFactory().post(
-            "/fake-url/", **{constants.Headers.SIGNATURE: signature, constants.Headers.EVENT: event,}
+            "/fake-url/", **{constants.Headers.SIGNATURE: signature, constants.Headers.EVENT: event}
         )
 
     return f

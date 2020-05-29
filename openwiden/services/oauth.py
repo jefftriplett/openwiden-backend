@@ -14,20 +14,6 @@ from openwiden import enums, exceptions
 from openwiden.services import serializers, models as service_models
 
 
-# def gitlab_compliance_fix(session):
-#     """
-#     OAuth fix for Gitlab, because Gitlab does not return expires_at.
-#     """
-#
-#     def _fix(response):
-#         token = response.json()
-#         token["expires_at"] = 60 * 60 * 24  # 1 day in seconds
-#         response._content = to_unicode(json.dumps(token)).encode("utf-8")
-#         return response
-#
-#     session.register_compliance_hook("access_token_response", _fix)
-
-
 def update_token(vcs, token, refresh_token=None, access_token=None):
     """
     OAuth token update handler for authlib.
@@ -73,13 +59,13 @@ class OAuthService:
         except AuthlibBaseError as e:
             raise exceptions.ServiceException(e.description)
 
-    @staticmethod
-    def get_profile(vcs: str, request: Request) -> "service_models.Profile":
+    @classmethod
+    def get_profile(cls, vcs: str, request: Request) -> "service_models.Profile":
         """
         Returns profile mapped cls with a data from provider's API.
         """
-        client = OAuthService.get_client(vcs)
-        token = OAuthService.get_token(client, request)
+        client = cls.get_client(vcs)
+        token = cls.get_token(client, request)
 
         try:
             profile_data = client.get("user", token=token).json()
@@ -107,12 +93,12 @@ class OAuthService:
             else:
                 raise exceptions.ServiceException(_("Unexpected error occurred."), error=serializer.errors)
 
-    @staticmethod
-    def oauth(vcs: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
+    @classmethod
+    def oauth(cls, vcs: str, user: t.Union[models.User, AnonymousUser], request: Request) -> models.User:
         """
         Returns user (new or existed) by provider and service provider profile data.
         """
-        profile = OAuthService.get_profile(vcs, request)
+        profile = cls.get_profile(vcs, request)
 
         try:
             vcs_account = models.VCSAccount.objects.get(vcs=vcs, remote_id=profile.id)

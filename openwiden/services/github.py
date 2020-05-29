@@ -17,20 +17,20 @@ from openwiden import exceptions
 from openwiden.webhooks import models as webhook_models
 
 
+def convert_lines_count_to_percent(repo_languages: dict) -> dict:
+    """
+    Converts repo languages lines count into percentages.
+    """
+    total_lines_count = sum(repo_languages.values())
+    for k, v in repo_languages.items():
+        repo_languages[k] = round(v / total_lines_count * 100, 2)
+    return repo_languages
+
+
 class GitHubService(RemoteService):
     repo_sync_serializer = GitHubRepositorySync
     org_sync_serializer = GithubOrganizationSync
     issue_sync_serializer = GitHubIssueSync
-
-    @staticmethod
-    def convert_repo_lang_lines_count_to_percent(repo_languages: dict) -> dict:
-        """
-        Converts repo languages lines count into percentages.
-        """
-        total_lines_count = sum(repo_languages.values())
-        for k, v in repo_languages.items():
-            repo_languages[k] = round(v / total_lines_count * 100, 2)
-        return repo_languages
 
     def get_repo_owner(self, repo: repo_models.Repository) -> str:
         """
@@ -47,7 +47,7 @@ class GitHubService(RemoteService):
     def get_repo_languages(self, repo: repo_models.Repository) -> dict:
         owner = self.get_repo_owner(repo)
         languages = self.client.get(f"repos/{owner}/{repo.name}/languages", token=self.token).json()
-        languages = self.convert_repo_lang_lines_count_to_percent(languages)
+        languages = convert_lines_count_to_percent(languages)
         return languages
 
     def get_repo_issues(self, repo: repo_models.Repository) -> t.List[dict]:

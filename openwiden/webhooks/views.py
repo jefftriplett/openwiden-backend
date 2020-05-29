@@ -16,8 +16,7 @@ class RepositoryWebhookView(views.APIView):
 
     def post(self, request: Request, id: str):
         webhook = get_object_or_404(services.RepositoryWebhook.all(), id=id)
-        vcs = webhook.repository.vcs
-        return get_service(vcs=vcs).handle_webhook(webhook, request)
+        return get_service(vcs=webhook.repository.vcs).handle_webhook(webhook, request)
 
 
 repository_webhook_view = RepositoryWebhookView.as_view()
