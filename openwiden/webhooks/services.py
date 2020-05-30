@@ -26,8 +26,10 @@ class RepositoryWebhook:
                 repository=repo, secret=uuid4().hex, is_active=False, issue_events_enabled=False,
             )
 
-            # Add url
-            webhook.url = f"https://{Site.objects.get_current().domain}{webhook.get_absolute_url()}"
+            # Build & set url
+            webhook.url = "https://{domain}{absolute_url}".format(
+                domain=Site.objects.get_current().domain, absolute_url=webhook.get_absolute_url()
+            )
             webhook.save(update_fields=("url",))
 
             # Return new created webhook
