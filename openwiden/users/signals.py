@@ -9,4 +9,4 @@ from openwiden.users import models
 @receiver(post_save, sender=models.VCSAccount)
 def new_vcs_account(instance: models.VCSAccount, created: bool, **kwargs):
     if created:
-        async_task(get_service(instance).sync)
+        async_task(get_service(vcs_account=instance).sync)

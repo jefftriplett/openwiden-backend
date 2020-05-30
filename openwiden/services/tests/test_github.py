@@ -3,7 +3,6 @@ import pytest
 from openwiden import exceptions
 from openwiden.repositories import models
 from openwiden.services.github import GitHubService, convert_lines_count_to_percent
-from openwiden.services import oauth
 from openwiden.services import constants
 
 pytestmark = pytest.mark.django_db
@@ -22,7 +21,7 @@ def test_convert_lines_count_to_percent(lines_count, expected):
 def test_get_repo_owner(create_repository, org, vcs_account):
     org_repo = create_repository(owner=None, organization=org)
     owner_repo = create_repository(organization=None)
-    service = GitHubService(vcs_account)
+    service = GitHubService(vcs_account=vcs_account)
 
     assert service.get_repo_owner(org_repo) == org_repo.organization.name
     assert service.get_repo_owner(owner_repo) == vcs_account.login
@@ -40,7 +39,7 @@ def test_get_user_repos(vcs_account, monkeypatch):
     def get_mock_client(vcs: str):
         return MockClient()
 
-    monkeypatch.setattr(oauth.OAuthService, "get_client", get_mock_client)
+    monkeypatch.setattr(GitHubService, "get_client", get_mock_client)
     service = GitHubService(vcs_account=vcs_account)
 
     assert service.get_user_repos() == [{"id": 1, "archived": False}]

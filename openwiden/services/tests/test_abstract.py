@@ -2,8 +2,11 @@ import pytest
 from authlib.common.errors import AuthlibBaseError
 
 from authlib.integrations.django_client import DjangoRemoteApp
-from openwiden import services
+
+from openwiden.services import get_service
+from openwiden.services.abstract import RemoteService
 from openwiden.exceptions import ServiceException
+from openwiden.enums import VersionControlService
 
 pytestmark = pytest.mark.django_db
 
@@ -13,6 +16,53 @@ def test_profile_cls_split_name_false(create_profile):
 
     assert profile.first_name is None
     assert profile.last_name is None
+
+
+def test_get_client(settings, authlib_settings_github, random_vcs):
+    settings.AUTHLIB_OAUTH_CLIENTS = {random_vcs: authlib_settings_github}
+    client = get_service(vcs=random_vcs).get_client()
+
+    assert isinstance(client, DjangoRemoteApp)
+
+
+def test_get_client_raises_error(monkeypatch):
+    monkeypatch.setattr(RemoteService, "__abstractmethods__", set)
+
+    with pytest.raises(ServiceException):
+        service = get_service(vcs=VersionControlService.GITHUB.value)
+        service.vcs = "error"
+        service.get_client()
+
+
+def test_get_token(settings, authlib_settings_github, monkeypatch, fake_token, api_rf, anonymous_user, random_vcs):
+    def return_fake_token(*args):
+        return fake_token
+
+    monkeypatch.setattr(DjangoRemoteApp, "authorize_access_token", return_fake_token)
+    settings.AUTHLIB_OAUTH_CLIENTS = {random_vcs: authlib_settings_github}
+    mock_request = api_rf.get("/fake-url/")
+    mock_request.user = anonymous_user
+    token = get_service(vcs=random_vcs).get_token(mock_request)
+
+    assert token == fake_token
+
+
+def test_get_token_raises_service_exception(settings, authlib_settings_github, monkeypatch, api_rf, random_vcs):
+    settings.AUTHLIB_OAUTH_CLIENTS = {random_vcs: authlib_settings_github}
+
+    class MockAuthlibClient:
+        def authorize_access_token(self, *args):
+            raise AuthlibBaseError(description="test")
+
+    request = api_rf.get("/fake-url/")
+    client = MockAuthlibClient()
+
+    with pytest.raises(ServiceException) as e:
+        service = get_service(vcs=random_vcs)
+        service.client = client
+        service.get_token(request)
+
+    assert e.value.args[0] == "test"
 
 
 # @mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
@@ -28,56 +78,17 @@ def test_profile_cls_split_name_false(create_profile):
 #     return returned_profile, profile.json()
 
 
-def test_get_client(settings, authlib_settings_github):
-    settings.AUTHLIB_OAUTH_CLIENTS = {"github": authlib_settings_github}
-    client = services.OAuthService.get_client("github")
-
-    assert isinstance(client, DjangoRemoteApp)
-
-
-def test_get_client_raises_error(settings):
-    settings.AUTHLIB_OAUTH_CLIENTS = {}
-
-    with pytest.raises(ServiceException):
-        services.OAuthService.get_client("test")
-
-
-def test_get_token(settings, authlib_settings_github, monkeypatch, fake_token, api_rf, anonymous_user):
-    def return_fake_token(*args):
-        return fake_token
-
-    monkeypatch.setattr(DjangoRemoteApp, "authorize_access_token", return_fake_token)
-    settings.AUTHLIB_OAUTH_CLIENTS = {"github": authlib_settings_github}
-    client = services.OAuthService.get_client("github")
-    mock_request = api_rf.get("/fake-url/")
-    mock_request.user = anonymous_user
-    token = services.OAuthService.get_token(client, mock_request)
-
-    assert token == fake_token
-
-
-def test_get_token_raises_service_exception(settings, authlib_settings_github, monkeypatch, api_rf):
-    settings.AUTHLIB_OAUTH_CLIENTS = {"github": authlib_settings_github}
-
-    class MockAuthlibClient:
-        def authorize_access_token(self, *args):
-            raise AuthlibBaseError(description="test")
-
-    request = api_rf.get("/fake-url/")
-    client = MockAuthlibClient()
-
-    with pytest.raises(ServiceException) as e:
-        services.OAuthService.get_token(client, request)
-
-    assert e.value.args[0] == "test"
-
-
-#     @override_settings(AUTHLIB_OAUTH_CLIENTS={"github": fixtures.GITHUB_PROVIDER})
-#     def test_get_github_profile(self):
-#         profile, data = self.get_profile("github")
-#         expected_profile = service_models.Profile(**data, **self.token)
-#         self.assertEqual(profile.to_dict(), expected_profile.to_dict())
+# def test_get_github_profile(settings, authlib_settings_github, monkeypatch):
+#     settings.AUTHLIB_OAUTH_CLIENTS = {"github": authlib_settings_github}
 #
+#     @mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
+#     @mock.patch("openwiden.users.services.oauth.OAuthService.get_token")
+#
+# profile, data = self.get_profile("github")
+# expected_profile = service_models.Profile(**data, **self.token)
+#
+# self.assertEqual(profile.to_dict(), expected_profile.to_dict())
+
 #     @override_settings(AUTHLIB_OAUTH_CLIENTS={"gitlab": fixtures.GITLAB_PROVIDER})
 #     def test_get_gitlab_profile(self):
 #         profile, data = self.get_profile("gitlab")

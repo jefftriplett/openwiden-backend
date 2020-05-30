@@ -53,7 +53,11 @@ class GitlabRepositorySync(RepositorySync):
         return super().to_internal_value(data)
 
 
-class GitHubUserSerializer(serializers.Serializer):
+class UserProfileSerializer(serializers.Serializer):
+    pass
+
+
+class GitHubUserSerializer(UserProfileSerializer):
     id = serializers.IntegerField()
     login = serializers.CharField()
     name = serializers.CharField()
@@ -61,7 +65,7 @@ class GitHubUserSerializer(serializers.Serializer):
     avatar_url = serializers.URLField()
 
 
-class GitlabUserSerializer(serializers.Serializer):
+class GitlabUserSerializer(UserProfileSerializer):
     id = serializers.IntegerField()
     login = serializers.CharField()
     name = serializers.CharField()

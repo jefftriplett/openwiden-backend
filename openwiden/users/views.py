@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from openwiden import enums
-from openwiden.services import OAuthService
+from openwiden.services import get_service
 from openwiden.users import exceptions, models, permissions, serializers, services
 
 token_refresh_view = TokenRefreshView.as_view()
@@ -28,15 +28,8 @@ class OAuthLoginView(views.APIView):
 
     permission_classes = (drf_permissions.AllowAny,)
 
-    @staticmethod
-    def get_client(vcs: str) -> DjangoRemoteApp:
-        """
-        Returns client or raises VCSNotFound exception.
-        """
-        return OAuthService.get_client(vcs)
-
     def get(self, request, vcs):
-        client: DjangoRemoteApp = self.get_client(vcs)
+        client: DjangoRemoteApp = get_service(vcs=vcs).get_client()
 
         redirect_uri = request.GET.get("redirect_uri")
 
@@ -60,7 +53,7 @@ class OAuthCompleteView(views.APIView):
     permission_classes = (drf_permissions.AllowAny,)
 
     def get(self, request, vcs: str):
-        user = OAuthService.oauth(vcs, self.request.user, request)
+        user = get_service(vcs=vcs).oauth(self.request.user, request)
         jwt_tokens = services.UserService.get_jwt(user)
         return Response(jwt_tokens)
 
