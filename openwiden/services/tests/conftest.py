@@ -1,8 +1,12 @@
 import pytest
 from django.test import RequestFactory
+from faker import Faker
 from rest_framework.request import Request
 
-from openwiden.services import constants
+from openwiden.services import constants, models
+
+
+fake = Faker()
 
 
 @pytest.fixture()
@@ -266,3 +270,56 @@ def mock_issue_edit_data() -> dict:
             "site_admin": False,
         },
     }
+
+
+class Profile(models.Profile):
+    def __init__(self, username: str, **kwargs):
+        super().__init__(**kwargs)
+        self.username = username
+
+    def json(self):
+        return {
+            "id": self.id,
+            "login": self.login,
+            "name": self._name,
+            "email": self.email,
+            "avatar_url": self.avatar_url,
+            "username": self.username,
+        }
+
+
+@pytest.fixture()
+def create_profile():
+    def f(
+        id=fake.pyint(),
+        login=fake.pystr(),
+        name=fake.name(),
+        email=fake.email(),
+        avatar_url=fake.url(),
+        split_name=True,
+        access_token=fake.pystr(),
+        expires_at=fake.pyint(),
+        token_type="bearer",
+        refresh_token=fake.pystr(),
+        username=fake.pystr(),
+    ) -> Profile:
+        return Profile(
+            id=id,
+            login=login,
+            name=name,
+            email=email,
+            avatar_url=avatar_url,
+            split_name=split_name,
+            access_token=access_token,
+            expires_at=expires_at,
+            token_type=token_type,
+            refresh_token=refresh_token,
+            username=username,
+        )
+
+    return f
+
+
+@pytest.fixture()
+def fake_token() -> dict:
+    return {"access_token": fake.pystr(), "expires_at": fake.pyint()}

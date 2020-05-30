@@ -147,8 +147,15 @@ class OAuthService:
             # multiple services (github, gitlab etc.).
             # Now, if the second user will repeat auth with github, then vcs_account user will be
             # changed for the second user. Now we have one user account with two oauth_tokens as expected.
-            update_fields = ()
+            update_fields = ("access_token", "token_type", "refresh_token", "expires_at")
 
+            # Update token data fields
+            vcs_account.access_token = profile.access_token
+            vcs_account.token_type = profile.token_type
+            vcs_account.refresh_token = profile.refresh_token
+            vcs_account.expires_at = profile.expires_at
+
+            # Change user if current authenticated user is not equals account user
             if user.is_authenticated:
                 if vcs_account.user.username != user.username:
                     vcs_account.user = user

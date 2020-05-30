@@ -1,7 +1,10 @@
 import pytest
+from django.contrib.auth.models import AnonymousUser
+from faker import Faker
 from rest_framework.test import APIRequestFactory
 
 from openwiden import enums
+from openwiden.enums import VersionControlService
 from openwiden.users import models as users_models
 from openwiden.users.tests import factories as users_factories
 from openwiden.organizations.tests import factories as org_factories
@@ -11,17 +14,25 @@ from openwiden.repositories import models as repo_models
 from openwiden.repositories.tests import factories as repo_factories
 
 
+fake = Faker()
+
+
 @pytest.fixture(autouse=True)
 def media_storage(settings, tmpdir):
     settings.MEDIA_ROOT = tmpdir.strpath
 
 
-@pytest.fixture
+@pytest.fixture()
 def user() -> users_models.User:
     return users_factories.UserFactory()
 
 
-@pytest.fixture
+@pytest.fixture()
+def anonymous_user() -> AnonymousUser:
+    return AnonymousUser()
+
+
+@pytest.fixture()
 def create_user():
     def factory(**kwargs):
         return users_factories.UserFactory(**kwargs)
@@ -152,9 +163,42 @@ def repository() -> repo_models.Repository:
     return repo_factories.Repository()
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_repository():
     def factory(**kwargs) -> repo_models.Repository:
         return repo_factories.Repository(**kwargs)
 
     return factory
+
+
+@pytest.fixture()
+def random_vcs() -> str:
+    return fake.random_element(VersionControlService.values)
+
+
+@pytest.fixture()
+def authlib_settings_github() -> dict:
+    return {
+        "client_id": "GITHUB_CLIENT_ID",
+        "client_secret": "GITHUB_SECRET_KEY",
+        "access_token_url": "https://github.com/login/oauth/access_token",
+        "access_token_params": None,
+        "authorize_url": "https://github.com/login/oauth/authorize",
+        "authorize_params": None,
+        "api_base_url": "https://api.github.com/",
+        "client_kwargs": {"scope": "user:email"},
+    }
+
+
+@pytest.fixture()
+def authlib_settings_gitlab() -> dict:
+    return {
+        "client_id": "GITHUB_CLIENT_ID",
+        "client_secret": "GITHUB_SECRET_KEY",
+        "access_token_url": "http://gitlab.example.com/oauth/token",
+        "access_token_params": None,
+        "authorize_url": "https://gitlab.example.com/oauth/authorize",
+        "authorize_params": None,
+        "api_base_url": "https://gitlab.example.com/api/v4/",
+        "client_kwargs": None,
+    }
