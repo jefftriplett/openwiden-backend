@@ -15,6 +15,7 @@ class Messages:
     DIGEST_IS_NOT_SUPPORTED = _("{digest_name} is not supported digest.")
     X_HUB_SIGNATURE_IS_INVALID = _("HTTP_X_HUB_SIGNATURE header value is invalid.")
     REPO_WEBHOOK_CREATE_ERROR = _("Error occurred while repository webhook create: {error}.")
+    VCS_IS_NOT_IMPLEMENTED = _("{vcs} is not implemented.")
 
 
 class Events:
