@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from openwiden import enums
 from openwiden.services.abstract import RemoteService
@@ -86,3 +87,8 @@ class TestUserViewSet:
 
         assert response.status_code == 200
         assert response.data == {}
+
+    def test_me_anonymous_user(self, client):
+        response = client.get(reverse("api-v1:user-me"))
+
+        assert response.status_code == 403

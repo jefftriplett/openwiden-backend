@@ -72,7 +72,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
             return serializers.UserUpdateSerializer
         return super().get_serializer_class()
 
-    @action(detail=False)
+    @action(detail=False, permission_classes=(drf_permissions.IsAuthenticated,))
     def me(self, request):
         """
         Returns current authenticated user's information.
