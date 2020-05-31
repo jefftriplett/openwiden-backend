@@ -322,4 +322,9 @@ def create_profile():
 
 @pytest.fixture()
 def fake_token() -> dict:
-    return {"access_token": fake.pystr(), "expires_at": fake.pyint()}
+    return {
+        "access_token": fake.pystr(),
+        "expires_at": fake.pyint(),
+        "refresh_token": fake.pystr(),
+        "token_type": fake.random_element(["bearer", "Bearer", "JWt", "token"]),
+    }

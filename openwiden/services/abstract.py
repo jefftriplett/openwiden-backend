@@ -22,7 +22,7 @@ from openwiden.webhooks import models as webhook_models
 from openwiden import exceptions
 
 
-def update_token(vcs, token, refresh_token=None, access_token=None):
+def update_token(vcs, token, refresh_token=None, access_token=None) -> None:
     """
     OAuth token update handler for authlib.
     """
@@ -34,11 +34,11 @@ def update_token(vcs, token, refresh_token=None, access_token=None):
         return None
 
     if qs.exists():
-        oauth_token = qs.first()
-        oauth_token.access_token = token["access_token"]
-        oauth_token.refresh_token = token["refresh_token"]
-        oauth_token.expires_at = token["expires_at"]
-        oauth_token.save(update_fields=("access_token", "refresh_token", "expires_at"))
+        vcs_account = qs.first()
+        vcs_account.access_token = token["access_token"]
+        vcs_account.refresh_token = token["refresh_token"]
+        vcs_account.expires_at = token["expires_at"]
+        vcs_account.save(update_fields=("access_token", "refresh_token", "expires_at"))
 
 
 oauth = OAuth(update_token=update_token)

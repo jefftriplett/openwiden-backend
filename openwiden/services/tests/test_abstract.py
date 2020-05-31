@@ -4,7 +4,7 @@ from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import DjangoRemoteApp
 
 from openwiden.services import get_service
-from openwiden.services.abstract import RemoteService
+from openwiden.services.abstract import RemoteService, update_token
 from openwiden.exceptions import ServiceException
 from openwiden.enums import VersionControlService
 
@@ -63,6 +63,30 @@ def test_get_token_raises_service_exception(settings, authlib_settings_github, m
         service.get_token(request)
 
     assert e.value.args[0] == "test"
+
+
+def test_update_token(random_vcs, fake_token, create_vcs_account):
+    access_token = "12345"
+    refresh_token = "67890"
+    vcs_account = create_vcs_account(vcs=random_vcs, access_token=access_token, refresh_token=refresh_token)
+
+    update_token(random_vcs, fake_token)
+    vcs_account.refresh_from_db()
+    assert vcs_account.access_token != fake_token["access_token"]
+    assert vcs_account.refresh_token != fake_token["refresh_token"]
+    assert vcs_account.expires_at != fake_token["expires_at"]
+
+    update_token(random_vcs, fake_token, refresh_token=refresh_token)
+    vcs_account.refresh_from_db()
+    assert vcs_account.access_token == fake_token["access_token"]
+    assert vcs_account.refresh_token == fake_token["refresh_token"]
+    assert vcs_account.expires_at == fake_token["expires_at"]
+
+    update_token(random_vcs, fake_token, access_token=access_token)
+    vcs_account.refresh_from_db()
+    assert vcs_account.access_token == fake_token["access_token"]
+    assert vcs_account.refresh_token == fake_token["refresh_token"]
+    assert vcs_account.expires_at == fake_token["expires_at"]
 
 
 # @mock.patch("openwiden.users.services.oauth.OAuthService.get_client")
