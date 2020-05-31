@@ -4,7 +4,10 @@ import pytest
 from django.utils.timezone import now
 
 from openwiden import enums, exceptions, services as remote_services
-from openwiden.repositories import services, models, error_messages
+from openwiden.exceptions import ServiceException
+from openwiden.repositories import services, models, error_messages, serializers
+
+pytestmark = pytest.mark.django_db
 
 
 class TestRepositoryService:
@@ -91,3 +94,29 @@ class TestIssueService:
             created_at=now(),
             updated_at=now(),
         ) == (mock_issue, True)
+
+    def test_validate(self, issue):
+        issue_data = serializers.SyncIssueSerializer(instance=issue).data
+        issue_data["state"] = tuple(issue_data["state"])[0]
+        validated_data = services.Issue.validate(**issue_data)
+        serializer = serializers.SyncIssueSerializer(data=issue_data)
+
+        assert serializer.is_valid() is True
+        assert validated_data == serializer.validated_data
+
+        issue_data["remote_id"] = None
+        serializer = serializers.SyncIssueSerializer(data=issue_data)
+        assert serializer.is_valid() is False
+
+        with pytest.raises(ServiceException) as e:
+            services.Issue.validate(**issue_data)
+
+        assert e.value.description == ServiceException(str(serializer.errors)).description
+
+    def test_delete_by_remote_id(self, issue):
+        repository = issue.repository
+        assert repository.issues.count() == 1
+
+        services.Issue.delete_by_remote_id(repository, str(issue.remote_id))
+
+        assert repository.issues.count() == 0

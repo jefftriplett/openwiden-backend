@@ -111,6 +111,6 @@ class Repository:
         """
         return cls.added(enums.VisibilityLevel.public)
 
-    @staticmethod
-    def delete(repo: models.Repository):
-        pass
+    # @staticmethod
+    # def delete(repo: models.Repository):
+    #     pass
