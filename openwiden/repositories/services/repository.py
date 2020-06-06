@@ -85,7 +85,7 @@ class Repository:
         repo.is_added = True
 
         # Call repository sync action
-        remote_service = services.get_service(vcs_account)
+        remote_service = services.get_service(vcs_account=vcs_account)
         return async_task(remote_service.sync_repo, repo=repo)
 
     @staticmethod
