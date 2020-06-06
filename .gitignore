@@ -140,3 +140,7 @@ dmypy.json
 media/
 staticfiles/
 !staticfiles/.gitkeep
+
+# Selenium
+selenium_screenshots/
+!selenium_screenshots/.gitkeep

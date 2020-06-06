@@ -13,3 +13,14 @@ GITLAB_SECRET=7a625e20f348eb56b4f362090097e30458aaa2312a465f43a24a9d9bf9923b65
 
 # Redis
 REDIS_URL=redis://redis:6379/0
+
+
+# Test GitHub account credentials
+TEST_GITHUB_USER_LOGIN=openwiden-test-github-user
+TEST_GITHUB_USER_PASSWORD=EbqbYB34gPqGJJj
+
+
+# Test e-mail account credentials
+TEST_EMAIL_LOGIN=openwiden@yandex.ru
+TEST_EMAIL_PASSWORD=26jmHxzzcNyk6.L
+TEST_EMAIL_IMAP_HOST=imap.yandex.ru

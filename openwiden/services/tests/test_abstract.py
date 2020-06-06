@@ -14,8 +14,8 @@ pytestmark = pytest.mark.django_db
 def test_profile_cls_split_name_false(create_profile):
     profile = create_profile(split_name=False)
 
-    assert profile.first_name is None
-    assert profile.last_name is None
+    assert profile.first_name == ""
+    assert profile.last_name == ""
 
 
 def test_get_client(settings, authlib_settings_github, random_vcs):

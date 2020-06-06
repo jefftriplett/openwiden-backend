@@ -60,7 +60,7 @@ class UserProfileSerializer(serializers.Serializer):
 class GitHubUserSerializer(UserProfileSerializer):
     id = serializers.IntegerField()
     login = serializers.CharField()
-    name = serializers.CharField()
+    name = serializers.CharField(required=False, allow_null=True)
     email = serializers.EmailField()
     avatar_url = serializers.URLField()
 
@@ -68,7 +68,7 @@ class GitHubUserSerializer(UserProfileSerializer):
 class GitlabUserSerializer(UserProfileSerializer):
     id = serializers.IntegerField()
     login = serializers.CharField()
-    name = serializers.CharField()
+    name = serializers.CharField(required=False, allow_null=True)
     email = serializers.EmailField()
     avatar_url = serializers.URLField()
 

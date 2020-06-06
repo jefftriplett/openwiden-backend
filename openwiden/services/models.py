@@ -17,15 +17,15 @@ class Profile:
         self.login = login
         self._name = name
         self.email = email
-        self.first_name = None
-        self.last_name = None
+        self.first_name = ""
+        self.last_name = ""
         self.avatar_url = avatar_url
         self.access_token = access_token
         self.token_type = token_type
         self.refresh_token = refresh_token
         self.expires_at = expires_at
 
-        if split_name:
+        if split_name and self._name:
             self.first_name, sep, self.last_name = self._name.partition(" ")
 
     def to_dict(self):

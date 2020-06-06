@@ -1,7 +1,13 @@
+import socket
+
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from faker import Faker
-from rest_framework.test import APIRequestFactory
+from pytest_django.live_server_helper import LiveServer
+from rest_framework.test import APIRequestFactory, APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from selenium import webdriver
 
 from openwiden import enums
 from openwiden.enums import VersionControlService
@@ -82,6 +88,22 @@ def create_member():
 @pytest.fixture
 def api_rf() -> APIRequestFactory:
     return APIRequestFactory()
+
+
+@pytest.fixture()
+def create_api_client():
+    def _create_api_client(user: users_models.User = None, access_token: str = None) -> APIClient:
+        client = APIClient()
+
+        if user:
+            access_token = str(RefreshToken.for_user(user).access_token)
+
+        if access_token:
+            client.credentials(HTTP_AUTHORIZATION="JWT {access_token}".format(access_token=access_token))
+
+        return client
+
+    return _create_api_client
 
 
 @pytest.fixture
@@ -202,3 +224,18 @@ def authlib_settings_gitlab() -> dict:
         "api_base_url": "https://gitlab.example.com/api/v4/",
         "client_kwargs": None,
     }
+
+
+@pytest.fixture()
+def selenium():
+    with webdriver.Remote(
+        command_executor="http://selenium:4444/wd/hub", desired_capabilities=webdriver.DesiredCapabilities.FIREFOX
+    ) as driver:
+        yield driver
+
+
+@pytest.fixture(scope="session")
+def live_server() -> LiveServer:
+    server = LiveServer(socket.gethostbyname(socket.gethostname()))
+    yield server
+    server.stop()
