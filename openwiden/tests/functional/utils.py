@@ -9,9 +9,9 @@ def search_github_verification_code(user: str, password: str, imap_host: str, ti
     Connects to the imap server and returns verification code.
     """
     connection = imaplib.IMAP4_SSL(imap_host)
+    connection.login(user=user, password=password)
 
     while True:
-        connection.login(user=user, password=password)
         connection.select(mailbox="INBOX")
         typ, data = connection.search(None, '(SUBJECT "[GitHub] Please verify your device")')
 

@@ -17,7 +17,7 @@ REDIS_URL=redis://redis:6379/0
 
 # Test GitHub account credentials
 TEST_GITHUB_USER_LOGIN=openwiden-test-github-user
-TEST_GITHUB_USER_PASSWORD=EbqbYB34gPqGJJj
+TEST_GITHUB_USER_PASSWORD=LQukKCVQ95f836j
 
 
 # Test e-mail account credentials
