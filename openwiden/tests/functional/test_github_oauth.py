@@ -97,7 +97,7 @@ def test_run(selenium, live_server, create_api_client):
     selenium.save_screenshot("./selenium_screenshots/sign_in_clicked.png")
 
     # Wait for redirect and check received type
-    redirect_type = wait.until(oauth_redirect)
+    redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
     if redirect_type == OAuthRedirectType.AUTHORIZE:
         authorize(selenium)
     elif redirect_type == OAuthRedirectType.VERIFY_DEVICE:
