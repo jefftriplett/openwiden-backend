@@ -18,9 +18,10 @@ jobs:
       run: docker-compose -f local.yml run django pytest --cov-config=.coveragerc --cov=./ --cov-report=xml
     - name: Save selenium screenshots as artifacts
       uses: actions/upload-artifact@v1
+      if: always()
       with:
-        name: selenium_sceeenshots
-        path: openwiden/tests/functional/selenium_screenshots/
+        name: selenium
+        path: openwiden/tests/functional/selenium
     - name: Upload coverage report to Codecov
       uses: codecov/codecov-action@v1
       with:

@@ -58,11 +58,11 @@ def verify_device(selenium: webdriver.Remote) -> None:
 
     # Set code
     selenium.find_element_by_id("otp").send_keys(verification_code)
-    selenium.save_screenshot("./selenium_screenshots/verify_set_code.png")
+    selenium.save_screenshot("./selenium/verify_set_code.png")
 
     # Click on verify button
     verify_button.click()
-    selenium.save_screenshot("./selenium_screenshots/verify_clicked.png")
+    selenium.save_screenshot("./selenium/verify_clicked.png")
 
 
 def authorize(selenium: webdriver.Remote) -> None:
@@ -75,11 +75,11 @@ def authorize(selenium: webdriver.Remote) -> None:
     # Select & submit clicks + 1 for just in case
     for _ in range(3):
         authorize_button.click()
-    selenium.save_screenshot("./selenium_screenshots/authorize_clicked.png")
+    selenium.save_screenshot("./selenium/authorize_clicked.png")
 
     # Additional wait
     selenium.implicitly_wait(3)
-    selenium.save_screenshot("./selenium_screenshots/authorize_success.png")
+    selenium.save_screenshot("./selenium/authorize_success.png")
 
 
 def test_run(selenium, live_server, create_api_client):
@@ -90,14 +90,23 @@ def test_run(selenium, live_server, create_api_client):
     selenium.get(url)
 
     # Sign in
-    selenium.save_screenshot("./selenium_screenshots/sign_in_open.png")
+    selenium.save_screenshot("./selenium/sign_in_open.png")
     selenium.find_element_by_id("login_field").send_keys(GITHUB_USER_LOGIN)
     selenium.find_element_by_id("password").send_keys(GITHUB_USER_PASSWORD)
     selenium.find_element_by_xpath("//input[@name='commit' and @value='Sign in']").click()
-    selenium.save_screenshot("./selenium_screenshots/sign_in_clicked.png")
+    selenium.save_screenshot("./selenium/sign_in_clicked.png")
 
     # Wait for redirect and check received type
-    redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
+    try:
+        redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
+    finally:
+        # Save page for debugging on fail
+        path = os.path.join(os.path.dirname(__file__), "selenium/sign_in_clicked.html")
+        with open(path, "w") as file:
+            file.write(selenium.current_url)
+            file.write(selenium.page_source)
+
+    # Do action depends on redirect type
     if redirect_type == OAuthRedirectType.AUTHORIZE:
         authorize(selenium)
     elif redirect_type == OAuthRedirectType.VERIFY_DEVICE:
@@ -107,7 +116,7 @@ def test_run(selenium, live_server, create_api_client):
     url = selenium.current_url.replace("http://0.0.0.0:5000", live_server.url)
     complete_url = "view-source:{url}&format=json".format(url=url)
     selenium.get(complete_url)
-    selenium.save_screenshot("./selenium_screenshots/complete.png")
+    selenium.save_screenshot("./selenium/complete.png")
 
     pre_element = selenium.find_element_by_tag_name("pre")
     tokens = json.loads(pre_element.text)
