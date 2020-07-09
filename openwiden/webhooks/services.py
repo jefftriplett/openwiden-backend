@@ -3,7 +3,7 @@ import typing as t
 from uuid import uuid4
 
 from django.contrib.sites.models import Site
-from django.db import models as m
+from django.db.models import QuerySet
 
 from openwiden.webhooks import models
 from openwiden.repositories import models as repo_models
@@ -11,7 +11,7 @@ from openwiden.repositories import models as repo_models
 
 class RepositoryWebhook:
     @staticmethod
-    def all() -> m.QuerySet:
+    def all() -> QuerySet:
         return models.RepositoryWebhook.objects.all()
 
     @staticmethod
@@ -34,3 +34,7 @@ class RepositoryWebhook:
 
             # Return new created webhook
             return webhook, True
+
+
+def get_webhooks() -> "QuerySet[models.RepositoryWebhook]":
+    return models.RepositoryWebhook.objects.all()

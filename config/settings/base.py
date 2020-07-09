@@ -69,6 +69,7 @@ THIRD_PARTY_APPS = (
     "drf_yasg",
     "corsheaders",
     "django_q",
+    "github_webhooks",
 )
 
 LOCAL_APPS = (
@@ -306,4 +307,9 @@ Q_CLUSTER = {
     "label": "Django Q",
     "sync": DEBUG,
     "redis": env("REDIS_URL"),
+}
+
+# GitHub Webhooks
+DJANGO_GITHUB_WEBHOOKS = {
+    "ALLOWED_EVENTS": ("issues",),
 }

@@ -5,7 +5,12 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
 
 from openwiden.services import get_service
-from openwiden.webhooks import services
+from . import services, models
+
+from github_webhooks import views as github_webhook_views
+
+
+__all__ = ("github_webhook_view",)
 
 
 @method_decorator(csrf_exempt, "dispatch")
@@ -20,3 +25,14 @@ class RepositoryWebhookView(views.APIView):
 
 
 repository_webhook_view = RepositoryWebhookView.as_view()
+
+
+class GithubWebhookView(github_webhook_views.GitHubWebhookView):
+    def get_secret(self) -> str:
+        webhook: models.RepositoryWebhook = get_object_or_404(
+            services.get_webhooks(), id=self.kwargs["id"],
+        )
+        return webhook.secret
+
+
+github_webhook_view = GithubWebhookView.as_view()
