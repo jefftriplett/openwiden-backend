@@ -7,6 +7,7 @@ redis==3.5.0 # https://github.com/andymccurdy/redis-py
 uvicorn==0.11.5  # https://github.com/encode/uvicorn
 authlib==0.14.1
 requests==2.23.0
+PyGithub==1.51  # https://github.com/PyGithub/PyGithub
 
 # Django
 # ------------------------------------------------------------------------------
@@ -15,7 +16,7 @@ django-environ==0.4.5  # https://github.com/joke2k/django-environ
 django-model-utils==4.0.0  # https://github.com/jazzband/django-model-utils
 django-redis==4.11.0  # https://github.com/jazzband/django-redis
 django-q==1.2.1  # https://github.com/Koed00/django-q
-django-github-webhooks  # https://github.com/OpenWiden/django-github-webhooks
+django-github-webhooks==1.0.0  # https://github.com/OpenWiden/django-github-webhooks
 
 # Django REST Framework
 # ------------------------------------------------------------------------------

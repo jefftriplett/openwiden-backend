@@ -41,3 +41,8 @@ class UserWithVCSAccountsSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ("vcs_accounts",)
+
+
+class CreateVCSAccountSerializer(VCSAccountSerializer):
+    class Meta(VCSAccountSerializer.Meta):
+        fields = "__all__"

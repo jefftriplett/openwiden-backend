@@ -1,17 +1,110 @@
-from rest_framework_simplejwt.tokens import RefreshToken
+from typing import Union
+from uuid import uuid4
 
-from openwiden.users import models, error_messages
+import requests
+from authlib.common.errors import AuthlibBaseError
+from authlib.integrations.django_client import OAuth, DjangoRemoteApp
+from django.contrib.auth.models import AnonymousUser
+from django.core.files.base import ContentFile
+from rest_framework.request import Request
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.translation import gettext_lazy as _
+
 from openwiden import exceptions
 
+from . import models, error_messages, serializers
 
-class UserService:
-    @staticmethod
-    def get_jwt(user: models.User) -> dict:
-        """
-        Returns JWT tokens for specified user.
-        """
-        refresh = RefreshToken.for_user(user)
-        return dict(access=str(refresh.access_token), refresh=str(refresh))
+
+class Profile:
+    def __init__(
+        self,
+        id: int,
+        login: str,
+        name: str,
+        email: str,
+        avatar_url: str,
+        access_token: str,
+        expires_at: int = None,
+        split_name: bool = True,
+        token_type: str = None,
+        refresh_token: str = None,
+        **kwargs,
+    ):
+        self.id: int = id
+        self.login = login
+        self._name = name
+        self.email = email
+        self.first_name = ""
+        self.last_name = ""
+        self.avatar_url = avatar_url
+        self.access_token = access_token
+        self.token_type = token_type
+        self.refresh_token = refresh_token
+        self.expires_at = expires_at
+
+        if split_name and self._name:
+            self.first_name, sep, self.last_name = self._name.partition(" ")
+
+    def to_dict(self):
+        return dict(
+            id=self.id,
+            login=self.login,
+            name=self._name,
+            email=self.email,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            avatar_url=self.avatar_url,
+            access_token=self.access_token,
+            token_type=self.token_type,
+            refresh_token=self.refresh_token,
+            expires_at=self.expires_at,
+        )
+
+    @classmethod
+    def _parse_github_profile_json(cls, json: dict, token: dict) -> "Profile":
+        return Profile(**json, **token)
+
+    @classmethod
+    def _parse_gitlab_profile_json(cls, json: dict, token: dict) -> "Profile":
+        json["login"] = json.pop("username", None)
+        return Profile(**json, **token)
+
+    @classmethod
+    def from_json(cls, vcs: str, json: dict, token: dict) -> "Profile":
+        parse_function = getattr(cls, f"_parse_{vcs}_profile_json")
+        return parse_function(json, token)
+
+
+def update_token(vcs, token, refresh_token=None, access_token=None) -> None:
+    """
+    OAuth token update handler for authlib.
+    """
+    if refresh_token:
+        qs = models.VCSAccount.objects.filter(vcs=vcs, refresh_token=refresh_token)
+    elif access_token:
+        qs = models.VCSAccount.objects.filter(vcs=vcs, access_token=access_token)
+    else:
+        return None
+
+    if qs.exists():
+        vcs_account = qs.first()
+        vcs_account.access_token = token["access_token"]
+        vcs_account.refresh_token = token["refresh_token"]
+        vcs_account.expires_at = token["expires_at"]
+        vcs_account.save(update_fields=("access_token", "refresh_token", "expires_at"))
+
+
+oauth_client = OAuth(update_token=update_token)
+oauth_client.register("github")
+oauth_client.register("gitlab")
+
+
+def get_jwt_tokens(user: models.User) -> dict:
+    """
+    Returns JWT tokens for specified user.
+    """
+    refresh = RefreshToken.for_user(user)
+    return dict(access=str(refresh.access_token), refresh=str(refresh))
 
 
 class VCSAccount:
@@ -26,3 +119,148 @@ class VCSAccount:
             raise exceptions.ServiceException(error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs=vcs))
         else:
             return vcs_account
+
+
+def get_client(*, vcs: str) -> DjangoRemoteApp:
+    """
+    Returns authlib client instance or None if not found.
+    """
+    client = oauth_client.create_client(vcs)
+    if client is None:
+        raise exceptions.ServiceException(_("{vcs} is not found.").format(vcs=vcs))
+    return client
+
+
+def get_user_profile(*, vcs: str, request: Request) -> Profile:
+    client = get_client(vcs=vcs)
+
+    try:
+        token = client.authorize_access_token(request)
+    except AuthlibBaseError as e:
+        raise exceptions.ServiceException(e.description)
+
+    try:
+        profile_data = client.get("user", token=token).json()
+
+        # Also check if email does not exist and get it from API
+        # Useful for GitHub, when "private email" option is ON.
+        if profile_data.get("email") is None:
+            emails = client.get("user/emails", token=token).json()
+            profile_data["email"] = emails[0]["email"]
+
+    except AuthlibBaseError as e:
+        raise exceptions.ServiceException(e.description)
+    else:
+        return Profile.from_json(vcs=vcs, json=profile_data, token=token)
+
+
+def oauth(*, vcs: str, user: Union[models.User, AnonymousUser], request: Request) -> models.User:
+    """
+    Returns user (new or existed) by provider and service provider profile data.
+    """
+    profile = get_user_profile(vcs=vcs, request=request)
+
+    try:
+        vcs_account = models.VCSAccount.objects.get(vcs=vcs, remote_id=profile.id)
+    except models.VCSAccount.DoesNotExist:
+        # Handle case when vcs_account does not exists (first provider auth)
+        # Check if user is not authenticated and create it first.
+        if user.is_anonymous:
+            # Check if username is already exists with profile's login
+            # and create unique (login + hex) if exists else do nothing.
+            qs = models.User.objects.filter(username=profile.login)
+            if qs.exists():
+                profile.login = f"{profile.login}_{uuid4().hex}"
+
+            # Download user's avatar from service
+            avatar = ContentFile(requests.get(profile.avatar_url).content)
+
+            # Create new user and save avatar
+            user = models.User.objects.create(
+                username=profile.login, email=profile.email, first_name=profile.first_name, last_name=profile.last_name,
+            )
+            user.avatar.save(f"{uuid4()}.jpg", avatar)
+
+        # Create new oauth token instance for user:
+        # New if anonymous or existed if is authenticated.
+        new_vcs_account(
+            user=user,
+            vcs=vcs,
+            remote_id=profile.id,
+            login=profile.login,
+            access_token=profile.access_token,
+            token_type=profile.token_type,
+            refresh_token=profile.refresh_token,
+            expires_at=profile.expires_at,
+        )
+        return user
+    else:
+        # If user is authenticated, then check that vcs_account's user
+        # is the same and if not -> just change it for current user.
+        # Explanation:
+        # github auth -> new user was created -> logout
+        # gitlab auth -> new user was created and now we have a two user accounts,
+        # but for the same user, that's wrong, because we want to have one account, but for
+        # multiple services (github, gitlab etc.).
+        # Now, if the second user will repeat auth with github, then vcs_account user will be
+        # changed for the second user. Now we have one user account with two oauth_tokens as expected.
+        update_fields = ("access_token", "token_type", "refresh_token", "expires_at")
+
+        # Update token data fields
+        vcs_account.access_token = profile.access_token
+        vcs_account.token_type = profile.token_type
+        vcs_account.refresh_token = profile.refresh_token
+        vcs_account.expires_at = profile.expires_at
+
+        # Change user if current authenticated user is not equals account user
+        if user.is_authenticated:
+            if vcs_account.user.username != user.username:
+                vcs_account.user = user
+                update_fields += ("user",)
+
+        # Change vcs_account login if it's changed in github, gitlab etc.
+        if vcs_account.login != profile.login:
+            vcs_account.login = profile.login
+            update_fields += ("login",)
+
+        # Save changes for vcs_account
+        if update_fields:
+            vcs_account.save(update_fields=update_fields)
+
+        # Return vcs_account's user, because we can handle case when
+        # user is not authenticated, but vcs_account for specified profile does exist.
+        return vcs_account.user
+
+
+def new_vcs_account(
+    *,
+    user: models.User,
+    vcs: str,
+    remote_id: int,
+    login: str,
+    access_token: str,
+    token_type: str = None,
+    refresh_token: str = None,
+    expires_at: int = None,
+):
+    """
+    Validate specified data and create new oauth token instance.
+    Also trigger new actions for a new created token.
+    """
+    data = dict(
+        user=user.id,
+        vcs=vcs,
+        remote_id=remote_id,
+        login=login,
+        access_token=access_token,
+        token_type=token_type,
+        refresh_token=refresh_token,
+        expires_at=expires_at,
+    )
+    serializer = serializers.CreateVCSAccountSerializer(data=data)
+
+    # Save vcs account instance
+    if serializer.is_valid():
+        return serializer.save()
+    else:
+        raise exceptions.ServiceException(str(serializer.errors))
