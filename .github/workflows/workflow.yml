@@ -21,7 +21,7 @@ jobs:
       if: always()
       with:
         name: selenium
-        path: openwiden/tests/functional/selenium/
+        path: openwiden/users/tests/selenium/
     - name: Upload coverage report to Codecov
       uses: codecov/codecov-action@v1
       with:
