@@ -142,4 +142,4 @@ staticfiles/
 !staticfiles/.gitkeep
 
 # Selenium
-*/selenium/*
+selenium/
