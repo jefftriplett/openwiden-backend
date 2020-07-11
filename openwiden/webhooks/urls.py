@@ -5,5 +5,5 @@ from . import views
 app_name = "openwiden.webhooks"
 
 urlpatterns = [
-    path("github/<int:id>/receive/", views.github_webhook_view, name="github"),
+    path("github/<uuid:id>/receive/", views.github_webhook_view, name="github"),
 ]

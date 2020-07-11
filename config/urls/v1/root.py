@@ -3,7 +3,7 @@ from django.urls import path, include
 
 from openwiden.repositories import views as repository_views
 from openwiden.users import views as users_views
-from openwiden.webhooks import views as webhook_views, urls as webhook_urls
+from openwiden.webhooks import urls as webhook_urls
 
 app_name = "v1"
 
@@ -25,7 +25,6 @@ auth_urlpatterns = [
 ]
 
 urlpatterns = [
-    path("webhooks/<str:id>/receive/", webhook_views.repository_webhook_view, name="repo-webhook-receive"),
     path("webhooks/", include(webhook_urls, namespace="webhooks")),
 ]
 

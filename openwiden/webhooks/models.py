@@ -1,5 +1,4 @@
 from django.db import models
-from django.urls import reverse
 from model_utils.models import UUIDModel
 from django.utils.translation import gettext_lazy as _
 from openwiden.repositories import models as repo_models
@@ -26,6 +25,3 @@ class RepositoryWebhook(UUIDModel):
 
     def __str__(self):
         return _("repository webhook for {repo}").format(repo=self.repository.name)
-
-    def get_absolute_url(self) -> str:
-        return reverse("api-v1:repo-webhook-receive", kwargs={"id": self.id})

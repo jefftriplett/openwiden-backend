@@ -41,5 +41,5 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["POST"])
     def add(self, request, **kwargs):
         repository = self.get_object()
-        task_id = services.add_repository(repository=repository, user=request.user)
-        return Response({"task_id": task_id})
+        services.add_repository(repository=repository, user=request.user)
+        return Response({"detail": "added."})
