@@ -136,6 +136,7 @@ def authorize(selenium: webdriver.Remote) -> None:
     save_current_state(selenium, "github", "authorize_success")
 
 
+@pytest.mark.selenium
 def test_run(selenium, live_server, create_api_client):
     url = live_server.url + reverse("api-v1:login", kwargs={"vcs": VersionControlService.GITHUB.value})
     wait = WebDriverWait(selenium, 10)
