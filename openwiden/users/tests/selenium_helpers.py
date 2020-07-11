@@ -21,7 +21,12 @@ def save_current_state(driver: webdriver.Remote, prefix: str, name: str):
 
     # Save driver info
     with open(info_path, "w") as file:
-        file.writelines([f"{k}: {v}" for k, v in driver.__dict__.items()])
+        data = {
+            "title": driver.title,
+            "current_url": driver.current_url,
+            **driver.__dict__,
+        }
+        file.writelines([f"{k}: {v}\n" for k, v in data.items()])
 
     # Save browser screenshot and increase step count
     driver.save_screenshot(screenshot_path)
