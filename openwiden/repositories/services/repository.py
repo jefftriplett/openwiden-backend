@@ -73,7 +73,7 @@ class Repository:
         """
         Adds existed repository by sync related objects (issues, for example) and changes status for "is_added".
         """
-        vcs_account = users_services.VCSAccount.find(user, repo.vcs)
+        vcs_account = users_services.find_vcs_account(user, repo.vcs)
 
         # Check if repository is already added and raise an error if yes
         if repo.is_added:
@@ -110,7 +110,3 @@ class Repository:
         Returns added and public visible repositories also known as "OpenWiden".
         """
         return cls.added(enums.VisibilityLevel.public)
-
-    # @staticmethod
-    # def delete(repo: models.Repository):
-    #     pass

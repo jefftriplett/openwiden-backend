@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from openwiden import enums
 from openwiden.repositories import models as repositories_models
-from openwiden.users import models as users_models
 from openwiden.organizations import models as organization_models
 
 
@@ -51,36 +50,6 @@ class GitlabRepositorySync(RepositorySync):
         ):
             data[new_key] = data.pop(key)
         return super().to_internal_value(data)
-
-
-class UserProfileSerializer(serializers.Serializer):
-    pass
-
-
-class GitHubUserSerializer(UserProfileSerializer):
-    id = serializers.IntegerField()
-    login = serializers.CharField()
-    name = serializers.CharField(required=False, allow_null=True)
-    email = serializers.EmailField()
-    avatar_url = serializers.URLField()
-
-
-class GitlabUserSerializer(UserProfileSerializer):
-    id = serializers.IntegerField()
-    login = serializers.CharField()
-    name = serializers.CharField(required=False, allow_null=True)
-    email = serializers.EmailField()
-    avatar_url = serializers.URLField()
-
-    def to_internal_value(self, data):
-        data["login"] = data.pop("username")
-        return super().to_internal_value(data)
-
-
-class OAuthTokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = users_models.VCSAccount
-        fields = "__all__"
 
 
 class OrganizationSync(serializers.ModelSerializer):

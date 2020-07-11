@@ -33,7 +33,7 @@ class TestRepositoryService:
 
     @mock.patch.object(remote_services, "get_service")
     @mock.patch.object(services.repository, "async_task")
-    @mock.patch.object(services.repository.users_services.VCSAccount, "find")
+    @mock.patch.object(services.repository.users_services, "find_vcs_account")
     def test_add(self, p_find, p_task, p_get_service, mock_repo, mock_vcs_account, mock_remote_service, mock_user):
         expected_task_id = "12345"
         repo = mock_repo

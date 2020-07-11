@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from . import constants
 from .abstract import RemoteService
-from .serializers import GitlabRepositorySync, GitlabOrganizationSync, GitlabIssueSync, GitlabUserSerializer
+from .serializers import GitlabRepositorySync, GitlabOrganizationSync, GitlabIssueSync
 from .enums import GitlabNamespaceKind
 from openwiden.organizations import models as org_models
 from openwiden.repositories import models as repo_models
@@ -20,7 +20,6 @@ class GitlabService(RemoteService):
     repo_sync_serializer = GitlabRepositorySync
     org_sync_serializer = GitlabOrganizationSync
     issue_sync_serializer = GitlabIssueSync
-    user_profile_serializer = GitlabUserSerializer
 
     def get_user_repos(self) -> t.List[dict]:
         return self.client.get("projects/?membership=True&archived=False&visibility=public", token=self.token).json()

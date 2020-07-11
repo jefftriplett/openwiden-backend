@@ -7,14 +7,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from .abstract import RemoteService
-from .serializers import GitHubRepositorySync, GithubOrganizationSync, GitHubIssueSync, GitHubUserSerializer
+from .serializers import GitHubRepositorySync, GithubOrganizationSync, GitHubIssueSync
 from .enums import GitHubOwnerType
 from .constants import Messages, Headers, Events, IssueEventActions
 from openwiden.repositories import models as repo_models, services as repo_services
 from openwiden.organizations import models as org_models
 from django.utils.translation import gettext_lazy as _
 from openwiden import exceptions
-from openwiden.services import models as service_models
 from openwiden.webhooks import models as webhook_models
 
 
@@ -32,7 +31,6 @@ class GitHubService(RemoteService):
     repo_sync_serializer = GitHubRepositorySync
     org_sync_serializer = GithubOrganizationSync
     issue_sync_serializer = GitHubIssueSync
-    user_profile_serializer = GitHubUserSerializer
 
     def get_repo_owner(self, repo: repo_models.Repository) -> str:
         """

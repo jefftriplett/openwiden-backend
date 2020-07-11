@@ -11,7 +11,7 @@ from selenium import webdriver
 
 from openwiden import enums
 from openwiden.enums import VersionControlService
-from openwiden.users import models as users_models
+from openwiden.users import models as users_models, services as users_services
 from openwiden.users.tests import factories as users_factories
 from openwiden.organizations.tests import factories as org_factories
 from openwiden.webhooks import models as webhook_models
@@ -239,3 +239,61 @@ def live_server() -> LiveServer:
     server = LiveServer(socket.gethostbyname(socket.gethostname()))
     yield server
     server.stop()
+
+
+class MockProfile(users_services.Profile):
+    def __init__(self, username: str, **kwargs):
+        super().__init__(**kwargs)
+        self.username = username
+
+    def json(self):
+        return {
+            "id": self.id,
+            "login": self.login,
+            "name": self._name,
+            "email": self.email,
+            "avatar_url": self.avatar_url,
+            "username": self.username,
+        }
+
+
+@pytest.fixture()
+def create_mock_profile():
+    def _create_mock_profile(
+        id=fake.pyint(),
+        login=fake.pystr(),
+        name=fake.name(),
+        email=fake.email(),
+        avatar_url=fake.url(),
+        split_name=True,
+        access_token=fake.pystr(),
+        expires_at=fake.pyint(),
+        token_type="bearer",
+        refresh_token=fake.pystr(),
+        username=fake.pystr(),
+    ) -> MockProfile:
+        return MockProfile(
+            id=id,
+            login=login,
+            name=name,
+            email=email,
+            avatar_url=avatar_url,
+            split_name=split_name,
+            access_token=access_token,
+            expires_at=expires_at,
+            token_type=token_type,
+            refresh_token=refresh_token,
+            username=username,
+        )
+
+    return _create_mock_profile
+
+
+@pytest.fixture()
+def fake_token() -> dict:
+    return {
+        "access_token": fake.pystr(),
+        "expires_at": fake.pyint(),
+        "refresh_token": fake.pystr(),
+        "token_type": fake.random_element(["bearer", "Bearer", "JWt", "token"]),
+    }
