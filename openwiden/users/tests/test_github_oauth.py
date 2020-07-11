@@ -2,6 +2,8 @@ import json
 import os
 import pytest
 import typing as t
+import imaplib
+import time
 
 from enum import Enum, auto
 
@@ -14,10 +16,9 @@ from selenium.webdriver.support import expected_conditions
 
 from openwiden.enums import VersionControlService
 
-from .utils import search_github_verification_code
-
 pytestmark = [pytest.mark.django_db, pytest.mark.functional]
 
+GITHUB_VERIFICATION_CODE_LENGTH = 6
 
 GITHUB_USER_LOGIN = os.getenv("TEST_GITHUB_USER_LOGIN")
 GITHUB_USER_PASSWORD = os.getenv("TEST_GITHUB_USER_PASSWORD")
@@ -25,6 +26,56 @@ GITHUB_USER_PASSWORD = os.getenv("TEST_GITHUB_USER_PASSWORD")
 EMAIL_LOGIN = os.getenv("TEST_EMAIL_LOGIN")
 EMAIL_PASSWORD = os.getenv("TEST_EMAIL_PASSWORD")
 EMAIL_IMAP_HOST = os.getenv("TEST_EMAIL_IMAP_HOST")
+
+
+def search_github_verification_code(user: str, password: str, imap_host: str, timeout: int = 60) -> str:
+    """
+    Connects to the imap server and returns verification code.
+    """
+    connection = imaplib.IMAP4_SSL(imap_host)
+    connection.login(user=user, password=password)
+
+    while True:
+        connection.select(mailbox="INBOX")
+        typ, data = connection.search(None, '(SUBJECT "[GitHub] Please verify your device")')
+
+        if typ == "OK":
+            messages_ids = data[0].split()
+
+            # Check for a new messages
+            if len(messages_ids) == 0:
+                if timeout > 0:
+                    time.sleep(1)
+                    timeout -= 1
+                    continue
+                else:
+                    raise Exception("e-mail search failed (timed out).")
+
+            # Fetch last e-mail
+            typ, data = connection.fetch(messages_ids[-1], "(RFC822)")
+
+            if typ == "OK":
+                email_text = data[0][1]
+
+                # Parse email for code
+                search_text = "Verification code: "
+                start = email_text.find(search_text.encode()) + len(search_text)
+                end = start + GITHUB_VERIFICATION_CODE_LENGTH
+                code = email_text[start:end]
+
+                # Delete all messages before connection close
+                for message_id in messages_ids:
+                    connection.store(message_id, "+FLAGS", "\\Deleted")
+                connection.expunge()
+
+                # Close connection and logout
+                connection.close()
+                connection.logout()
+
+                # Return code
+                return code.decode()
+            else:
+                raise Exception("Fetch failed")
 
 
 class OAuthRedirectType(Enum):
@@ -147,10 +198,8 @@ def test_run(selenium, live_server, create_api_client):
 
     # OAuth complete
     url = selenium.current_url.replace("http://0.0.0.0:8000", live_server.url)
-    print(url)
     complete_url = "view-source:{url}&format=json".format(url=url)
     selenium.get(complete_url)
-    # wait.until(lambda driver: driver.current_url.startswith("https://github.com/login/oauth/authorize") is False)
     save_current_state(selenium, "complete")
 
     pre_element = selenium.find_element_by_tag_name("pre")
