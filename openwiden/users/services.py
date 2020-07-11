@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from openwiden import exceptions
 
-from . import models, error_messages, serializers
+from . import models, serializers
 
 
 class Profile:
@@ -105,18 +105,6 @@ def get_jwt_tokens(user: models.User) -> dict:
     """
     refresh = RefreshToken.for_user(user)
     return dict(access=str(refresh.access_token), refresh=str(refresh))
-
-
-def find_vcs_account(user: models.User, vcs: str) -> models.VCSAccount:
-    """
-    Returns version control service account by specified user and vcs name.
-    """
-    try:
-        vcs_account = models.VCSAccount.objects.get(user=user, vcs=vcs)
-    except models.VCSAccount.DoesNotExist:
-        raise exceptions.ServiceException(error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs=vcs))
-    else:
-        return vcs_account
 
 
 def get_client(*, vcs: str) -> DjangoRemoteApp:

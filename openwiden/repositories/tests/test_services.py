@@ -6,6 +6,7 @@ from django.utils.timezone import now
 from openwiden import enums, exceptions, services as remote_services
 from openwiden.exceptions import ServiceException
 from openwiden.repositories import services, models, error_messages, serializers
+from openwiden.users import selectors as users_selectors
 
 pytestmark = pytest.mark.django_db
 
@@ -32,8 +33,8 @@ class TestRepositoryService:
         assert patched_create.call_count == 1
 
     @mock.patch.object(remote_services, "get_service")
-    @mock.patch.object(services.repository, "async_task")
-    @mock.patch.object(services.repository.users_services, "find_vcs_account")
+    @mock.patch.object(services, "async_task")
+    @mock.patch.object(users_selectors, "find_vcs_account")
     def test_add(self, p_find, p_task, p_get_service, mock_repo, mock_vcs_account, mock_remote_service, mock_user):
         expected_task_id = "12345"
         repo = mock_repo
@@ -44,38 +45,24 @@ class TestRepositoryService:
         p_get_service.return_value = mock_remote_service
         p_task.return_value = expected_task_id
 
-        task_id = services.Repository.add(repo, mock_user)
+        task_id = services.add_repository(repository=repo, user=mock_user)
 
         assert task_id == expected_task_id
 
         with pytest.raises(exceptions.ServiceException) as e:
             repo.is_added = True
-            services.Repository.add(repo, mock_user)
+            services.add_repository(repository=repo, user=mock_user)
             assert e.value == error_messages.REPOSITORY_ALREADY_ADDED
 
         with pytest.raises(exceptions.ServiceException) as e:
             repo.is_added = False
             repo.visibility = enums.VisibilityLevel.private
-            services.Repository.add(repo, mock_user)
+            services.add_repository(repository=repo, user=mock_user)
             assert e.value == error_messages.REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED
 
         assert p_find.call_count == 3
         assert p_get_service.call_count == 1
         assert p_task.call_count == 1
-
-    @pytest.mark.django_db
-    def test_get_user_repos(self, create_repository, user, org, create_member, create_vcs_account):
-        user_repos = [
-            create_repository(owner__user=user, organization=None),
-            create_repository(owner=None, organization=org),
-        ]
-        create_repository(owner=None, organization=None)
-        create_member(organization=org, vcs_account=create_vcs_account(user=user))
-
-        qs = services.Repository.get_user_repos(user)
-
-        assert qs.count() == len(user_repos)
-        assert models.Repository.objects.count() == len(user_repos) + 1
 
 
 class TestIssueService:

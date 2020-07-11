@@ -4,8 +4,7 @@ import pytest
 from authlib.integrations.django_client import DjangoRemoteApp
 
 from openwiden.exceptions import ServiceException
-from openwiden.users import services, models
-from openwiden import exceptions
+from openwiden.users import services
 
 pytestmark = pytest.mark.django_db
 
@@ -17,27 +16,6 @@ def get_jwt_tokens(patched_refresh_token_for_user, mock_user, create_mock_refres
     patched_refresh_token_for_user.return_value = create_mock_refresh_token(**expected)
 
     assert services.get_jwt_tokens(mock_user) == expected
-
-
-@mock.patch.object(models.VCSAccount.objects, "get")
-def test_find(patched_objects_get, mock_vcs_account, mock_user):
-    patched_objects_get.return_value = mock_vcs_account
-    vcs_account = services.find_vcs_account(mock_user, "test")
-
-    assert vcs_account == mock_vcs_account
-
-
-@mock.patch.object(models.VCSAccount.objects, "get")
-def test_find_raises_service_exception(patched_objects_get, mock_user):
-    def raise_does_not_exist(**kwargs):
-        raise services.models.VCSAccount.DoesNotExist
-
-    patched_objects_get.side_effect = raise_does_not_exist
-
-    with pytest.raises(exceptions.ServiceException) as e:
-        services.find_vcs_account(mock_user, "test")
-
-        assert e.value == services.error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs="test")
 
 
 def test_profile_cls_split_name_false(create_mock_profile):

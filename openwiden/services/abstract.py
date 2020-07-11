@@ -125,14 +125,14 @@ class RemoteService(ABC):
                     _("an error occurred while synchronizing repository, please, try again.")
                 )
 
-    def sync_repo(self, repo: repo_models.Repository):
+    def sync_repo(self, repository: repo_models.Repository):
         """
         Synchronizes repository.
         """
-        self.sync_repo_issues(repo)
-        self.sync_repo_webhook(repo)
-        repo.programming_languages = self.get_repo_languages(repo)
-        repo.save(update_fields=("programming_languages", "is_added"))
+        self.sync_repo_issues(repository)
+        self.sync_repo_webhook(repository)
+        repository.programming_languages = self.get_repo_languages(repository)
+        repository.save(update_fields=("programming_languages", "is_added"))
 
     def sync_repo_issues(self, repo: repo_models.Repository):
         """
