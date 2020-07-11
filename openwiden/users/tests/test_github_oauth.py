@@ -16,6 +16,8 @@ from selenium.webdriver.support import expected_conditions
 
 from openwiden.enums import VersionControlService
 
+from .selenium_helpers import save_current_state
+
 pytestmark = [pytest.mark.django_db, pytest.mark.functional]
 
 GITHUB_VERIFICATION_CODE_LENGTH = 6
@@ -84,28 +86,6 @@ class OAuthRedirectType(Enum):
     COMPLETE = auto()
 
 
-def save_current_state(driver: webdriver.Remote, name: str):
-    """
-    Selenium debug helper.
-    """
-    driver.step = getattr(driver, "step", 1)
-
-    # Build path
-    path = os.path.join(os.path.dirname(__file__), "selenium")
-    page_src_path = os.path.join(path, "{step}_{name}.html".format(step=driver.step, name=name))
-    screenshot_path = os.path.join(path, "{step}_{name}.png".format(step=driver.step, name=name))
-
-    # Save page source
-    with open(page_src_path, "w") as file:
-        file.write(driver.current_url)
-        file.write(driver.page_source)
-
-    # Save browser screenshot
-    driver.save_screenshot(screenshot_path)
-
-    driver.step += 1
-
-
 def oauth_redirect(driver: webdriver.Remote) -> t.Union[bool, OAuthRedirectType]:
     """
     Custom redirect waiter for selenium driver.
@@ -132,11 +112,11 @@ def verify_device(selenium: webdriver.Remote) -> None:
 
     # Set code
     selenium.find_element_by_id("otp").send_keys(verification_code)
-    save_current_state(selenium, "verify_set_code")
+    save_current_state(selenium, "github", "verify_set_code")
 
     # Click on verify button
     verify_button.click()
-    save_current_state(selenium, "verify_clicked")
+    save_current_state(selenium, "github", "verify_clicked")
 
 
 def authorize(selenium: webdriver.Remote) -> None:
@@ -150,10 +130,10 @@ def authorize(selenium: webdriver.Remote) -> None:
     wait = WebDriverWait(selenium, 10)
     wait.until(expected_conditions.staleness_of(authorize_button))
     authorize_button.click()
-    save_current_state(selenium, "authorize_clicked")
+    save_current_state(selenium, "github", "authorize_clicked")
 
     selenium.implicitly_wait(3)
-    save_current_state(selenium, "authorize_success")
+    save_current_state(selenium, "github", "authorize_success")
 
 
 def test_run(selenium, live_server, create_api_client):
@@ -164,17 +144,17 @@ def test_run(selenium, live_server, create_api_client):
     selenium.get(url)
 
     # Sign in
-    save_current_state(selenium, "sign_in_open")
+    save_current_state(selenium, "github", "sign_in_open")
     selenium.find_element_by_id("login_field").send_keys(GITHUB_USER_LOGIN)
     selenium.find_element_by_id("password").send_keys(GITHUB_USER_PASSWORD)
     selenium.find_element_by_xpath("//input[@name='commit' and @value='Sign in']").click()
-    save_current_state(selenium, "sign_in_clicked")
+    save_current_state(selenium, "github", "sign_in_clicked")
 
     # Wait for redirect and check received type
     try:
         redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
     finally:
-        save_current_state(selenium, "sign_in_redirect_fail")
+        save_current_state(selenium, "github", "sign_in_redirect_fail")
 
     # Do action depends on redirect type
     if redirect_type == OAuthRedirectType.AUTHORIZE:
@@ -182,13 +162,13 @@ def test_run(selenium, live_server, create_api_client):
     elif redirect_type == OAuthRedirectType.VERIFY_DEVICE:
         verify_device(selenium)
 
-    save_current_state(selenium, "after_redirect")
+    save_current_state(selenium, "github", "after_redirect")
 
     # Check if authorize is required
     try:
         redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
     finally:
-        save_current_state(selenium, "sign_in_redirect_fail")
+        save_current_state(selenium, "github", "sign_in_redirect_fail")
 
     # Check if authorize required
     if redirect_type == OAuthRedirectType.AUTHORIZE:
@@ -200,7 +180,7 @@ def test_run(selenium, live_server, create_api_client):
     url = selenium.current_url.replace("http://0.0.0.0:8000", live_server.url)
     complete_url = "view-source:{url}&format=json".format(url=url)
     selenium.get(complete_url)
-    save_current_state(selenium, "complete")
+    save_current_state(selenium, "github", "complete")
 
     pre_element = selenium.find_element_by_tag_name("pre")
     tokens = json.loads(pre_element.text)
