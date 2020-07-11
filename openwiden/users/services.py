@@ -45,21 +45,6 @@ class Profile:
         if split_name and self._name:
             self.first_name, sep, self.last_name = self._name.partition(" ")
 
-    def to_dict(self):
-        return dict(
-            id=self.id,
-            login=self.login,
-            name=self._name,
-            email=self.email,
-            first_name=self.first_name,
-            last_name=self.last_name,
-            avatar_url=self.avatar_url,
-            access_token=self.access_token,
-            token_type=self.token_type,
-            refresh_token=self.refresh_token,
-            expires_at=self.expires_at,
-        )
-
     @classmethod
     def _parse_github_profile_json(cls, json: dict, token: dict) -> "Profile":
         return Profile(**json, **token)
