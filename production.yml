@@ -17,7 +17,7 @@ services:
       - ./.envs/.production/.django
       - ./.envs/.production/.postgres
     ports:
-    - "5000:5000"
+    - "8000:8000"
     command: /start
 
   postgres:

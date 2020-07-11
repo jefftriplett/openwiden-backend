@@ -63,7 +63,7 @@ def oauth_redirect(driver: webdriver.Remote) -> t.Union[bool, OAuthRedirectType]
         return OAuthRedirectType.VERIFY_DEVICE
     elif driver.current_url.startswith("https://github.com/login/oauth/authorize"):
         return OAuthRedirectType.AUTHORIZE
-    elif driver.current_url.startswith("http://0.0.0.0:5000/"):
+    elif driver.current_url.startswith("http://0.0.0.0:8000/"):
         return OAuthRedirectType.COMPLETE
     else:
         return False
@@ -146,7 +146,7 @@ def test_run(selenium, live_server, create_api_client):
         raise ValueError(redirect_type)
 
     # OAuth complete
-    url = selenium.current_url.replace("http://0.0.0.0:5000", live_server.url)
+    url = selenium.current_url.replace("http://0.0.0.0:8000", live_server.url)
     print(url)
     complete_url = "view-source:{url}&format=json".format(url=url)
     selenium.get(complete_url)
