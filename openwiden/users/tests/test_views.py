@@ -1,10 +1,11 @@
+from unittest import mock
+
 import pytest
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from openwiden import enums
-from openwiden.services.abstract import RemoteService
-from openwiden.users import views, serializers
+from openwiden.users import views, serializers, services
 from openwiden.users.exceptions import GitLabOAuthMissedRedirectURI
 
 
@@ -16,13 +17,10 @@ class MockClient:
     def authorize_redirect(*args, **kwargs):
         return Response("http://fake-redirect.com/", 302)
 
-    @staticmethod
-    def get_mock_client(*args, **kwargs):
-        return MockClient()
 
-
-def test_oauth_login_view(api_rf, monkeypatch):
-    monkeypatch.setattr(RemoteService, "get_client", MockClient.get_mock_client)
+@mock.patch.object(services, "get_client")
+def test_oauth_login_view(patched_get_client, api_rf):
+    patched_get_client.return_value = MockClient
 
     view = views.OAuthLoginView()
     request = api_rf.get("/fake-url/")
@@ -42,17 +40,15 @@ def test_oauth_login_view(api_rf, monkeypatch):
     assert response.status_code == 302
 
 
-def test_oauth_complete_view(api_rf, monkeypatch, mock_user):
-    def return_mock_user(*args):
-        return mock_user
-
+@mock.patch.object(services, "get_jwt_tokens")
+@mock.patch.object(services, "oauth")
+def test_oauth_complete_view(
+    patched_oauth, patched_get_jwt_tokens, api_rf, monkeypatch, mock_user,
+):
     mock_jwt_tokens = dict(access="12345", refresh="67890")
 
-    def return_mock_jwt_tokens(*args):
-        return mock_jwt_tokens
-
-    monkeypatch.setattr(RemoteService, "oauth", return_mock_user)
-    monkeypatch.setattr(views.services.UserService, "get_jwt", return_mock_jwt_tokens)
+    patched_oauth.return_value = mock_user
+    patched_get_jwt_tokens.return_value = mock_jwt_tokens
 
     view = views.OAuthCompleteView()
     request = api_rf.get("/fake-url/")

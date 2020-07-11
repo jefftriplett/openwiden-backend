@@ -33,29 +33,6 @@ class TestIssuesUrls:
         assert resolve(url).view_name == namespace
 
 
-class TestUsersUrls:
-    def test_list(self):
-        url = "/api/v1/users/"
-        namespace = "api-v1:user-list"
-
-        assert reverse(namespace) == url
-        assert resolve(url).view_name == namespace
-
-    def test_detail(self):
-        url = "/api/v1/users/1/"
-        namespace = "api-v1:user-detail"
-
-        assert reverse(namespace, kwargs={"id": 1}) == url
-        assert resolve(url).view_name == namespace
-
-    def test_me(self):
-        url = "/api/v1/users/me/"
-        namespace = "api-v1:user-me"
-
-        assert reverse(namespace) == url
-        assert resolve(url).view_name == namespace
-
-
 class TestUserRepositoriesUrls:
     def test_list(self):
         url = "/api/v1/user/repositories/"

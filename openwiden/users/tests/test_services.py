@@ -1,19 +1,18 @@
+from unittest import mock
+
 import pytest
 
 from openwiden.users import services
 from openwiden import exceptions
 
 
-class TestUserService:
-    def test_get_jwt(self, monkeypatch, mock_user, create_mock_refresh_token):
-        expected = dict(access="12345", refresh="67890")
+@mock.patch.object(services.RefreshToken, "for_user")
+def get_jwt_tokens(patched_refresh_token_for_user, monkeypatch, mock_user, create_mock_refresh_token):
+    expected = dict(access="12345", refresh="67890")
 
-        def get_mock_refresh_token(*args):
-            return create_mock_refresh_token(**expected)
+    patched_refresh_token_for_user.return_value = create_mock_refresh_token(**expected)
 
-        monkeypatch.setattr(services.RefreshToken, "for_user", get_mock_refresh_token)
-
-        assert services.UserService.get_jwt(mock_user) == expected
+    assert services.get_jwt_tokens(mock_user) == expected
 
 
 class TestVCSAccountService:

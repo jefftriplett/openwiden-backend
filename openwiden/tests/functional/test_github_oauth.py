@@ -106,7 +106,7 @@ def authorize(selenium: webdriver.Remote) -> None:
 
 
 def test_run(selenium, live_server, create_api_client):
-    url = live_server.url + reverse("api-v1:auth:login", kwargs={"vcs": VersionControlService.GITHUB.value})
+    url = live_server.url + reverse("api-v1:login", kwargs={"vcs": VersionControlService.GITHUB.value})
     wait = WebDriverWait(selenium, 10)
 
     # Open API url, that redirects to sign in form
