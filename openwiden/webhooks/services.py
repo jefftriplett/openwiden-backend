@@ -9,7 +9,6 @@ from django.utils.translation import gettext_lazy as _
 from openwiden import exceptions
 from openwiden.webhooks import models
 from openwiden.repositories import models as repo_models
-from openwiden.users import models as users_models
 from openwiden import vcs_clients
 
 
@@ -41,7 +40,7 @@ class RepositoryWebhook:
 
 
 def create_github_repository_webhook(
-    *, repository: repo_models.Repository, vcs_account: users_models.VCSAccount,
+    *, repository: repo_models.Repository, github_client: vcs_clients.GitHubClient,
 ) -> models.RepositoryWebhook:
     if models.RepositoryWebhook.objects.filter(repository=repository).exists():
         raise exceptions.ServiceException(_("repository webhook already exist."))
@@ -56,9 +55,12 @@ def create_github_repository_webhook(
     )
 
     events = ["issues", "repository"]
-    github_client = vcs_clients.GitHubClient(vcs_account)
     github_webhook = github_client.create_webhook(
-        owner=repository.owner_name, repo=repository.name, url=webhook_url, secret=webhook.secret, events=events,
+        owner_name=repository.owner_name,
+        repository_name=repository.name,
+        url=webhook_url,
+        secret=webhook.secret,
+        events=events,
     )
 
     webhook.remote_id = github_webhook.webhook_id

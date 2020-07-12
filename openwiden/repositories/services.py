@@ -3,14 +3,11 @@ from datetime import datetime
 
 from django.db.models import QuerySet
 
-from openwiden import enums, exceptions
+from openwiden import enums, exceptions, vcs_clients
 from openwiden.repositories import models, error_messages
 from openwiden.users import models as users_models, selectors as users_selectors
 from openwiden.organizations import models as organizations_models
 from openwiden.webhooks import services as webhooks_services
-
-
-TaskID = str
 
 
 class Repository:
@@ -137,16 +134,43 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
     elif repository.visibility == enums.VisibilityLevel.private:
         raise exceptions.ServiceException(error_messages.REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED)
 
-    # Set is_added True for now, but save in sync action (if success)
-    repository.is_added = True
+    # Sync repository, issues and create webhook
+    if vcs_account.vcs == enums.VersionControlService.GITHUB:
+        github_client = vcs_clients.GitHubClient(vcs_account)
+        sync_github_repository(repository=repository, github_client=github_client)
 
-    # Sync issues
-    ...
-    # Sync repository
-    ...
-    # Create repository webhook
-    webhooks_services.create_github_repository_webhook(
-        repository=repository, vcs_account=vcs_account,
+    # Save repository
+    repository.is_added = True
+    repository.save()
+
+
+def sync_github_repository(*, repository: models.Repository, github_client: vcs_clients.GitHubClient,) -> None:
+    # Sync repository issues
+    repository_issues = github_client.get_repository_issues(
+        owner_name=repository.owner_name, repository_name=repository.name,
+    )
+    for issue in repository_issues:
+        models.Issue.objects.update_or_create(
+            repository=repository,
+            remote_id=issue.issue_id,
+            defaults=dict(
+                title=issue.title,
+                description=issue.body,
+                state=issue.state,
+                labels=issue.labels,
+                url=issue.html_url,
+                created_at=issue.created_at,
+                updated_at=issue.updated_at,
+                closed_at=issue.closed_at,
+            ),
+        )
+
+    # Sync repository languages
+    repository.programming_languages = github_client.get_repository_languages(
+        owner_name=repository.owner_name, repository_name=repository.name
     )
 
-    repository.save(update_fields=("is_added",))
+    # Create repository webhook
+    webhooks_services.create_github_repository_webhook(
+        repository=repository, github_client=github_client,
+    )

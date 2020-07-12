@@ -154,7 +154,7 @@ def oauth(*, vcs: str, user: Union[models.User, AnonymousUser], request: Request
 
         # Create new oauth token instance for user:
         # New if anonymous or existed if is authenticated.
-        new_vcs_account(
+        create_vcs_account(
             user=user,
             vcs=vcs,
             remote_id=profile.id,
@@ -203,7 +203,7 @@ def oauth(*, vcs: str, user: Union[models.User, AnonymousUser], request: Request
         return vcs_account.user
 
 
-def new_vcs_account(
+def create_vcs_account(
     *,
     user: models.User,
     vcs: str,
