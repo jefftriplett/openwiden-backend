@@ -140,7 +140,11 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
     # Set is_added True for now, but save in sync action (if success)
     repository.is_added = True
 
-    # Call repository sync action
+    # Sync issues
+    ...
+    # Sync repository
+    ...
+    # Create repository webhook
     webhooks_services.create_github_repository_webhook(
         repository=repository, vcs_account=vcs_account,
     )

@@ -50,6 +50,15 @@ class Repository(UUIDModel):
     def __str__(self):
         return self.name
 
+    @property
+    def owner_name(self) -> str:
+        if self.owner:
+            return self.owner.login
+        elif self.organization:
+            return self.organization.name
+        else:
+            raise ValueError("repository has no owner!")
+
 
 class Issue(UUIDModel):
     repository = models.ForeignKey(

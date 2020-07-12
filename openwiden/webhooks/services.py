@@ -55,11 +55,10 @@ def create_github_repository_webhook(
         path=reverse("api-v1:webhooks:github", kwargs={"id": str(webhook.id)}),
     )
 
-    owner = vcs_account.login if repository.owner else repository.organization.name
     events = ["issues", "repository"]
     github_client = vcs_clients.GitHubClient(vcs_account)
     github_webhook = github_client.create_webhook(
-        owner=owner, repo=repository.name, url=webhook_url, secret=webhook.secret, events=events,
+        owner=repository.owner_name, repo=repository.name, url=webhook_url, secret=webhook.secret, events=events,
     )
 
     webhook.remote_id = github_webhook.webhook_id
