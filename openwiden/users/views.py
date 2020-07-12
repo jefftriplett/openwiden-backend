@@ -1,20 +1,31 @@
 from authlib.integrations.django_client import DjangoRemoteApp
+from drf_yasg.utils import swagger_auto_schema
 
-from rest_framework import views, permissions as drf_permissions, viewsets, mixins
-from rest_framework.decorators import action
+from rest_framework import views, permissions as drf_permissions, viewsets, mixins, status
+from rest_framework.request import Request
 from rest_framework.response import Response
 
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView as JWTRefreshView
 
 from openwiden import enums
 from . import exceptions, models, permissions, serializers, services
+
+
+class TokenRefreshView(JWTRefreshView):
+    """Refresh user token
+
+    Takes a refresh type JSON web token and returns an access type JSON web
+    token if the refresh token is valid.
+    """
+
+    pass
+
 
 token_refresh_view = TokenRefreshView.as_view()
 
 
 class OAuthLoginView(views.APIView):
-    """
-    Redirects user for auth via available provider.
+    """Redirects user for auth via available provider
 
     # GitLab
     For GitLab `redirect_uri` is required.
@@ -45,8 +56,9 @@ oauth_login_view = OAuthLoginView.as_view()
 
 
 class OAuthCompleteView(views.APIView):
-    """
-    Creates or updates user for specified provider.
+    """Creates or updates user for specified provider
+
+    Should retrieve default GET params from VCS site redirect.
     """
 
     permission_classes = (drf_permissions.AllowAny,)
@@ -60,7 +72,11 @@ class OAuthCompleteView(views.APIView):
 oauth_complete_view = OAuthCompleteView.as_view()
 
 
-class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class UserViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet,
+):
+    """Users """
+
     serializer_class = serializers.UserSerializer
     lookup_field = "id"
     queryset = models.User.objects.all()
@@ -71,9 +87,19 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
             return serializers.UserUpdateSerializer
         return super().get_serializer_class()
 
-    @action(detail=False, permission_classes=(drf_permissions.IsAuthenticated,))
-    def me(self, request):
-        """
-        Returns current authenticated user's information.
-        """
-        return Response(serializers.UserWithVCSAccountsSerializer(instance=request.user).data)
+
+class UserMeView(views.APIView):
+    """Get current user
+
+    Returns current user with VCS accounts data.
+    """
+
+    @swagger_auto_schema(
+        request_body=None, responses={status.HTTP_200_OK: serializers.UserWithVCSAccountsSerializer,},
+    )
+    def get(self, request: Request) -> Response:
+        data = serializers.UserWithVCSAccountsSerializer(request.user).data
+        return Response(data)
+
+
+user_me_view = UserMeView.as_view()

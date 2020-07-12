@@ -22,6 +22,7 @@ auth_urlpatterns = [
     path("auth/login/<str:vcs>/", users_views.oauth_login_view, name="login"),
     path("auth/complete/<str:vcs>/", users_views.oauth_complete_view, name="complete"),
     path("auth/refresh_token/", users_views.token_refresh_view, name="refresh_token"),
+    path("user/", users_views.user_me_view, name="user-me"),
 ]
 
 urlpatterns = [
