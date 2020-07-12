@@ -29,3 +29,9 @@ class AbstractVCSClient:
             raise ValueError(f"request failed: {response.json()}")
 
         return response.json()
+
+    def _delete(self, *, url: str) -> None:
+        response = self._client.delete(url=url, token=self.vcs_account.to_token())
+
+        if response.status_code != 204:
+            raise ValueError(f"request failed: {response.json()}")

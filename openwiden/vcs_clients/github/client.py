@@ -48,6 +48,16 @@ class GitHubClient(AbstractVCSClient):
 
         return models.Webhook.from_json(json)
 
+    def delete_webhook(
+        self,
+        *,
+        owner_name: str,
+        repository_name: str,
+        webhook_id: int,
+    ) -> None:
+        url = f"repos/{owner_name}/{repository_name}/hooks/{webhook_id}"
+        self._delete(url=url)
+
     def get_repository_issues(
         self,
         *,

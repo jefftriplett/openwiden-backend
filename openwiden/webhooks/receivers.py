@@ -16,20 +16,22 @@ def handle_github_issue_event(payload, **kwargs):
     if payload["action"] == constants.IssueEventActions.DELETED:
         repositories_services.delete_by_remote_id(remote_id=payload["issue"]["id"])
     else:
-        issue_data = dict(
-            remote_id=payload["issue"]["id"],
-            title=payload["issue"]["title"],
-            description=payload["issue"]["body"],
-            state=payload["issue"]["state"],
-            labels=[label["name"] for label in payload["issue"]["labels"]],
-            url=payload["issue"]["html_url"],
-            created_at=payload["issue"]["created_at"],
-            closed_at=payload["issue"]["closed_at"],
-            updated_at=payload["issue"]["updated_at"],
-        )
         try:
             repository = repositories_models.Repository.objects.get(remote_id=payload["repository"]["id"])
         except repositories_models.Repository.DoesNotExist:
             log.info("repository with id {id} not found, abort sync issue.".format(id=payload["repository"]["id"]))
         else:
-            repositories_services.sync_issue(repository=repository, **issue_data)
+            repositories_models.Issue.objects.update_or_create(
+                repository=repository,
+                remote_id=payload["issue"]["id"],
+                defaults=dict(
+                    title=payload["issue"]["title"],
+                    description=payload["issue"]["body"],
+                    state=payload["issue"]["state"],
+                    labels=[label["name"] for label in payload["issue"]["labels"]],
+                    url=payload["issue"]["html_url"],
+                    created_at=payload["issue"]["created_at"],
+                    closed_at=payload["issue"]["closed_at"],
+                    updated_at=payload["issue"]["updated_at"],
+                ),
+            )

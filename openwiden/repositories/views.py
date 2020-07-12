@@ -1,6 +1,7 @@
 from django.http import Http404
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from openwiden import exceptions
@@ -39,7 +40,13 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
         return selectors.get_user_repositories(user=self.request.user)
 
     @action(detail=True, methods=["POST"])
-    def add(self, request, **kwargs):
+    def add(self, request: Request, **kwargs) -> Response:
         repository = self.get_object()
         services.add_repository(repository=repository, user=request.user)
         return Response({"detail": "added."})
+
+    @action(detail=True, methods=["DELETE"])
+    def remove(self, request: Request, **kwargs) -> Response:
+        repository = self.get_object()
+        services.remove_repository(repository=repository, user=request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)

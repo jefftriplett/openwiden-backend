@@ -71,3 +71,17 @@ def create_github_repository_webhook(
     webhook.save(update_fields=("remote_id", "created_at", "updated_at", "is_active", "url",),)
 
     return webhook
+
+
+def delete_github_repository_webhook(
+    *, repository: repo_models.Repository, github_client: vcs_clients.GitHubClient
+) -> None:
+    try:
+        webhook = repository.webhook
+    except models.RepositoryWebhook.DoesNotExist:
+        pass
+    else:
+        github_client.delete_webhook(
+            owner_name=repository.owner_name, repository_name=repository.name, webhook_id=webhook.remote_id,
+        )
+        webhook.delete()

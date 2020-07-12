@@ -81,40 +81,6 @@ class Repository:
         return cls.added(enums.VisibilityLevel.public)
 
 
-def sync_issue(
-    *,
-    repository: models.Repository,
-    remote_id: int,
-    title: str,
-    description: str,
-    state: str,
-    labels: t.List[str],
-    url: str,
-    created_at: datetime,
-    updated_at: datetime,
-    closed_at: datetime = None,
-) -> t.Tuple[models.Issue, bool]:
-    """
-    Synchronizes issue by specified data.
-    """
-    issue, created = models.Issue.objects.update_or_create(
-        repository=repository,
-        remote_id=remote_id,
-        defaults=dict(
-            title=title,
-            description=description,
-            state=state,
-            labels=labels,
-            url=url,
-            created_at=created_at,
-            updated_at=updated_at,
-            closed_at=closed_at,
-        ),
-    )
-
-    return issue, created
-
-
 def delete_by_remote_id(*, remote_id: str):
     """
     Finds and deletes repository issue by id.
@@ -142,6 +108,22 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         webhooks_services.create_github_repository_webhook(
             repository=repository, github_client=github_client,
         )
+
+
+def remove_repository(*, repository: models.Repository, user: users_models.User) -> None:
+    vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
+
+    if repository.is_added is False:
+        raise exceptions.ServiceException("repository already removed.")
+
+    if vcs_account.vcs == enums.VersionControlService.GITHUB:
+        github_client = vcs_clients.GitHubClient(vcs_account)
+        webhooks_services.delete_github_repository_webhook(
+            repository=repository, github_client=github_client,
+        )
+
+    repository.is_added = False
+    repository.save(update_fields=("is_added",))
 
 
 def sync_github_repository(*, repository_id: int, github_client: vcs_clients.GitHubClient,) -> models.Repository:
@@ -173,6 +155,7 @@ def sync_github_repository(*, repository_id: int, github_client: vcs_clients.Git
     else:
         repository.owner = github_client.vcs_account
 
+    # TODO: service
     # Sync repository issues
     repository_issues = github_client.get_repository_issues(
         owner_name=repository.owner_name, repository_name=repository.name,
