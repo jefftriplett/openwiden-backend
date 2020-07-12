@@ -66,3 +66,44 @@ class GitHubClient(AbstractVCSClient):
     def get_repository_languages(self, *, owner_name: str, repository_name: str) -> dict:
         json = self._get(url=f"repos/{owner_name}/{repository_name}/languages")
         return convert_lines_count_to_percentages(json)
+
+    def get_repository(
+        self,
+        *,
+        owner_name: str = None,
+        repository_name: str = None,
+        repository_id: int = None,
+    ) -> models.Repository:
+        if owner_name and repository_name:
+            url = f"repos/{owner_name}/{repository_name}"
+        elif repository_id:
+            url = f"repositories/{repository_id}"
+        else:
+            msg = "owner_name and repository_name OR repository_id should be specified"
+            raise ValueError(msg)
+
+        json = self._get(url=url)
+        return models.Repository.from_json(json)
+
+    def get_organization(self, organization_name: str) -> models.Organization:
+        json = self._get(url=f"orgs/{organization_name}")
+        return models.Organization.from_json(json)
+
+    def check_organization_membership(
+        self, organization_name: str,
+    ) -> models.MembershipType:
+        url = f"/user/memberships/orgs/{organization_name}"
+        response = self._client.get(url, token=self.vcs_account.to_token())
+        json = response.json()
+
+        if response.status_code == 200:
+            if json["role"] == models.MembershipType.ADMIN:
+                return models.MembershipType.ADMIN
+            elif json["role"] == models.MembershipType.MEMBER:
+                return models.MembershipType.MEMBER
+            else:
+                raise ValueError(f"unexpected role retrieved: {json['role']}")
+        elif response.status_code == 404:
+            return models.MembershipType.NOT_A_MEMBER
+        else:
+            raise ValueError("check organization membership failed, please, try again.")
