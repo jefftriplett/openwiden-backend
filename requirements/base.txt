@@ -15,7 +15,7 @@ django-environ==0.4.5  # https://github.com/joke2k/django-environ
 django-model-utils==4.0.0  # https://github.com/jazzband/django-model-utils
 django-redis==4.11.0  # https://github.com/jazzband/django-redis
 django-q==1.2.1  # https://github.com/Koed00/django-q
-django-github-webhooks==1.0.0  # https://github.com/OpenWiden/django-github-webhooks
+django-github-webhooks==1.1.0  # https://github.com/OpenWiden/django-github-webhooks
 
 # Django REST Framework
 # ------------------------------------------------------------------------------
