@@ -18,6 +18,8 @@ services:
       - ./.envs/.production/.postgres
     ports:
     - "8000:8000"
+    volumes:
+      - .:/app
     command: /start
 
   postgres:
