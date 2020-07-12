@@ -311,5 +311,5 @@ Q_CLUSTER = {
 
 # GitHub Webhooks
 DJANGO_GITHUB_WEBHOOKS = {
-    "ALLOWED_EVENTS": ("issues",),
+    "ALLOWED_EVENTS": ("issues", "ping",),
 }

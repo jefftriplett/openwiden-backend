@@ -1,7 +1,6 @@
 from typing import Tuple
 from uuid import uuid4
 
-import github
 from django.contrib.sites.models import Site
 from django.db.models import QuerySet
 from django.urls import reverse
@@ -10,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from openwiden import exceptions
 from openwiden.webhooks import models
 from openwiden.repositories import models as repo_models
+from openwiden.users import models as users_models
+from openwiden import vcs_clients
 
 
 class RepositoryWebhook:
@@ -40,7 +41,7 @@ class RepositoryWebhook:
 
 
 def create_github_repository_webhook(
-    *, repository: repo_models.Repository, access_token: str,
+    *, repository: repo_models.Repository, vcs_account: users_models.VCSAccount,
 ) -> models.RepositoryWebhook:
     if models.RepositoryWebhook.objects.filter(repository=repository).exists():
         raise exceptions.ServiceException(_("repository webhook already exist."))
@@ -54,18 +55,18 @@ def create_github_repository_webhook(
         path=reverse("api-v1:webhooks:github", kwargs={"id": str(webhook.id)}),
     )
 
+    owner = vcs_account.login if repository.owner else repository.organization.name
     events = ["issues", "repository"]
-    config = dict(url=webhook_url, content_type="json", secret=webhook.secret, insecure_ssl="0",)
-    github_client = github.Github(access_token)
-    github_webhook = github_client.get_repo(repository.remote_id).create_hook(
-        name="web", config=config, events=events, active=True,
+    github_client = vcs_clients.GitHubClient(vcs_account)
+    github_webhook = github_client.create_webhook(
+        owner=owner, repo=repository.name, url=webhook_url, secret=webhook.secret, events=events,
     )
 
-    webhook.remote_id = github_webhook.id
+    webhook.remote_id = github_webhook.webhook_id
     webhook.created_at = github_webhook.created_at
     webhook.updated_at = github_webhook.updated_at
-    webhook.is_active = True
-    webhook.url = webhook_url
+    webhook.is_active = github_webhook.active
+    webhook.url = github_webhook.config.url
     webhook.save(update_fields=("remote_id", "created_at", "updated_at", "is_active", "url",),)
 
     return webhook

@@ -1,4 +1,3 @@
-import json
 import logging
 
 from django.dispatch import receiver
@@ -10,10 +9,9 @@ from . import constants
 log = logging.getLogger(__name__)
 
 
-@receiver(signal=github_signals.issues_signal)
+@receiver(signal=github_signals.issues)
 def handle_github_issue_event(payload, **kwargs):
     log.info("issues payload received: {payload}".format(payload=payload))
-    payload = json.loads(payload)
 
     if payload["action"] == constants.IssueEventActions.DELETED:
         repositories_services.delete_by_remote_id(remote_id=payload["issue"]["id"])
