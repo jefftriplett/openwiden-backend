@@ -166,7 +166,9 @@ def sync_github_repository(*, repository_id: int, github_client: vcs_clients.Git
     # Sync repository ownership
     if repository_data.owner.owner_type == OwnerType.ORGANIZATION:
         # Sync organization
-        organization = sync_github_organization(organization_name=repository_data.owner.login)
+        organization = sync_github_organization(
+            organization_name=repository_data.owner.login, github_client=github_client,
+        )
         repository.organization = organization
     else:
         repository.owner = github_client.vcs_account
@@ -238,3 +240,19 @@ def sync_github_organization(
         organization.members.filter(vcs_account=github_client.vcs_account).delete()
 
     return organization
+
+
+def sync_github_user_repositories(*, github_client: vcs_clients.GitHubClient) -> None:
+    user_repositories = github_client.get_user_repositories()
+    for repository in user_repositories:
+        sync_github_repository(
+            repository_id=repository.repository_id, github_client=github_client,
+        )
+
+
+def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:
+    if vcs_account.vcs == enums.VersionControlService.GITHUB:
+        github_client = vcs_clients.GitHubClient(vcs_account)
+        sync_github_user_repositories(github_client=github_client)
+    else:
+        raise exceptions.ServiceException(f"vcs {vcs_account.vcs} is not supported yet!")

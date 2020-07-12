@@ -1,5 +1,6 @@
 from .owner import Owner
 
+
 class Repository:
     def __init__(
         self,
@@ -30,5 +31,6 @@ class Repository:
 
     @classmethod
     def from_json(cls, json: dict) -> "Repository":
+        json["repository_id"] = json.pop("id")
         json["owner"] = Owner.from_json(json.pop("owner"))
         return Repository(**json)

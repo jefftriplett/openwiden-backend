@@ -107,3 +107,10 @@ class GitHubClient(AbstractVCSClient):
             return models.MembershipType.NOT_A_MEMBER
         else:
             raise ValueError("check organization membership failed, please, try again.")
+
+    def get_user_repositories(self) -> List[models.Repository]:
+        json = self._get(
+            url="user/repos?affiliation=owner,organization_member&visibility=public"
+        )
+
+        return [models.Repository.from_json(data) for data in json]

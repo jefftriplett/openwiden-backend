@@ -6,11 +6,13 @@ from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
+from django_q.tasks import async_task
 from rest_framework.request import Request
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.translation import gettext_lazy as _
 
 from openwiden import exceptions
+from openwiden.repositories import services as repositories_services
 
 from . import models, serializers
 
@@ -232,6 +234,10 @@ def create_vcs_account(
 
     # Save vcs account instance
     if serializer.is_valid():
-        return serializer.save()
+        vcs_account = serializer.save()
+        async_task(
+            repositories_services.sync_user_repositories, vcs_account=vcs_account,
+        )
+        return vcs_account
     else:
         raise exceptions.ServiceException(str(serializer.errors))
