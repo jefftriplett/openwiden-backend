@@ -7,7 +7,6 @@ redis==3.5.0 # https://github.com/andymccurdy/redis-py
 uvicorn==0.11.5  # https://github.com/encode/uvicorn
 authlib==0.14.1
 requests==2.23.0
-PyGithub==1.51  # https://github.com/PyGithub/PyGithub
 
 # Django
 # ------------------------------------------------------------------------------
