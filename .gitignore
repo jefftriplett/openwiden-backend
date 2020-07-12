@@ -138,6 +138,7 @@ dmypy.json
 
 # Django
 media/
+!media/.gitkeep
 staticfiles/
 !staticfiles/.gitkeep
 
