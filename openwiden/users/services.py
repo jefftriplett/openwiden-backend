@@ -18,7 +18,9 @@ from . import models, serializers
 
 
 class Token:
-    def __init__(self, access_token: str, token_type: str, refresh_token: str, expires_at: int, **kwargs,) -> None:
+    def __init__(
+        self, access_token: str, token_type: str, refresh_token: str = None, expires_at: int = None, **kwargs,
+    ) -> None:
         self.access_token = access_token
         self.token_type = token_type
         self.refresh_token = refresh_token
