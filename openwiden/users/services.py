@@ -17,6 +17,14 @@ from openwiden.repositories import services as repositories_services
 from . import models, serializers
 
 
+class Token:
+    def __init__(self, access_token: str, token_type: str, refresh_token: str, expires_at: int, **kwargs,) -> None:
+        self.access_token = access_token
+        self.token_type = token_type
+        self.refresh_token = refresh_token
+        self.expires_at = expires_at
+
+
 class Profile:
     def __init__(
         self,
@@ -25,11 +33,8 @@ class Profile:
         name: str,
         email: str,
         avatar_url: str,
-        access_token: str,
-        expires_at: int = None,
+        token: Token,
         split_name: bool = True,
-        token_type: str = None,
-        refresh_token: str = None,
         **kwargs,
     ):
         self.id: int = id
@@ -39,22 +44,22 @@ class Profile:
         self.first_name = ""
         self.last_name = ""
         self.avatar_url = avatar_url
-        self.access_token = access_token
-        self.token_type = token_type
-        self.refresh_token = refresh_token
-        self.expires_at = expires_at
+        self.token = token
 
         if split_name and self._name:
             self.first_name, sep, self.last_name = self._name.partition(" ")
 
     @classmethod
-    def _parse_github_profile_json(cls, json: dict, token: dict) -> "Profile":
-        return Profile(**json, **token)
+    def _parse_github_profile_json(cls, json: dict, token_data: dict) -> "Profile":
+        token = Token(**token_data)
+        return Profile(**json, token=token)
 
     @classmethod
-    def _parse_gitlab_profile_json(cls, json: dict, token: dict) -> "Profile":
+    def _parse_gitlab_profile_json(cls, json: dict, token_data: dict) -> "Profile":
         json["login"] = json.pop("username", None)
-        return Profile(**json, **token)
+        token_data["expires_at"] = token_data["created_at"]
+        token = Token(**token_data)
+        return Profile(**json, token=token)
 
     @classmethod
     def from_json(cls, vcs: str, json: dict, token: dict) -> "Profile":
@@ -161,10 +166,10 @@ def oauth(*, vcs: str, user: Union[models.User, AnonymousUser], request: Request
             vcs=vcs,
             remote_id=profile.id,
             login=profile.login,
-            access_token=profile.access_token,
-            token_type=profile.token_type,
-            refresh_token=profile.refresh_token,
-            expires_at=profile.expires_at,
+            access_token=profile.token.access_token,
+            token_type=profile.token.token_type,
+            refresh_token=profile.token.refresh_token,
+            expires_at=profile.token.expires_at,
         )
         return user
     else:
@@ -180,10 +185,10 @@ def oauth(*, vcs: str, user: Union[models.User, AnonymousUser], request: Request
         update_fields = ("access_token", "token_type", "refresh_token", "expires_at")
 
         # Update token data fields
-        vcs_account.access_token = profile.access_token
-        vcs_account.token_type = profile.token_type
-        vcs_account.refresh_token = profile.refresh_token
-        vcs_account.expires_at = profile.expires_at
+        vcs_account.access_token = profile.token.access_token
+        vcs_account.token_type = profile.token.token_type
+        vcs_account.refresh_token = profile.token.refresh_token
+        vcs_account.expires_at = profile.token.expires_at
 
         # Change user if current authenticated user is not equals account user
         if user.is_authenticated:
