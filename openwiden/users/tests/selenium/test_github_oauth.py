@@ -1,24 +1,14 @@
-import json
 import os
-import pytest
 import typing as t
 import imaplib
 import time
 
 from enum import Enum, auto
 
-from django.urls import reverse
-
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-
-from openwiden.enums import VersionControlService
-
-from .selenium_helpers import save_current_state
-
-pytestmark = [pytest.mark.django_db, pytest.mark.functional]
 
 GITHUB_VERIFICATION_CODE_LENGTH = 6
 
@@ -86,7 +76,7 @@ class OAuthRedirectType(Enum):
     COMPLETE = auto()
 
 
-def oauth_redirect(driver: webdriver.Remote) -> t.Union[bool, OAuthRedirectType]:
+def oauth_redirect(driver) -> t.Union[bool, OAuthRedirectType]:
     """
     Custom redirect waiter for selenium driver.
     """
@@ -100,8 +90,20 @@ def oauth_redirect(driver: webdriver.Remote) -> t.Union[bool, OAuthRedirectType]
         return False
 
 
-def verify_device(selenium: webdriver.Remote) -> None:
-    verify_button = selenium.find_element_by_xpath("//button[contains(text(), 'Verify')]")
+def code_confirm_page_is_loaded() -> bool:
+    try:
+        return driver.find_element_by_xpath("//button[contains(text(), 'Verify')]")
+    except NoSuchElementException:
+        return False
+
+
+def verify_device(driver) -> None:
+    verify_button = None
+
+    try:
+        verify_button = wait.until(code_confirm_page_is_loaded)
+    except TimeoutException:
+        pass
 
     # Get verification code from email
     verification_code = search_github_verification_code(
@@ -111,84 +113,60 @@ def verify_device(selenium: webdriver.Remote) -> None:
     )
 
     # Set code
-    selenium.find_element_by_id("otp").send_keys(verification_code)
-    save_current_state(selenium, "github", "verify_set_code")
+    driver.find_element_by_id("otp").send_keys(verification_code)
 
     # Click on verify button
     verify_button.click()
-    save_current_state(selenium, "github", "verify_clicked")
 
 
-def authorize(selenium: webdriver.Remote) -> None:
+def authorize(driver) -> None:
     try:
-        authorize_button = selenium.find_element_by_xpath("//button[@name='authorize']")
+        authorize_button = driver.find_element_by_xpath("//button[@name='authorize']")
     except NoSuchElementException:
         # Do nothing (already completed case)
         return
 
     # Select & submit clicks + 1 for just in case
-    wait = WebDriverWait(selenium, 10)
     wait.until(expected_conditions.staleness_of(authorize_button))
     authorize_button.click()
-    save_current_state(selenium, "github", "authorize_clicked")
 
-    selenium.implicitly_wait(3)
-    save_current_state(selenium, "github", "authorize_success")
+    driver.implicitly_wait(3)
 
 
-@pytest.mark.selenium
-def test_run(selenium, live_server, create_api_client):
-    url = live_server.url + reverse("api-v1:login", kwargs={"vcs": VersionControlService.GITHUB.value})
-    wait = WebDriverWait(selenium, 10)
+DRIVER_PATH = "/Users/stefanitsky/Downloads/chromedriver"
+driver = webdriver.Chrome(DRIVER_PATH)
+url = "http://0.0.0.0:8000/api/v1/auth/login/github/"
+wait = WebDriverWait(driver, 10)
 
-    # Open API url, that redirects to sign in form
-    selenium.get(url)
+# Open API url, that redirects to sign in form
+driver.get(url)
 
-    # Sign in
-    save_current_state(selenium, "github", "sign_in_open")
-    selenium.find_element_by_id("login_field").send_keys(GITHUB_USER_LOGIN)
-    selenium.find_element_by_id("password").send_keys(GITHUB_USER_PASSWORD)
-    selenium.find_element_by_xpath("//input[@name='commit' and @value='Sign in']").click()
-    save_current_state(selenium, "github", "sign_in_clicked")
+# Sign in
+driver.find_element_by_id("login_field").send_keys(GITHUB_USER_LOGIN)
+driver.find_element_by_id("password").send_keys(GITHUB_USER_PASSWORD)
+driver.find_element_by_xpath("//input[@name='commit' and @value='Sign in']").click()
 
-    # Wait for redirect and check received type
-    try:
-        redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
-    finally:
-        save_current_state(selenium, "github", "sign_in_redirect_fail")
+# Wait for redirect and check received type
+redirect_type = None
+try:
+    redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=driver.current_url))
+except TimeoutException:
+    pass
 
-    # Do action depends on redirect type
-    if redirect_type == OAuthRedirectType.AUTHORIZE:
-        authorize(selenium)
-    elif redirect_type == OAuthRedirectType.VERIFY_DEVICE:
-        verify_device(selenium)
+# Do action depends on redirect type
+if redirect_type == OAuthRedirectType.AUTHORIZE:
+    authorize(driver)
+elif redirect_type == OAuthRedirectType.VERIFY_DEVICE:
+    verify_device(driver)
 
-    save_current_state(selenium, "github", "after_redirect")
+# Check if authorize is required
+try:
+    redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=driver.current_url))
+except TimeoutException:
+    pass
 
-    # Check if authorize is required
-    try:
-        redirect_type = wait.until(oauth_redirect, "url: {url}".format(url=selenium.current_url))
-    finally:
-        save_current_state(selenium, "github", "sign_in_redirect_fail")
-
-    # Check if authorize required
-    if redirect_type == OAuthRedirectType.AUTHORIZE:
-        authorize(selenium)
-    elif redirect_type != OAuthRedirectType.COMPLETE:
-        raise ValueError(redirect_type)
-
-    # OAuth complete
-    url = selenium.current_url.replace("http://0.0.0.0:8000", live_server.url)
-    complete_url = "view-source:{url}&format=json".format(url=url)
-    selenium.get(complete_url)
-    save_current_state(selenium, "github", "complete")
-
-    pre_element = selenium.find_element_by_tag_name("pre")
-    tokens = json.loads(pre_element.text)
-
-    # Get user
-    client = create_api_client(access_token=tokens["access"])
-    response = client.get(reverse("api-v1:user-me"))
-
-    assert response.status_code == 200
-    assert response.data["username"] == GITHUB_USER_LOGIN
+# Check if authorize required
+if redirect_type == OAuthRedirectType.AUTHORIZE:
+    authorize(driver)
+elif redirect_type != OAuthRedirectType.COMPLETE:
+    raise ValueError(redirect_type)
