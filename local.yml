@@ -13,11 +13,8 @@ services:
     container_name: django
     depends_on:
       - postgres
-      - selenium
       - django-q
       - redis
-    links:
-      - selenium
     volumes:
       - .:/app
     env_file:
@@ -51,8 +48,3 @@ services:
       - redis
     ports: []
     command: /start-django-q
-
-  selenium:
-    image: selenium/standalone-firefox
-    ports:
-      - "4444:4444"

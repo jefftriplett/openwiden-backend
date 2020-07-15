@@ -7,8 +7,6 @@ from pytest_django.live_server_helper import LiveServer
 from rest_framework.test import APIRequestFactory, APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from selenium import webdriver
-
 from openwiden import enums
 from openwiden.enums import VersionControlService
 from openwiden.users import models as users_models, services as users_services
@@ -224,14 +222,6 @@ def authlib_settings_gitlab() -> dict:
         "api_base_url": "https://gitlab.example.com/api/v4/",
         "client_kwargs": None,
     }
-
-
-@pytest.fixture()
-def selenium():
-    with webdriver.Remote(
-        command_executor="http://selenium:4444/wd/hub", desired_capabilities=webdriver.DesiredCapabilities.FIREFOX
-    ) as driver:
-        yield driver
 
 
 @pytest.fixture(scope="session")
