@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from openwiden import enums, exceptions, vcs_clients
 from openwiden.repositories import models, error_messages
 from openwiden.users import models as users_models, selectors as users_selectors
@@ -37,6 +39,12 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         webhooks_services.create_github_repository_webhook(
             repository=repository, github_client=github_client,
         )
+    elif vcs_account.vcs == enums.VersionControlService.GITLAB:
+        gitlab_client = vcs_clients.GitlabClient(vcs_account)
+        repository = gitlab_client.get_repository(repository_id=repository.remote_id)
+        _sync_gitlab_repository(
+            repository=repository, vcs_account=vcs_account, extra_defaults={"is_added": True},
+        )
 
 
 def remove_repository(*, repository: models.Repository, user: users_models.User) -> None:
@@ -72,7 +80,10 @@ def sync_user_repositories(*, vcs_account: users_models.VCSAccount, is_new_vcs_a
                 repository_id=repository.repository_id, github_client=github_client, **sync_kwargs,
             )
     elif vcs_account.vcs == enums.VersionControlService.GITLAB:
-        sync_gitlab_repositories(vcs_account=vcs_account)
+        gitlab_client = vcs_clients.GitlabClient(vcs_account)
+        repositories = gitlab_client.get_user_repositories()
+        for repository in repositories:
+            _sync_gitlab_repository(repository=repository, vcs_account=vcs_account)
     else:
         raise exceptions.ServiceException(f"vcs {vcs_account.vcs} is not supported yet!")
 
@@ -153,35 +164,40 @@ def sync_github_repository_issues(*, repository: models.Repository, github_clien
         )
 
 
-def sync_gitlab_repositories(*, vcs_account: users_models.VCSAccount) -> None:
-    gitlab_client = vcs_clients.GitlabClient(vcs_account)
-    repositories = gitlab_client.get_user_repositories()
+def _sync_gitlab_repository(
+    *,
+    repository: vcs_clients.gitlab.models.Repository,
+    vcs_account: users_models.VCSAccount,
+    extra_defaults: dict = None,
+) -> Tuple[models.Repository, bool]:
+    defaults = dict(
+        name=repository.name,
+        description=repository.description,
+        url=repository.web_url,
+        stars_count=repository.star_count,
+        open_issues_count=repository.open_issues_count,
+        forks_count=repository.forks_count,
+        created_at=repository.created_at,
+        updated_at=repository.last_activity_at,
+        visibility=repository.visibility,
+    )
 
-    # Update or create each repository
-    for repository in repositories:
-        defaults = dict(
-            name=repository.name,
-            description=repository.description,
-            url=repository.web_url,
-            stars_count=repository.star_count,
-            open_issues_count=repository.open_issues_count,
-            forks_count=repository.forks_count,
-            created_at=repository.created_at,
-            updated_at=repository.last_activity_at,
-            visibility=repository.visibility,
+    if extra_defaults:
+        defaults.update(extra_defaults)
+
+    # Add ownership
+    if repository.namespace.kind == NamespaceKind.ORGANIZATION:
+        defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
+            vcs=enums.VersionControlService.GITLAB,
+            remote_id=repository.namespace.namespace_id,
+            defaults=dict(name=repository.namespace.name),
         )
+    else:
+        defaults["owner"] = vcs_account
 
-        # Add ownership
-        if repository.namespace.kind == NamespaceKind.ORGANIZATION:
-            defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
-                vcs=enums.VersionControlService.GITLAB,
-                remote_id=repository.namespace.namespace_id,
-                defaults=dict(name=repository.namespace.name),
-            )
-        else:
-            defaults["owner"] = vcs_account
+    # Sync repository data
+    repository_obj, created = models.Repository.objects.update_or_create(
+        vcs=enums.VersionControlService.GITLAB, remote_id=repository.repository_id, defaults=defaults,
+    )
 
-        # Update or create repository
-        models.Repository.objects.update_or_create(
-            remote_id=repository.repository_id, vcs=enums.VersionControlService.GITLAB, defaults=defaults,
-        )
+    return repository_obj, created
