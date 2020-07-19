@@ -1,7 +1,9 @@
+import json
 from typing import Union
 from uuid import uuid4
 
 import requests
+from authlib.common.encoding import to_unicode
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
@@ -52,45 +54,37 @@ class Profile:
             self.first_name, sep, self.last_name = self._name.partition(" ")
 
     @classmethod
-    def _parse_github_profile_json(cls, json: dict, token_data: dict) -> "Profile":
+    def _parse_github_profile_json(cls, data: dict, token_data: dict) -> "Profile":
         token = Token(**token_data)
-        return Profile(**json, token=token)
+        return Profile(**data, token=token)
 
     @classmethod
-    def _parse_gitlab_profile_json(cls, json: dict, token_data: dict) -> "Profile":
-        json["login"] = json.pop("username", None)
+    def _parse_gitlab_profile_json(cls, data: dict, token_data: dict) -> "Profile":
+        data["login"] = data.pop("username", None)
         token_data["expires_at"] = token_data["created_at"]
         token = Token(**token_data)
-        return Profile(**json, token=token)
+        return Profile(**data, token=token)
 
     @classmethod
-    def from_json(cls, vcs: str, json: dict, token: dict) -> "Profile":
+    def from_json(cls, vcs: str, data: dict, token: dict) -> "Profile":
         parse_function = getattr(cls, f"_parse_{vcs}_profile_json")
-        return parse_function(json, token)
+        return parse_function(data, token)
 
 
-def update_token(vcs, token, refresh_token=None, access_token=None) -> None:
-    """
-    OAuth token update handler for authlib.
-    """
-    if refresh_token:
-        qs = models.VCSAccount.objects.filter(vcs=vcs, refresh_token=refresh_token)
-    elif access_token:
-        qs = models.VCSAccount.objects.filter(vcs=vcs, access_token=access_token)
-    else:
-        return None
+def gitlab_compliance_fix(session):
+    def _fix(response):
+        token = response.json()
+        token["expires_at"] = token["created_at"]
+        response._content = to_unicode(json.dumps(token)).encode("utf-8")
+        return response
 
-    if qs.exists():
-        vcs_account = qs.first()
-        vcs_account.access_token = token["access_token"]
-        vcs_account.refresh_token = token["refresh_token"]
-        vcs_account.expires_at = token["expires_at"]
-        vcs_account.save(update_fields=("access_token", "refresh_token", "expires_at"))
+    # session.register_compliance_hook("access_token_response", _fix)
+    session.register_compliance_hook("refresh_token_response", _fix)
 
 
-oauth_client = OAuth(update_token=update_token)
+oauth_client = OAuth()
 oauth_client.register("github")
-oauth_client.register("gitlab")
+oauth_client.register("gitlab", compliance_fix=gitlab_compliance_fix)
 
 
 def get_jwt_tokens(user: models.User) -> dict:
@@ -131,7 +125,7 @@ def get_user_profile(*, vcs: str, request: Request) -> Profile:
     except AuthlibBaseError as e:
         raise exceptions.ServiceException(e.description)
     else:
-        return Profile.from_json(vcs=vcs, json=profile_data, token=token)
+        return Profile.from_json(vcs=vcs, data=profile_data, token=token)
 
 
 def oauth(*, vcs: str, user: Union[models.User, AnonymousUser], request: Request) -> models.User:
