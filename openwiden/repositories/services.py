@@ -41,9 +41,12 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         )
     elif vcs_account.vcs == enums.VersionControlService.GITLAB:
         gitlab_client = vcs_clients.GitlabClient(vcs_account)
-        repository = gitlab_client.get_repository(repository_id=repository.remote_id)
+        repository_data = gitlab_client.get_repository(repository_id=repository.remote_id)
+        programming_languages = gitlab_client.get_repository_programming_languages(repository.remote_id)
         _sync_gitlab_repository(
-            repository=repository, vcs_account=vcs_account, extra_defaults={"is_added": True},
+            repository=repository_data,
+            vcs_account=vcs_account,
+            extra_defaults=dict(is_added=True, programming_languages=programming_languages,),
         )
 
 

@@ -12,3 +12,6 @@ class GitlabClient(AbstractVCSClient):
     def get_repository(self, repository_id: int) -> Repository:
         json = self._get(f"projects/{repository_id}")
         return Repository.from_json(json)
+
+    def get_repository_programming_languages(self, repository_id: int) -> dict:
+        return self._get(f"projects/{repository_id}/languages")
