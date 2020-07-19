@@ -22,7 +22,7 @@ class AbstractVCSClient:
 
         return response.json()
 
-    def _get(self, *, url: str) -> JsonType:
+    def _get(self, url: str) -> JsonType:
         response = self._client.get(url, token=self.vcs_account.to_token())
 
         if response.status_code != 200:
