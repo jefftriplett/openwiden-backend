@@ -36,3 +36,6 @@ class GitlabClient(AbstractVCSClient):
         )
         json = self._post(f"projects/{repository_id}/hooks", data)
         return Webhook.from_json(json)
+
+    def delete_repository_webhook(self, repository_id: int, webhook_id: int) -> None:
+        self._delete(f"projects/{repository_id}/hooks/{webhook_id}")

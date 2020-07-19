@@ -34,7 +34,7 @@ class AbstractVCSClient:
 
         return response.json()
 
-    def _delete(self, *, url: str) -> None:
+    def _delete(self, url: str) -> None:
         response = self._client.delete(url=url, token=self._get_token())
 
         if response.status_code != 204:

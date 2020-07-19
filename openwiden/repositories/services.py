@@ -73,6 +73,10 @@ def remove_repository(*, repository: models.Repository, user: users_models.User)
         webhooks_services.delete_github_repository_webhook(
             repository=repository, github_client=github_client,
         )
+    elif vcs_account.vcs == enums.VersionControlService.GITLAB:
+        webhooks_services.delete_gitlab_repository_webhook(
+            repository=repository, vcs_account=vcs_account,
+        )
 
     repository.is_added = False
     repository.save(update_fields=("is_added",))

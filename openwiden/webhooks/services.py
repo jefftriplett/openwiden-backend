@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from openwiden import exceptions
 from openwiden.webhooks import models
 from openwiden.repositories import models as repo_models
+from openwiden.users import models as users_models
 from openwiden import vcs_clients
 
 
@@ -83,3 +84,13 @@ def create_gitlab_repository_webhook(
     webhook.is_active = True
     webhook.url = webhook.url
     webhook.save(update_fields=("remote_id", "created_at", "updated_at", "is_active", "url"))
+
+
+def delete_gitlab_repository_webhook(
+    *, repository: repo_models.Repository, vcs_account: users_models.VCSAccount,
+) -> None:
+    gitlab_client = vcs_clients.GitlabClient(vcs_account)
+    gitlab_client.delete_repository_webhook(
+        repository_id=repository.remote_id, webhook_id=repository.webhook.remote_id,
+    )
+    repository.webhook.delete()
