@@ -1,19 +1,16 @@
 from rest_framework.generics import get_object_or_404
 
-from . import models, selectors
+from . import selectors
 
-from github_webhooks import views as github_webhook_views
-
-
-__all__ = ("github_webhook_view",)
+from github_webhooks.views import GitHubWebhookView as BaseGitHubWebhookView
+from gitlab_webhooks.views import WebhookView as BaseGitlabWebhookView
 
 
-class GithubWebhookView(github_webhook_views.GitHubWebhookView):
+class GithubWebhookView(BaseGitHubWebhookView):
     def get_secret(self) -> str:
-        webhook: models.RepositoryWebhook = get_object_or_404(
-            selectors.get_webhooks(), id=self.kwargs["id"],
-        )
-        return webhook.secret
+        return get_object_or_404(selectors.get_webhooks(), id=self.kwargs["id"]).secret
 
 
-github_webhook_view = GithubWebhookView.as_view()
+class GitlabWebhookView(BaseGitlabWebhookView):
+    def get_secret(self) -> str:
+        return get_object_or_404(selectors.get_webhooks(), id=self.kwargs["id"]).secret

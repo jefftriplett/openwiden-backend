@@ -70,6 +70,7 @@ THIRD_PARTY_APPS = (
     "corsheaders",
     "django_q",
     "github_webhooks",
+    "gitlab_webhooks",
 )
 
 LOCAL_APPS = (
@@ -309,7 +310,12 @@ Q_CLUSTER = {
     "redis": env("REDIS_URL"),
 }
 
-# GitHub Webhooks
+# GitHub webhooks
 DJANGO_GITHUB_WEBHOOKS = {
     "ALLOWED_EVENTS": ("issues", "ping",),
+}
+
+# Gilab webhooks
+DJANGO_GITLAB_WEBHOOKS = {
+    "ALLOWED_EVENTS": ("Issue Hook",),
 }

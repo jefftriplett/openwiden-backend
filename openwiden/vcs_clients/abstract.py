@@ -17,7 +17,7 @@ class AbstractVCSClient:
         self.vcs_account.refresh_from_db()
         return self.vcs_account.to_token()
 
-    def _post(self, *, url: str, data: dict) -> JsonType:
+    def _post(self, url: str, data: dict) -> JsonType:
         response = self._client.post(url, token=self._get_token(), json=data)
 
         # TODO: rewrite exception handler

@@ -1,6 +1,6 @@
 from typing import List
 
-from .models import Repository, Issue
+from .models import Repository, Issue, Webhook
 from ..abstract import AbstractVCSClient
 
 
@@ -19,3 +19,20 @@ class GitlabClient(AbstractVCSClient):
     def get_repository_issues(self, repository_id: int) -> List[Issue]:
         json = self._get(f"projects/{repository_id}/issues?state=opened")
         return [Issue.from_json(data) for data in json]
+
+    def create_webhook(
+        self,
+        *,
+        repository_id: int,
+        webhook_url: str,
+        enable_issues_events: bool = True,
+        secret: str,
+    ) -> Webhook:
+        data = dict(
+            url=webhook_url,
+            issues_events=enable_issues_events,
+            enable_ssl_verification=True,
+            token=secret,
+        )
+        json = self._post(f"projects/{repository_id}/hooks", data)
+        return Webhook.from_json(json)

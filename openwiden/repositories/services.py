@@ -56,6 +56,11 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         for issue in issues:
             sync_gitlab_repository_issue(issue=issue, repository=repository)
 
+        # Create webhook
+        webhooks_services.create_gitlab_repository_webhook(
+            repository=repository, gitlab_client=gitlab_client,
+        )
+
 
 def remove_repository(*, repository: models.Repository, user: users_models.User) -> None:
     vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
