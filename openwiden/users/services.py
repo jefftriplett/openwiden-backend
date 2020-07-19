@@ -1,9 +1,7 @@
-import json
 from typing import Union
 from uuid import uuid4
 
 import requests
-from authlib.common.encoding import to_unicode
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
@@ -71,20 +69,9 @@ class Profile:
         return parse_function(data, token)
 
 
-def gitlab_compliance_fix(session):
-    def _fix(response):
-        token = response.json()
-        token["expires_at"] = token["created_at"]
-        response._content = to_unicode(json.dumps(token)).encode("utf-8")
-        return response
-
-    # session.register_compliance_hook("access_token_response", _fix)
-    session.register_compliance_hook("refresh_token_response", _fix)
-
-
 oauth_client = OAuth()
 oauth_client.register("github")
-oauth_client.register("gitlab", compliance_fix=gitlab_compliance_fix)
+oauth_client.register("gitlab")
 
 
 def get_jwt_tokens(user: models.User) -> dict:
