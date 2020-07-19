@@ -41,13 +41,20 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         )
     elif vcs_account.vcs == enums.VersionControlService.GITLAB:
         gitlab_client = vcs_clients.GitlabClient(vcs_account)
+
+        # Sync repository
         repository_data = gitlab_client.get_repository(repository_id=repository.remote_id)
         programming_languages = gitlab_client.get_repository_programming_languages(repository.remote_id)
-        _sync_gitlab_repository(
+        sync_gitlab_repository(
             repository=repository_data,
             vcs_account=vcs_account,
             extra_defaults=dict(is_added=True, programming_languages=programming_languages,),
         )
+
+        # Sync issues
+        issues = gitlab_client.get_repository_issues(repository.remote_id)
+        for issue in issues:
+            sync_gitlab_repository_issue(issue=issue, repository=repository)
 
 
 def remove_repository(*, repository: models.Repository, user: users_models.User) -> None:
@@ -86,7 +93,7 @@ def sync_user_repositories(*, vcs_account: users_models.VCSAccount, is_new_vcs_a
         gitlab_client = vcs_clients.GitlabClient(vcs_account)
         repositories = gitlab_client.get_user_repositories()
         for repository in repositories:
-            _sync_gitlab_repository(repository=repository, vcs_account=vcs_account)
+            sync_gitlab_repository(repository=repository, vcs_account=vcs_account)
     else:
         raise exceptions.ServiceException(f"vcs {vcs_account.vcs} is not supported yet!")
 
@@ -167,7 +174,7 @@ def sync_github_repository_issues(*, repository: models.Repository, github_clien
         )
 
 
-def _sync_gitlab_repository(
+def sync_gitlab_repository(
     *,
     repository: vcs_clients.gitlab.models.Repository,
     vcs_account: users_models.VCSAccount,
@@ -204,3 +211,29 @@ def _sync_gitlab_repository(
     )
 
     return repository_obj, created
+
+
+def sync_gitlab_repository_issue(
+    *, issue: vcs_clients.gitlab.models.Issue, repository: models.Repository = None
+) -> None:
+    state = issue.state
+    if state == "opened":
+        state = "open"
+
+    if repository is None:
+        repository = models.Repository.objects.get(vcs=enums.VersionControlService.GITLAB, remote_id=issue.project_id,)
+
+    models.Issue.objects.update_or_create(
+        repository=repository,
+        remote_id=issue.issue_id,
+        defaults=dict(
+            title=issue.title,
+            description=issue.description,
+            state=state,
+            labels=issue.labels,
+            url=issue.web_url,
+            created_at=issue.created_at,
+            updated_at=issue.updated_at,
+            closed_at=issue.closed_at,
+        ),
+    )
