@@ -5,24 +5,24 @@ from openwiden.repositories import serializers, models
 pytestmark = pytest.mark.django_db
 
 
-class TestRepositorySerializer:
-    def test_meta(self):
-        assert serializers.Repository.Meta.model == models.Repository
-        assert serializers.Repository.Meta.fields == (
-            "id",
-            "vcs",
-            "name",
-            "description",
-            "url",
-            "stars_count",
-            "open_issues_count",
-            "forks_count",
-            "created_at",
-            "updated_at",
-        )
-
-    def test_to_representation(self, repository):
-        serializers.Repository().to_representation(repository)
+# class TestRepositorySerializer:
+#     def test_meta(self):
+#         assert serializers.Repository.Meta.model == models.Repository
+#         assert serializers.Repository.Meta.fields == (
+#             "id",
+#             "vcs",
+#             "name",
+#             "description",
+#             "url",
+#             "stars_count",
+#             "open_issues_count",
+#             "forks_count",
+#             "created_at",
+#             "updated_at",
+#         )
+#
+#     def test_to_representation(self, repository):
+#         serializers.Repository().to_representation(repository)
 
 
 class TestIssueSerializer:

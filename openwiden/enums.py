@@ -11,3 +11,8 @@ class VisibilityLevel(models.TextChoices):
     public = "public", _("public")
     private = "private", _("private")
     internal = "internal", _("internal")
+
+
+class OwnerType(models.TextChoices):
+    USER = "user", _("user")
+    ORGANIZATION = "organization", _("organization")

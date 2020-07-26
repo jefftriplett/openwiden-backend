@@ -223,9 +223,7 @@ def create_vcs_account(
     # Save vcs account instance
     if serializer.is_valid():
         vcs_account = serializer.save()
-        async_task(
-            repositories_services.sync_user_repositories, vcs_account=vcs_account, is_new_vcs_account=True,
-        )
+        async_task(repositories_services.sync_user_repositories, vcs_account=vcs_account)
         return vcs_account
     else:
         raise exceptions.ServiceException(str(serializer.errors))

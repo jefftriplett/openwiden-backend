@@ -15,6 +15,7 @@ class User(AbstractUser, UUIDModel):
         verbose_name_plural = _("users")
 
 
+# TODO: UUID model
 class VCSAccount(models.Model):
     user = models.ForeignKey(User, models.CASCADE, "vcs_accounts", "vcs_account", verbose_name=_("user"))
     vcs = models.CharField(_("version control service"), max_length=40, choices=enums.VersionControlService.choices)

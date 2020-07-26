@@ -1,6 +1,11 @@
+import logging
+
 from rest_framework import serializers
 
+from openwiden.enums import OwnerType
 from openwiden.repositories import models
+
+log = logging.getLogger(__name__)
 
 
 class SyncIssueSerializer(serializers.ModelSerializer):
@@ -20,6 +25,8 @@ class SyncIssueSerializer(serializers.ModelSerializer):
 
 
 class Repository(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Repository
         fields = (
@@ -33,7 +40,24 @@ class Repository(serializers.ModelSerializer):
             "forks_count",
             "created_at",
             "updated_at",
+            "owner",
         )
+
+    def get_owner(self, obj: models.Repository) -> dict:
+        if obj.owner:
+            return {
+                "type": OwnerType.USER,
+                "id": obj.owner.user.id,
+                "name": obj.owner.login,
+            }
+        elif obj.organization:
+            return {
+                "type": OwnerType.ORGANIZATION,
+                "id": obj.organization.id,
+                "name": obj.organization.name,
+            }
+        else:
+            log.error(f"repository with id {obj.id} has no owner!")
 
 
 class Issue(serializers.ModelSerializer):

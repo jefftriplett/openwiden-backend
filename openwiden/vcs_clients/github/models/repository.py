@@ -7,7 +7,7 @@ class Repository:
         repository_id: int,
         name: str,
         description: str,
-        url: str,
+        html_url: str,
         stargazers_count: int,
         open_issues_count: int,
         forks_count: int,
@@ -20,7 +20,7 @@ class Repository:
         self.repository_id = repository_id
         self.name = name
         self.description = description
-        self.url = url
+        self.html_url = html_url
         self.stargazers_count = stargazers_count
         self.open_issues_count = open_issues_count
         self.forks_count = forks_count

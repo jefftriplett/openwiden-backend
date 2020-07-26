@@ -36,21 +36,21 @@ class TestIssuesUrls:
 class TestUserRepositoriesUrls:
     def test_list(self):
         url = "/api/v1/user/repositories/"
-        namespace = "api-v1:user-repo-list"
+        namespace = "api-v1:user-repositories-list"
 
         assert reverse(namespace) == url
         assert resolve(url).view_name == namespace
 
     def test_detail(self):
         url = "/api/v1/user/repositories/1/"
-        namespace = "api-v1:user-repo-detail"
+        namespace = "api-v1:user-repositories-detail"
 
         assert reverse(namespace, kwargs={"id": 1}) == url
         assert resolve(url).view_name == namespace
 
     def test_add(self):
         url = "/api/v1/user/repositories/1/add/"
-        namespace = "api-v1:user-repo-add"
+        namespace = "api-v1:user-repositories-add"
 
         assert reverse(namespace, kwargs={"id": 1}) == url
         assert resolve(url).view_name == namespace

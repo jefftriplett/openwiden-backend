@@ -13,15 +13,15 @@ router = routers.DefaultRouter()
 router.register("repositories", repository_views.Repository, basename="repo")
 repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
 repository_router.register("issues", repository_views.Issue, basename="repo-issue")
-router.register("user/repositories", repository_views.UserRepositories, basename="user-repo")
+router.register("user/repositories", repository_views.UserRepositories, basename="user-repositories")
 
 # Users
 router.register("users", users_views.UserViewSet, basename="user")
 
 auth_urlpatterns = [
-    path("auth/login/<str:vcs>/", users_views.oauth_login_view, name="login"),
-    path("auth/complete/<str:vcs>/", users_views.oauth_complete_view, name="complete"),
-    path("auth/refresh_token/", users_views.token_refresh_view, name="refresh_token"),
+    path("auth/login/<str:vcs>/", users_views.oauth_login_view, name="auth-login"),
+    path("auth/complete/<str:vcs>/", users_views.oauth_complete_view, name="auth-complete"),
+    path("auth/refresh_token/", users_views.token_refresh_view, name="auth-refresh_token"),
     path("user/", users_views.user_me_view, name="user-me"),
 ]
 

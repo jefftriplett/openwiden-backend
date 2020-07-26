@@ -14,3 +14,12 @@ class VCSAccountInline(admin.StackedInline):
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
     inlines = (VCSAccountInline,)
+    fields = (
+        "is_active",
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "avatar",
+        "date_joined",
+    )

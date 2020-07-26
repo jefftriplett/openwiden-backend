@@ -3,7 +3,6 @@ from typing import Tuple
 from openwiden import enums, exceptions, vcs_clients
 from openwiden.repositories import models, error_messages
 from openwiden.users import models as users_models, selectors as users_selectors
-from openwiden.organizations import services as organization_services
 from openwiden.organizations import models as organizations_models
 from openwiden.vcs_clients.github.models import OwnerType
 from openwiden.vcs_clients.gitlab.models.repository import NamespaceKind
@@ -82,22 +81,12 @@ def remove_repository(*, repository: models.Repository, user: users_models.User)
     repository.save(update_fields=("is_added",))
 
 
-def sync_user_repositories(*, vcs_account: users_models.VCSAccount, is_new_vcs_account: bool = False,) -> None:
-    # Init sync kwargs depends on new vcs account or not
-    sync_kwargs = {}
-    if is_new_vcs_account:
-        sync_kwargs.update(
-            {"sync_issues": False, "sync_programming_languages": False, "is_added": False,}
-        )
-
-    # Call sync depends on VCS
+def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:
     if vcs_account.vcs == enums.VersionControlService.GITHUB:
         github_client = vcs_clients.GitHubClient(vcs_account)
         user_repositories = github_client.get_user_repositories()
         for repository in user_repositories:
-            sync_github_repository(
-                repository_id=repository.repository_id, github_client=github_client, **sync_kwargs,
-            )
+            sync_github_repository(repository=repository, vcs_account=vcs_account)
     elif vcs_account.vcs == enums.VersionControlService.GITLAB:
         gitlab_client = vcs_clients.GitlabClient(vcs_account)
         repositories = gitlab_client.get_user_repositories()
@@ -109,56 +98,42 @@ def sync_user_repositories(*, vcs_account: users_models.VCSAccount, is_new_vcs_a
 
 def sync_github_repository(
     *,
-    repository_id: int,
-    github_client: vcs_clients.GitHubClient,
-    sync_issues: bool = True,
-    sync_programming_languages: bool = True,
-    is_added: bool = True,
-) -> models.Repository:
-    # Sync repository
-    repository_data = github_client.get_repository(repository_id=repository_id)
-    repository, created = models.Repository.objects.update_or_create(
-        remote_id=repository_id,
-        vcs=enums.VersionControlService.GITHUB,
-        defaults=dict(
-            name=repository_data.name,
-            description=repository_data.description,
-            url=repository_data.url,
-            stars_count=repository_data.stargazers_count,
-            open_issues_count=repository_data.open_issues_count,
-            forks_count=repository_data.forks_count,
-            created_at=repository_data.created_at,
-            updated_at=repository_data.updated_at,
-            visibility=(enums.VisibilityLevel.public if not repository_data.private else enums.VisibilityLevel.private),
-            is_added=is_added,
-        ),
+    repository: vcs_clients.github.models.Repository,
+    vcs_account: users_models.VCSAccount,
+    extra_defaults: dict = None,
+) -> Tuple[models.Repository, bool]:
+    defaults = dict(
+        name=repository.name,
+        description=repository.description,
+        url=repository.html_url,
+        stars_count=repository.stargazers_count,
+        open_issues_count=repository.open_issues_count,
+        forks_count=repository.forks_count,
+        created_at=repository.created_at,
+        updated_at=repository.updated_at,
+        visibility=(enums.VisibilityLevel.public if not repository.private else enums.VisibilityLevel.private),
     )
 
-    # Sync repository ownership
-    if repository_data.owner.owner_type == OwnerType.ORGANIZATION:
-        # Sync organization
-        organization = organization_services.sync_github_organization(
-            organization_name=repository_data.owner.login, github_client=github_client,
+    if extra_defaults:
+        defaults.update(extra_defaults)
+
+    if repository.owner.owner_type == OwnerType.ORGANIZATION:
+        defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
+            vcs=enums.VersionControlService.GITHUB,
+            remote_id=repository.owner.owner_id,
+            defaults=dict(name=repository.owner.login),
         )
-        repository.organization = organization
+        organizations_models.Member.objects.update_or_create(
+            organization=defaults["organization"], vcs_account=vcs_account, defaults=dict(is_admin=False),
+        )
     else:
-        repository.owner = github_client.vcs_account
+        defaults["owner"] = vcs_account
 
-    # Sync issues
-    if sync_issues:
-        sync_github_repository_issues(
-            repository=repository, github_client=github_client,
-        )
+    repository_obj, created = models.Repository.objects.update_or_create(
+        remote_id=repository.repository_id, vcs=enums.VersionControlService.GITHUB, defaults=defaults,
+    )
 
-    # Sync repository languages
-    if sync_programming_languages:
-        repository.programming_languages = github_client.get_repository_languages(
-            owner_name=repository.owner_name, repository_name=repository.name
-        )
-
-    repository.save()
-
-    return repository
+    return repository_obj, created
 
 
 def sync_github_repository_issues(*, repository: models.Repository, github_client: vcs_clients.GitHubClient) -> None:
