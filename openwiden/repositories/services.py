@@ -10,7 +10,7 @@ from openwiden.vcs_clients.gitlab.models.repository import NamespaceKind
 from openwiden.webhooks import services as webhooks_services
 
 
-def delete_by_remote_id(*, remote_id: str):
+def delete_issue_by_remote_id(*, remote_id: str):
     """
     Finds and deletes repository issue by id.
     """

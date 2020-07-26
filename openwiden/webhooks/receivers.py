@@ -17,7 +17,7 @@ def handle_github_issue_event(payload, **kwargs):
     log.info("issues payload received: {payload}".format(payload=payload))
 
     if payload["action"] == constants.IssueEventActions.DELETED:
-        repositories_services.delete_by_remote_id(remote_id=payload["issue"]["id"])
+        repositories_services.delete_issue_by_remote_id(remote_id=payload["issue"]["id"])
     else:
         try:
             repository = repositories_models.Repository.objects.get(remote_id=payload["repository"]["id"])
