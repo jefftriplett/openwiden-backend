@@ -61,7 +61,7 @@ class TestUserRepositoriesViewSet:
         response = view.add(request)
 
         assert response.status_code == 200
-        assert response.data == {"task_id": task_id}
+        assert response.data == {"detail": "added."}
 
         patched_add.side_effect = exceptions.ServiceException("test")
 

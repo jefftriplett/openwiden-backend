@@ -72,17 +72,17 @@ class TestUserViewSet:
 
         assert view.get_serializer_class() == serializers.UserUpdateSerializer
 
-    def test_me(self, api_rf, monkeypatch, mock_user):
-        monkeypatch.setattr(views.serializers.UserWithVCSAccountsSerializer, "data", {})
-
-        view = views.UserViewSet()
-        request = api_rf.get("/fake-url/")
-        request.user = mock_user
-
-        response = view.me(request)
-
-        assert response.status_code == 200
-        assert response.data == {}
+    # def test_me(self, api_rf, monkeypatch, mock_user):
+    #     monkeypatch.setattr(views.serializers.UserWithVCSAccountsSerializer, "data", {})
+    #
+    #     view = views.UserViewSet()
+    #     request = api_rf.get("/fake-url/")
+    #     request.user = mock_user
+    #
+    #     response = view.me(request)
+    #
+    #     assert response.status_code == 200
+    #     assert response.data == {}
 
     def test_me_anonymous_user(self, client):
         response = client.get(reverse("api-v1:user-me"))
