@@ -9,11 +9,50 @@ from openwiden.vcs_clients.gitlab.models.repository import NamespaceKind
 from openwiden.webhooks import services as webhooks_services
 
 
-def delete_issue_by_remote_id(*, remote_id: str):
-    """
-    Finds and deletes repository issue by id.
-    """
-    models.Issue.objects.filter(remote_id=remote_id).delete()
+def _add_github_repository(*, repository: models.Repository, vcs_account: users_models.VCSAccount,) -> None:
+    github_client = vcs_clients.GitHubClient(vcs_account)
+
+    # Sync repository
+    repository_data = github_client.get_repository(repository.remote_id)
+    programming_languages = github_client.get_repository_languages(repository.remote_id)
+    sync_github_repository(
+        repository=repository_data,
+        vcs_account=vcs_account,
+        extra_defaults=dict(is_added=True, programming_languages=programming_languages),
+    )
+
+    # Sync issues
+    repository_issues = github_client.get_repository_issues(repository.remote_id)
+    for issue in repository_issues:
+        sync_github_repository_issue(issue=issue, repository=repository)
+
+    # Create webhook
+    webhooks_services.create_repository_webhook(
+        repository=repository, vcs_account=vcs_account,
+    )
+
+
+def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_models.VCSAccount,) -> None:
+    gitlab_client = vcs_clients.GitlabClient(vcs_account)
+
+    # Sync repository
+    repository_data = gitlab_client.get_repository(repository_id=repository.remote_id)
+    programming_languages = gitlab_client.get_repository_programming_languages(repository.remote_id)
+    sync_gitlab_repository(
+        repository=repository_data,
+        vcs_account=vcs_account,
+        extra_defaults=dict(is_added=True, programming_languages=programming_languages),
+    )
+
+    # Sync issues
+    issues = gitlab_client.get_repository_issues(repository.remote_id)
+    for issue in issues:
+        sync_gitlab_repository_issue(issue=issue, repository=repository)
+
+    # Create webhook
+    webhooks_services.create_repository_webhook(
+        repository=repository, vcs_account=vcs_account,
+    )
 
 
 def add_repository(*, repository: models.Repository, user: users_models.User) -> None:
@@ -30,64 +69,27 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         raise exceptions.ServiceException(error_messages.REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED)
 
     if vcs_account.vcs == enums.VersionControlService.GITHUB:
-        github_client = vcs_clients.GitHubClient(vcs_account)
-
-        # Sync repository
-        repository_data = github_client.get_repository(repository.remote_id)
-        programming_languages = github_client.get_repository_languages(repository.remote_id)
-        sync_github_repository(
-            repository=repository_data,
-            vcs_account=vcs_account,
-            extra_defaults=dict(is_added=True, programming_languages=programming_languages),
-        )
-
-        # Sync issues
-        repository_issues = github_client.get_repository_issues(repository.remote_id)
-        for issue in repository_issues:
-            sync_github_repository_issue(issue=issue, repository=repository)
-
-        # Create webhook
-        webhooks_services.create_github_repository_webhook(
-            repository=repository, github_client=github_client,
-        )
+        _add_github_repository(repository=repository, vcs_account=vcs_account)
     elif vcs_account.vcs == enums.VersionControlService.GITLAB:
-        gitlab_client = vcs_clients.GitlabClient(vcs_account)
-
-        # Sync repository
-        repository_data = gitlab_client.get_repository(repository_id=repository.remote_id)
-        programming_languages = gitlab_client.get_repository_programming_languages(repository.remote_id)
-        sync_gitlab_repository(
-            repository=repository_data,
-            vcs_account=vcs_account,
-            extra_defaults=dict(is_added=True, programming_languages=programming_languages),
-        )
-
-        # Sync issues
-        issues = gitlab_client.get_repository_issues(repository.remote_id)
-        for issue in issues:
-            sync_gitlab_repository_issue(issue=issue, repository=repository)
-
-        # Create webhook
-        webhooks_services.create_gitlab_repository_webhook(
-            repository=repository, gitlab_client=gitlab_client,
-        )
+        _add_gitlab_repository(repository=repository, vcs_account=vcs_account)
 
 
-def remove_repository(*, repository: models.Repository, user: users_models.User) -> None:
+def delete_issue_by_remote_id(*, remote_id: str):
+    """
+    Finds and deletes repository issue by id.
+    """
+    models.Issue.objects.filter(remote_id=remote_id).delete()
+
+
+def remove_repository(*, repository: models.Repository, user: users_models.User,) -> None:
     vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
 
     if repository.is_added is False:
         raise exceptions.ServiceException("repository already removed.")
 
-    if vcs_account.vcs == enums.VersionControlService.GITHUB:
-        github_client = vcs_clients.GitHubClient(vcs_account)
-        webhooks_services.delete_github_repository_webhook(
-            repository=repository, github_client=github_client,
-        )
-    elif vcs_account.vcs == enums.VersionControlService.GITLAB:
-        webhooks_services.delete_gitlab_repository_webhook(
-            repository=repository, vcs_account=vcs_account,
-        )
+    webhooks_services.delete_repository_webhook(
+        repository=repository, vcs_account=vcs_account,
+    )
 
     repository.is_added = False
     repository.save(update_fields=("is_added",))
@@ -135,8 +137,8 @@ def sync_github_repository(
             remote_id=repository.owner.owner_id,
             defaults=dict(name=repository.owner.login),
         )
-        organizations_models.Member.objects.update_or_create(
-            organization=defaults["organization"], vcs_account=vcs_account, defaults=dict(is_admin=False),
+        organizations_models.Member.objects.get_or_create(
+            organization=defaults["organization"], vcs_account=vcs_account,
         )
     else:
         defaults["owner"] = vcs_account
