@@ -33,11 +33,7 @@ def create_github_repository_webhook(
 
     events = ["issues", "repository"]
     github_webhook = github_client.create_webhook(
-        owner_name=repository.owner_name,
-        repository_name=repository.name,
-        url=webhook_url,
-        secret=webhook.secret,
-        events=events,
+        repository_id=repository.remote_id, url=webhook_url, secret=webhook.secret, events=events,
     )
 
     webhook.remote_id = github_webhook.webhook_id
@@ -58,9 +54,7 @@ def delete_github_repository_webhook(
     except models.RepositoryWebhook.DoesNotExist:
         pass
     else:
-        github_client.delete_webhook(
-            owner_name=repository.owner_name, repository_name=repository.name, webhook_id=webhook.remote_id,
-        )
+        github_client.delete_webhook(repository_id=repository.remote_id, webhook_id=webhook.remote_id)
         webhook.delete()
 
 

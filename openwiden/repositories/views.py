@@ -45,7 +45,7 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
     def add(self, request: Request, **kwargs) -> Response:
         repository = self.get_object()
         services.add_repository(repository=repository, user=request.user)
-        return Response({"detail": "added."})
+        return Response({"detail": "ok"})
 
     @action(detail=True, methods=["DELETE"])
     def remove(self, request: Request, **kwargs) -> Response:

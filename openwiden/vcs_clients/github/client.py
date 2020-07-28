@@ -17,9 +17,7 @@ def convert_lines_count_to_percentages(repository_languages: dict) -> dict:
 class GitHubClient(AbstractVCSClient):
     def create_webhook(
         self,
-        *,
-        owner_name: str,
-        repository_name: str,
+        repository_id: int,
         url: str,
         secret: str,
         events: List[str] = None,
@@ -42,30 +40,18 @@ class GitHubClient(AbstractVCSClient):
         if events:
             data["events"] = events
 
-        url = f"/repos/{owner_name}/{repository_name}/hooks"
+        url = f"/repositories/{repository_id}/hooks"
 
         json = self._post(url=url, data=data)
 
         return models.Webhook.from_json(json)
 
-    def delete_webhook(
-        self,
-        *,
-        owner_name: str,
-        repository_name: str,
-        webhook_id: int,
-    ) -> None:
-        url = f"repos/{owner_name}/{repository_name}/hooks/{webhook_id}"
+    def delete_webhook(self, *, repository_id: int, webhook_id: int) -> None:
+        url = f"repositories/{repository_id}/hooks/{webhook_id}"
         self._delete(url=url)
 
-    def get_repository_issues(
-        self,
-        *,
-        owner_name: str,
-        repository_name: str,
-        state: str = "open"
-    ) -> List[models.Issue]:
-        json = self._get(url=f"repos/{owner_name}/{repository_name}/issues?state={state}")
+    def get_repository_issues(self, repository_id: int, state: str = "open") -> List[models.Issue]:
+        json = self._get(url=f"repositories/{repository_id}/issues?state={state}")
         # Note: GitHub's REST API v3 considers every pull request an issue,
         # but not every issue is a pull request. For this reason, "Issues"
         # endpoints may return both issues and pull requests in the response.
@@ -73,35 +59,19 @@ class GitHubClient(AbstractVCSClient):
         json = [issue for issue in json if "pull_request" not in issue]
         return [models.Issue.from_json(issue_data) for issue_data in json]
 
-    def get_repository_languages(self, *, owner_name: str, repository_name: str) -> dict:
-        json = self._get(url=f"repos/{owner_name}/{repository_name}/languages")
+    def get_repository_languages(self, repository_id: int) -> dict:
+        json = self._get(url=f"repositories/{repository_id}/languages")
         return convert_lines_count_to_percentages(json)
 
-    def get_repository(
-        self,
-        *,
-        owner_name: str = None,
-        repository_name: str = None,
-        repository_id: int = None,
-    ) -> models.Repository:
-        if owner_name and repository_name:
-            url = f"repos/{owner_name}/{repository_name}"
-        elif repository_id:
-            url = f"repositories/{repository_id}"
-        else:
-            msg = "owner_name and repository_name OR repository_id should be specified"
-            raise ValueError(msg)
-
-        json = self._get(url=url)
+    def get_repository(self, repository_id: int) -> models.Repository:
+        json = self._get(f"repositories/{repository_id}")
         return models.Repository.from_json(json)
 
     def get_organization(self, organization_name: str) -> models.Organization:
         json = self._get(url=f"orgs/{organization_name}")
         return models.Organization.from_json(json)
 
-    def check_organization_membership(
-        self, organization_name: str,
-    ) -> models.MembershipType:
+    def check_organization_membership(self, organization_name: str) -> models.MembershipType:
         url = f"/user/memberships/orgs/{organization_name}"
         response = self._client.get(url, token=self.vcs_account.to_token())
         json = response.json()

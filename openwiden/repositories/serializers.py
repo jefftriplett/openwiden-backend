@@ -57,7 +57,7 @@ class Repository(serializers.ModelSerializer):
                 "name": obj.organization.name,
             }
         else:
-            log.error(f"repository with id {obj.id} has no owner!")
+            raise ValueError(f"repository with id {obj.id} has no owner!")
 
 
 class Issue(serializers.ModelSerializer):

@@ -59,7 +59,6 @@ class Profile:
     @classmethod
     def _parse_gitlab_profile_json(cls, data: dict, token_data: dict) -> "Profile":
         data["login"] = data.pop("username", None)
-        token_data["expires_at"] = token_data["created_at"]
         token = Token(**token_data)
         return Profile(**data, token=token)
 

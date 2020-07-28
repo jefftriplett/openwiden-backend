@@ -16,5 +16,5 @@ def update_token(name, token, refresh_token=None, access_token=None, **kwargs) -
         vcs_account = qs.first()
         vcs_account.access_token = token["access_token"]
         vcs_account.refresh_token = token["refresh_token"]
-        vcs_account.expires_at = token.get("expires_at")
+        vcs_account.expires_at = token["expires_at"]
         vcs_account.save(update_fields=("access_token", "refresh_token", "expires_at"))

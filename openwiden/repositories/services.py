@@ -29,12 +29,24 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
     elif repository.visibility == enums.VisibilityLevel.private:
         raise exceptions.ServiceException(error_messages.REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED)
 
-    # Sync repository and create webhook
     if vcs_account.vcs == enums.VersionControlService.GITHUB:
         github_client = vcs_clients.GitHubClient(vcs_account)
+
+        # Sync repository
+        repository_data = github_client.get_repository(repository.remote_id)
+        programming_languages = github_client.get_repository_languages(repository.remote_id)
         sync_github_repository(
-            repository_id=repository.remote_id, github_client=github_client, is_added=True,
+            repository=repository_data,
+            vcs_account=vcs_account,
+            extra_defaults=dict(is_added=True, programming_languages=programming_languages),
         )
+
+        # Sync issues
+        repository_issues = github_client.get_repository_issues(repository.remote_id)
+        for issue in repository_issues:
+            sync_github_repository_issue(issue=issue, repository=repository)
+
+        # Create webhook
         webhooks_services.create_github_repository_webhook(
             repository=repository, github_client=github_client,
         )
@@ -47,7 +59,7 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         sync_gitlab_repository(
             repository=repository_data,
             vcs_account=vcs_account,
-            extra_defaults=dict(is_added=True, programming_languages=programming_languages,),
+            extra_defaults=dict(is_added=True, programming_languages=programming_languages),
         )
 
         # Sync issues
@@ -136,26 +148,23 @@ def sync_github_repository(
     return repository_obj, created
 
 
-def sync_github_repository_issues(*, repository: models.Repository, github_client: vcs_clients.GitHubClient) -> None:
-    # Sync repository issues
-    repository_issues = github_client.get_repository_issues(
-        owner_name=repository.owner_name, repository_name=repository.name,
+def sync_github_repository_issue(
+    *, issue: vcs_clients.github.models.Issue, repository: models.Repository,
+) -> Tuple[models.Issue, bool]:
+    return models.Issue.objects.update_or_create(
+        repository=repository,
+        remote_id=issue.issue_id,
+        defaults=dict(
+            title=issue.title,
+            description=issue.body,
+            state=issue.state,
+            labels=issue.labels,
+            url=issue.html_url,
+            created_at=issue.created_at,
+            updated_at=issue.updated_at,
+            closed_at=issue.closed_at,
+        ),
     )
-    for issue in repository_issues:
-        models.Issue.objects.update_or_create(
-            repository=repository,
-            remote_id=issue.issue_id,
-            defaults=dict(
-                title=issue.title,
-                description=issue.body,
-                state=issue.state,
-                labels=issue.labels,
-                url=issue.html_url,
-                created_at=issue.created_at,
-                updated_at=issue.updated_at,
-                closed_at=issue.closed_at,
-            ),
-        )
 
 
 def sync_gitlab_repository(
@@ -185,6 +194,9 @@ def sync_gitlab_repository(
             vcs=enums.VersionControlService.GITLAB,
             remote_id=repository.namespace.namespace_id,
             defaults=dict(name=repository.namespace.name),
+        )
+        organizations_models.Member.objects.get_or_create(
+            organization=defaults["organization"], vcs_account=vcs_account,
         )
     else:
         defaults["owner"] = vcs_account
