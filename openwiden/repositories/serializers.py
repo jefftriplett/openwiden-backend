@@ -1,24 +1,37 @@
+import logging
+
 from rest_framework import serializers
 
+from openwiden.enums import OwnerType
 from openwiden.repositories import models
 
+log = logging.getLogger(__name__)
 
-class ProgrammingLanguage(serializers.ModelSerializer):
+
+class SyncIssueSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ProgrammingLanguage
-        fields = ("id", "name")
+        model = models.Issue
+        fields = (
+            "remote_id",
+            "title",
+            "description",
+            "state",
+            "labels",
+            "url",
+            "created_at",
+            "updated_at",
+            "closed_at",
+        )
 
 
 class Repository(serializers.ModelSerializer):
-    version_control_service = serializers.CharField(source="version_control_service.host")
-    programming_language = ProgrammingLanguage()
-    stars_count = serializers.IntegerField(source="star_count")
+    owner = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Repository
         fields = (
             "id",
-            "version_control_service",
+            "vcs",
             "name",
             "description",
             "url",
@@ -27,8 +40,24 @@ class Repository(serializers.ModelSerializer):
             "forks_count",
             "created_at",
             "updated_at",
-            "programming_language",
+            "owner",
         )
+
+    def get_owner(self, obj: models.Repository) -> dict:
+        if obj.owner:
+            return {
+                "type": OwnerType.USER,
+                "id": obj.owner.user.id,
+                "name": obj.owner.login,
+            }
+        elif obj.organization:
+            return {
+                "type": OwnerType.ORGANIZATION,
+                "id": obj.organization.id,
+                "name": obj.organization.name,
+            }
+        else:
+            raise ValueError(f"repository with id {obj.id} has no owner!")
 
 
 class Issue(serializers.ModelSerializer):
@@ -45,3 +74,8 @@ class Issue(serializers.ModelSerializer):
             "closed_at",
             "updated_at",
         )
+
+
+class UserRepository(Repository):
+    class Meta(Repository.Meta):
+        fields = Repository.Meta.fields + ("visibility", "is_added")

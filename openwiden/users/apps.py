@@ -6,3 +6,6 @@ class UsersConfig(AppConfig):
     name = "openwiden.users"
     label = "users"
     verbose_name = _("users")
+
+    def ready(self):
+        from . import receivers  # noqa: F401

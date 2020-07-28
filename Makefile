@@ -1,12 +1,4 @@
-BASE_COMPOSE_FILES=docker-compose.yml
-#LOCAL_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.develop.yml
-#TEST_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.test.yml
-#STAGING_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.staging.yml
-#PRODUCTION_COMPOSE_FILES=$(BASE_COMPOSE_FILES) docker-compose.production.yml
-
-COMPOSE_FILES=BASE_COMPOSE_FILES
-
-WEB_CONTAINER=docker-compose $(foreach file, $($(COMPOSE_FILES)), -f $(file)) run --rm web
+WEB_CONTAINER=docker-compose -f local.yml run --rm django
 
 # Containers
 web:
@@ -48,22 +40,5 @@ black:
 black_check:
 	$(WEB_CONTAINER) black --check .
 
-# Tests
-with_test_settings:
-	DJANGO_CONFIGURATION=Test $(WEB_CONTAINER) $(c)
-
-test:
-	@make with_test_settings c="coverage run manage.py test --settings=config.settings.test"
-
-test_cov:
-	@make with_test_settings c="coverage erase"
-	@make test
-	@make with_test_settings c="coverage report -m"
-	@make with_test_settings c="coverage html"
-
-run_tests:
-	@make test
-	@make black_check
-	@make flake8
-	@make with_test_settings c="coverage xml"
-	@make with_test_settings c="codecov"
+tests:
+	$(WEB_CONTAINER) pytest --cov-config=.coveragerc --cov=./

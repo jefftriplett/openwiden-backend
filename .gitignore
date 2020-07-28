@@ -131,12 +131,13 @@ dmypy.json
 .pyre/
 
 # Env
-.envs/
+.envs/.production
 
 # PyCharm
 .idea/
 
 # Django
 media/
+!media/.gitkeep
 staticfiles/
 !staticfiles/.gitkeep

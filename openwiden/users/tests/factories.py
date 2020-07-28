@@ -1,7 +1,8 @@
 import factory
 from factory import fuzzy
 
-from openwiden.users.models import User, OAuth2Token
+from openwiden.users import models
+from openwiden import enums
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -11,13 +12,13 @@ class UserFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker("first_name")
 
     class Meta:
-        model = User
+        model = models.User
         django_get_or_create = ("username",)
 
 
-class OAuth2TokenFactory(factory.DjangoModelFactory):
+class VCSAccountFactory(factory.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
-    provider = fuzzy.FuzzyChoice(["github", "gitlab"])
+    vcs = fuzzy.FuzzyChoice(enums.VersionControlService.values)
     remote_id = fuzzy.FuzzyInteger(1)
     login = factory.Faker("first_name")
     token_type = factory.Faker("pystr")
@@ -26,4 +27,5 @@ class OAuth2TokenFactory(factory.DjangoModelFactory):
     expires_at = fuzzy.FuzzyInteger(100, 36000)
 
     class Meta:
-        model = OAuth2Token
+        model = models.VCSAccount
+        django_get_or_create = ("vcs", "remote_id")

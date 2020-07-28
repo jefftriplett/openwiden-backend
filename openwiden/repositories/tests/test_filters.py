@@ -1,85 +1,67 @@
-from django.test import TestCase, override_settings
+import pytest
 
-from openwiden.repositories.tests import factories
 from openwiden.repositories import models, filters
+from openwiden import enums
+
+pytestmark = pytest.mark.django_db
 
 
-@override_settings(USE_TZ=False)
-class RepositoryFilterTestCase(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        for i in range(1, 7):
-            count = i * 5
-            host = "github.com" if i <= 3 else "gitlab.com"
-            date = "2018-01-01" if i <= 3 else "2019-01-01"
-            repository: "models.Repository" = factories.Repository.create(
-                version_control_service__host=host,
-                name=f"Test {i}",
-                star_count=count,
-                open_issues_count=count,
-                forks_count=count,
-                created_at=date,
-                updated_at=date,
-            )
-            factories.Issue.create_batch(repository=repository, size=count, state="open")
+class TestRepositoryFilter:
+    def test_vcs_filter(self, create_repository):
+        expected = create_repository(vcs=enums.VersionControlService.GITHUB)
+        create_repository(vcs=enums.VersionControlService.GITLAB)
+        query = {"vcs": enums.VersionControlService.GITHUB}
 
-    def test_meta(self):
-        self.assertEqual(filters.Repository.Meta.model, models.Repository)
-        self.assertEqual(
-            filters.Repository.Meta.fields,
-            (
-                "version_control_service",
-                "stars_count_gte",
-                "open_issues_count_gte",
-                "forks_count_gte",
-                "created_at",
-                "updated_at",
-                "programming_language",
-            ),
-        )
-
-    def test_version_control_service_filter(self):
-        query = {"version_control_service": "github.com"}
         f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 3)
-        self.assertTrue(f.qs.filter(name__in=["Test 1", "Test 2", "Test 3"]).count(), 3)
 
-    def test_star_count_gte_filter(self):
+        assert f.qs.count() == 1
+        assert f.qs.first().id == expected.id
+
+    def test_stars_count_gte_filter(self, create_repository):
+        expected = create_repository(stars_count=20)
+        create_repository(stars_count=19)
         query = {"stars_count_gte": 20}
-        f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 3)
-        self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
-    def test_open_issues_count_gte_filter(self):
+        f = filters.Repository(query, models.Repository.objects.all())
+
+        assert f.qs.count() == 1
+        assert f.qs.first().id == expected.id
+
+    def test_open_issues_count_gte_filter(self, create_repository):
+        expected = create_repository(open_issues_count=21)
+        create_repository(open_issues_count=19)
         query = {"open_issues_count_gte": 20}
-        f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 3)
-        self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
-    def test_forks_count_gte_filter(self):
+        f = filters.Repository(query, models.Repository.objects.all())
+
+        assert f.qs.count() == 1
+        assert f.qs.first().id == expected.id
+
+    def test_forks_count_gte_filter(self, create_repository):
+        expected = create_repository(forks_count=21)
+        create_repository(forks_count=19)
         query = {"forks_count_gte": 20}
-        f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 3)
-        self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
 
-    def test_created_at_filter(self):
-        query = {"created_at_after": "2017-01-01", "created_at_before": "2018-02-01"}
         f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 3)
-        self.assertEqual(f.qs.filter(name__in=["Test 1", "Test 2", "Test 3"]).count(), 3)
 
-    def test_updated_at_filter(self):
-        query = {"updated_at_after": "2018-02-01", "updated_at_before": "2019-02-01"}
-        f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 3)
-        self.assertEqual(f.qs.filter(name__in=["Test 4", "Test 5", "Test 6"]).count(), 3)
+        assert f.qs.count() == 1
+        assert f.qs.first().id == expected.id
 
-    def test_programming_language_filter(self):
-        r = models.Repository.objects.first()
-        r.programming_language = factories.ProgrammingLanguage(name="TestLanguage")
-        r.save()
-        query = {"programming_language": r.programming_language.id}
+    def test_created_at_filter(self, create_repository):
+        expected = create_repository(created_at="2020-05-01")
+        create_repository(created_at="2010-01-01")
+        query = {"created_at_after": "2017-01-01", "created_at_before": "2020-06-01"}
+
         f = filters.Repository(query, models.Repository.objects.all())
-        self.assertEqual(f.qs.count(), 1)
-        self.assertEqual(f.qs.first().name, r.name)
-        self.assertEqual(f.qs.first().programming_language, r.programming_language)
+
+        assert f.qs.count() == 1
+        assert f.qs.first().id == expected.id
+
+    def test_updated_at_filter(self, create_repository):
+        expected = create_repository(updated_at="2020-05-01")
+        query = {"updated_at_after": "2018-02-01", "updated_at_before": "2020-06-01"}
+
+        f = filters.Repository(query, models.Repository.objects.all())
+
+        assert f.qs.count() == 1
+        assert f.qs.first().id == expected.id

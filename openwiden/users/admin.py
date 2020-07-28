@@ -1,12 +1,25 @@
 from django.contrib import admin
-from .models import User, OAuth2Token
+from openwiden.users import models
 
 
-@admin.register(User)
+class VCSAccountInline(admin.StackedInline):
+    model = models.VCSAccount
+    extra = 0
+    readonly_fields = ("vcs", "remote_id", "login")
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
+@admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(OAuth2Token)
-class OAuth2TokenAdmin(admin.ModelAdmin):
-    pass
+    inlines = (VCSAccountInline,)
+    fields = (
+        "is_active",
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "avatar",
+        "date_joined",
+    )

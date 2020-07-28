@@ -1,91 +1,82 @@
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, HStoreField
 from django.db import models
-from model_utils.models import UUIDModel, SoftDeletableModel
-from model_utils import Choices
+from model_utils.models import UUIDModel
 from django.utils.translation import gettext_lazy as _
-from openwiden.repositories import managers
+
+from openwiden import enums
+from openwiden.organizations.models import Organization
+from openwiden.users.models import VCSAccount
+from openwiden.repositories import enums as repo_enums
 
 
-class ProgrammingLanguage(models.Model):
-    name = models.CharField(_("name"), max_length=100, unique=True)
-
-    class Meta:
-        ordering = ("name",)
-        verbose_name = _("programming language")
-        verbose_name_plural = _("list of programming languages")
-
-    def __str__(self):
-        return self.name
-
-
-class VersionControlService(models.Model):
-    name = models.CharField(_("name"), max_length=100)
-    host = models.CharField(_("host"), max_length=50, unique=True)
-
-    class Meta:
-        ordering = ("host",)
-        verbose_name = _("version control service")
-        verbose_name_plural = _("version control services")
-
-    def __str__(self):
-        return self.name
-
-
-class Repository(SoftDeletableModel, UUIDModel):
-    version_control_service = models.ForeignKey(
-        VersionControlService, models.PROTECT, related_name="repositories", verbose_name=_("version control service")
-    )
+class Repository(UUIDModel):
+    vcs = models.CharField(_("version control service"), max_length=50, choices=enums.VersionControlService.choices)
     remote_id = models.PositiveIntegerField(_("remote repository id"))
     name = models.CharField(_("name"), max_length=255)
-    description = models.TextField(_("description"), blank=True)
+    description = models.TextField(_("description"), blank=True, null=True)
     url = models.URLField(_("url"))
 
-    star_count = models.PositiveIntegerField(_("star count"), default=0)
+    owner = models.ForeignKey(
+        VCSAccount, models.SET_NULL, "repositories", "repository", blank=True, null=True, verbose_name=_("owner")
+    )
+    organization = models.ForeignKey(
+        Organization,
+        models.SET_NULL,
+        "repositories",
+        "repository",
+        blank=True,
+        null=True,
+        verbose_name=_("organization"),
+    )
+
+    stars_count = models.PositiveIntegerField(_("stars count"), default=0)
     open_issues_count = models.PositiveSmallIntegerField(_("open issues count"), default=0)
     forks_count = models.PositiveSmallIntegerField(_("forks count"), default=0)
 
     created_at = models.DateTimeField(_("created at"))
     updated_at = models.DateTimeField(_("updated at"))
 
-    programming_language = models.ForeignKey(
-        ProgrammingLanguage, models.PROTECT, "repositories", "repository", verbose_name=_("programming language")
-    )
+    programming_languages = HStoreField(verbose_name=_("programming languages"), blank=True, null=True)
 
-    objects = managers.Repository()
+    visibility = models.CharField(_("visibility"), max_length=8, choices=enums.VisibilityLevel.choices)
+    is_added = models.BooleanField(_("is added"), default=False)
 
     class Meta:
         ordering = ("-open_issues_count",)
         verbose_name = _("repository")
         verbose_name_plural = _("repositories")
-        constraints = (
-            models.UniqueConstraint(fields=["version_control_service", "remote_id"], name="unique_repository",),
-        )
+        constraints = (models.UniqueConstraint(fields=("vcs", "remote_id",), name="unique_repository",),)
 
     def __str__(self):
         return self.name
 
+    @property
+    def owner_name(self) -> str:
+        if self.owner:
+            return self.owner.login
+        elif self.organization:
+            return self.organization.name
+        else:
+            raise ValueError("repository has no owner!")
+
 
 class Issue(UUIDModel):
-    STATE_CHOICES = Choices(("open", "Open"), ("closed", "Closed"),)
-
     repository = models.ForeignKey(
         Repository, models.CASCADE, related_name="issues", related_query_name="issue", verbose_name=_("repository")
     )
     remote_id = models.PositiveIntegerField(_("remote issue id"))
 
     title = models.CharField(_("title"), max_length=255)
-    description = models.TextField(_("description"))
+    description = models.TextField(_("description"), blank=True, null=True)
 
-    state = models.CharField(_("state"), max_length=30, choices=STATE_CHOICES)
-    labels = ArrayField(models.CharField(_("label"), max_length=50))
+    state = models.CharField(_("state"), max_length=30, choices=repo_enums.IssueState.choices)
+    labels = ArrayField(models.CharField(max_length=50), blank=True, null=True, verbose_name=_("labels"))
 
     url = models.URLField(_("url"))
 
     created_at = models.DateTimeField(_("crated at"))
     closed_at = models.DateTimeField(_("closed at"), blank=True, null=True)
     updated_at = models.DateTimeField(_("updated at"))
-
-    objects = managers.Issue()
 
     class Meta:
         ordering = ("-created_at",)

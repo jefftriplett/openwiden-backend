@@ -1,0 +1,47 @@
+version: '3'
+
+volumes:
+  production_postgres_data: {}
+  production_postgres_data_backups: {}
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile
+    image: openwiden_production_django
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./.envs/.production/.django
+      - ./.envs/.production/.postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./:/app"
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: openwiden_production_postgres
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - production_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.production/.postgres
+
+  redis:
+    image: redis:5.0
+    container_name: redis
+
+  django-q:
+    <<: *django
+    image: openwiden_production_django-q
+    container_name: django-q
+    depends_on:
+      - redis
+    ports: []
+    command: /start-django-q

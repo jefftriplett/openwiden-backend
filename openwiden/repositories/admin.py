@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from openwiden.repositories import models
+from openwiden.webhooks import admin as webhook_admin
 
 
 class DisabledAddModelAdmin(admin.ModelAdmin):
@@ -12,21 +13,14 @@ class DisabledAddModelAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(models.ProgrammingLanguage)
-class ProgrammingLanguage(DisabledAddModelAdmin):
-    pass
+class IssueInline(admin.StackedInline):
+    model = models.Issue
+    extra = 0
 
-
-@admin.register(models.VersionControlService)
-class VersionControlServiceAdmin(admin.ModelAdmin):
-    pass
+    def has_add_permission(self, request, obj):
+        return False
 
 
 @admin.register(models.Repository)
 class RepositoryAdmin(DisabledAddModelAdmin):
-    pass
-
-
-@admin.register(models.Issue)
-class IssueAdmin(DisabledAddModelAdmin):
-    pass
+    inlines = (IssueInline, webhook_admin.RepositoryWebhookInline)

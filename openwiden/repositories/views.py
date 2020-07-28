@@ -1,50 +1,54 @@
-from django.utils.translation import gettext_lazy as _
-from rest_framework import viewsets, permissions
+from django.http import Http404
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
-from django_q.tasks import async_task
 
-from openwiden.repositories import serializers, tasks, models, exceptions, filters, utils
+from openwiden import exceptions
+
+from . import serializers, filters, services, selectors
 
 
 class Repository(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Repository
-    queryset = models.Repository.objects.all().select_related("programming_language")
-    lookup_field = "id"
-    permission_classes = (permissions.AllowAny,)
+    queryset = selectors.get_added_and_public_repositories()
     filterset_class = filters.Repository
-
-    @action(detail=False, methods=["POST"], permission_classes=(permissions.IsAuthenticated,))
-    def add(self, request, *args, **kwargs):
-        url = request.data["url"]
-        parsed_url = utils.parse_repo_url(url)
-
-        # If repository url was not parsed (None returned)
-        if parsed_url is None:
-            raise exceptions.RepositoryURLParse(url)
-
-        # Try to find version control service by url host
-        try:
-            service = models.VersionControlService.objects.get(host=parsed_url.host)
-        except models.VersionControlService.DoesNotExist:
-            raise exceptions.VersionControlServiceNotFound(parsed_url.host)
-
-        async_task(tasks.update_or_create_repository, self.request.user, service, parsed_url.owner, parsed_url.repo)
-
-        return Response({"detail": _("Thank you! Repository will be added soon, you will be notified by e-mail.")})
+    permission_classes = (permissions.AllowAny,)
+    lookup_field = "id"
 
 
 class Issue(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Issue
-    lookup_field = "id"
     permission_classes = (permissions.AllowAny,)
+    lookup_field = "id"
 
     def get_queryset(self):
-        return models.Issue.objects.filter(repository=self.kwargs["repository_id"])
+        try:
+            repository = selectors.get_repository(id=self.kwargs["repository_id"])
+        except exceptions.ServiceException as e:
+            raise Http404(e.description)
+        else:
+            return repository.issues.all()
 
 
-class ProgrammingLanguage(viewsets.ReadOnlyModelViewSet):
-    serializer_class = serializers.ProgrammingLanguage
+class UserRepositories(viewsets.ReadOnlyModelViewSet):
+    serializer_class = serializers.UserRepository
     lookup_field = "id"
-    permission_classes = (permissions.AllowAny,)
-    queryset = models.ProgrammingLanguage.objects.all()
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        return selectors.get_user_repositories(user=self.request.user)
+
+    @swagger_auto_schema(request_body=None)
+    @action(detail=True, methods=["POST"])
+    def add(self, request: Request, **kwargs) -> Response:
+        repository = self.get_object()
+        services.add_repository(repository=repository, user=request.user)
+        return Response({"detail": "ok"})
+
+    @action(detail=True, methods=["DELETE"])
+    def remove(self, request: Request, **kwargs) -> Response:
+        repository = self.get_object()
+        services.remove_repository(repository=repository, user=request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
