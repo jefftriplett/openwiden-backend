@@ -21,19 +21,9 @@ class GitlabClient(AbstractVCSClient):
         return [Issue.from_json(data) for data in json]
 
     def create_webhook(
-        self,
-        *,
-        repository_id: int,
-        webhook_url: str,
-        enable_issues_events: bool = True,
-        secret: str,
+        self, *, repository_id: int, webhook_url: str, enable_issues_events: bool = True, secret: str,
     ) -> Webhook:
-        data = dict(
-            url=webhook_url,
-            issues_events=enable_issues_events,
-            enable_ssl_verification=True,
-            token=secret,
-        )
+        data = dict(url=webhook_url, issues_events=enable_issues_events, enable_ssl_verification=True, token=secret,)
         json = self._post(f"projects/{repository_id}/hooks", data)
         return Webhook.from_json(json)
 

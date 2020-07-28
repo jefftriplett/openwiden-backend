@@ -16,12 +16,7 @@ def convert_lines_count_to_percentages(repository_languages: dict) -> dict:
 
 class GitHubClient(AbstractVCSClient):
     def create_webhook(
-        self,
-        repository_id: int,
-        url: str,
-        secret: str,
-        events: List[str] = None,
-        active: bool = True,
+        self, repository_id: int, url: str, secret: str, events: List[str] = None, active: bool = True,
     ) -> models.Webhook:
         """
         Creates repository webhook.
@@ -89,8 +84,6 @@ class GitHubClient(AbstractVCSClient):
             raise ValueError("check organization membership failed, please, try again.")
 
     def get_user_repositories(self) -> List[models.Repository]:
-        json = self._get(
-            url="user/repos?affiliation=owner,organization_member&visibility=public"
-        )
+        json = self._get(url="user/repos?affiliation=owner,organization_member&visibility=public")
 
         return [models.Repository.from_json(data) for data in json]

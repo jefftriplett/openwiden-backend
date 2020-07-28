@@ -13,7 +13,7 @@ class Issue:
         created_at: str,
         updated_at: str,
         closed_at: str,
-        **kwargs
+        **kwargs,
     ) -> None:
         self.issue_id = issue_id
         self.title = title

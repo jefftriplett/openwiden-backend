@@ -15,7 +15,7 @@ class Repository:
         updated_at: str,
         private: bool,
         owner: Owner,
-        **kwargs
+        **kwargs,
     ) -> None:
         self.repository_id = repository_id
         self.name = name

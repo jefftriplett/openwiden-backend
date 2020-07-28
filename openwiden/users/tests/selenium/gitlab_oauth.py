@@ -27,9 +27,7 @@ def sign_in_page_is_loaded(driver: webdriver.Remote) -> bool:
 
 # Open API url, that redirect to Gitlab sign in
 driver.get(
-    "http://0.0.0.0:8000"
-    "/api/v1/auth/login/gitlab/"
-    "?redirect_uri=http://0.0.0.0:8000/api/v1/auth/complete/gitlab/"
+    "http://0.0.0.0:8000" "/api/v1/auth/login/gitlab/" "?redirect_uri=http://0.0.0.0:8000/api/v1/auth/complete/gitlab/"
 )
 
 # Checking your Browser - GitLab

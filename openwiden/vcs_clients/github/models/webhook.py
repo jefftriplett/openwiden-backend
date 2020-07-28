@@ -17,12 +17,7 @@ class InsecureSSL(Enum):
 
 
 class LastResponse:
-    def __init__(
-        self,
-        status: str,
-        code: Optional[int] = None,
-        message: Optional[str] = None
-    ) -> None:
+    def __init__(self, status: str, code: Optional[int] = None, message: Optional[str] = None) -> None:
         self.status = status
         self.code = code
         self.message = message

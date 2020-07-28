@@ -7,15 +7,7 @@ class NamespaceKind(str, Enum):
 
 
 class Namespace:
-    def __init__(
-        self,
-        namespace_id: int,
-        name: str,
-        path: str,
-        kind: str,
-        full_path: str,
-        **kwargs,
-    ) -> None:
+    def __init__(self, namespace_id: int, name: str, path: str, kind: str, full_path: str, **kwargs,) -> None:
         self.namespace_id = namespace_id
         self.name = name
         self.path = path

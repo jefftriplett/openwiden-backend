@@ -107,9 +107,7 @@ def verify_device(driver) -> None:
 
     # Get verification code from email
     verification_code = search_github_verification_code(
-        user=EMAIL_LOGIN,
-        password=EMAIL_PASSWORD,
-        imap_host=EMAIL_IMAP_HOST,
+        user=EMAIL_LOGIN, password=EMAIL_PASSWORD, imap_host=EMAIL_IMAP_HOST,
     )
 
     # Set code
