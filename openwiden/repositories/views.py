@@ -1,4 +1,5 @@
 from django.http import Http404
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -39,6 +40,7 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return selectors.get_user_repositories(user=self.request.user)
 
+    @swagger_auto_schema(request_body=None)
     @action(detail=True, methods=["POST"])
     def add(self, request: Request, **kwargs) -> Response:
         repository = self.get_object()
