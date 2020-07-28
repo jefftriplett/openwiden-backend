@@ -3,8 +3,7 @@ from unittest import mock
 import pytest
 from rest_framework import permissions
 
-from openwiden.repositories import views, serializers, filters, models, selectors, services
-from openwiden import exceptions
+from openwiden.repositories import views, serializers, filters, models, selectors
 
 pytestmark = pytest.mark.django_db
 
@@ -46,31 +45,3 @@ class TestUserRepositoriesViewSet:
         view.request = request
 
         assert view.get_queryset() == qs
-
-    @mock.patch.object(views.UserRepositories, "get_object")
-    @mock.patch.object(services, "add_repository")
-    def test_add(self, patched_add, patched_get_obj, api_rf, mock_user, mock_repo):
-        task_id = "1"
-        patched_get_obj.return_value = mock_repo
-        patched_add.return_value = task_id
-
-        view = self.view_cls()
-        request = api_rf.post("/fake-url/")
-        request.user = mock_user
-
-        response = view.add(request)
-
-        assert response.status_code == 200
-        assert response.data == {"detail": "added."}
-
-        patched_add.side_effect = exceptions.ServiceException("test")
-
-        with pytest.raises(exceptions.ServiceException) as e:
-            response = view.add(request)
-
-            assert e.value == "test"
-            assert response.status_code == 400
-            assert response.data == "test"
-
-            assert patched_add.call_count == 2
-            assert patched_get_obj.call_count == 2
