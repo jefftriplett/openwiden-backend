@@ -1,6 +1,6 @@
 from typing import List
 
-from .models import Repository, Issue, Webhook
+from .models import Repository, Issue, Webhook, Organization, MembershipType
 from ..abstract import AbstractVCSClient
 
 
@@ -19,6 +19,28 @@ class GitlabClient(AbstractVCSClient):
     def get_repository_issues(self, repository_id: int) -> List[Issue]:
         json = self._get(f"projects/{repository_id}/issues?state=opened")
         return [Issue.from_json(data) for data in json]
+
+    def get_organization(self, organization_id: int) -> Organization:
+        data = self._get(f"groups/{organization_id}")
+        return Organization.from_json(data)
+
+    def check_organization_membership(self, organization_id: int) -> MembershipType:
+        response = self._get(
+            f"groups/{organization_id}/members/{self.vcs_account.remote_id}",
+            return_response=True,
+        )
+        response_json = response.json()
+
+        # Check membership
+        if response.status_code == 200:
+            if response_json["access_level"] >= 40:
+                return MembershipType.ADMIN
+            else:
+                return MembershipType.MEMBER
+        elif response.status_code == 404:
+            return MembershipType.NOT_A_MEMBER
+        else:
+            raise ValueError("unexpected status code for memebership check")
 
     def create_webhook(
         self, *, repository_id: int, webhook_url: str, enable_issues_events: bool = True, secret: str,

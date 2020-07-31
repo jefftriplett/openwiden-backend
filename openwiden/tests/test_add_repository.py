@@ -62,27 +62,30 @@ def test_gitlab(
     create_vcs_account,
     create_repository,
     create_mock_response,
-    gitlab_repository_json,
+    gitlab_organization_repository_json,
     gitlab_repository_languages_json,
     gitlab_repository_issues_json,
     gitlab_webhook_create_json,
+    gitlab_organization_json,
+    gitlab_organization_member_json,
 ):
     api_client = create_api_client(user=user)
     vcs_account = create_vcs_account(user=user, vcs=VersionControlService.GITLAB)
     repository = create_repository(vcs=VersionControlService.GITLAB, owner=vcs_account, organization=None)
-    mock_responses = []
-
-    # Create mock repository
-    mock_responses.append(create_mock_response(gitlab_repository_json))
-
-    # Mock programming languages response
-    mock_responses.append(create_mock_response(gitlab_repository_languages_json))
-
-    # Create mock issues response
-    mock_responses.append(create_mock_response(gitlab_repository_issues_json))
-
-    # Create mock webhook create response
-    mock_responses.append(create_mock_response(gitlab_webhook_create_json))
+    mock_responses = [
+        # Create mock repository
+        create_mock_response(gitlab_organization_repository_json),
+        # Mock programming languages response
+        create_mock_response(gitlab_repository_languages_json),
+        # Mock organization response
+        create_mock_response(gitlab_organization_json),
+        # Mock organization membership check
+        create_mock_response(gitlab_organization_member_json),
+        # Mock issues response
+        create_mock_response(gitlab_repository_issues_json),
+        # Mock webhook create response
+        create_mock_response(gitlab_webhook_create_json),
+    ]
 
     # Mock request
     mock_request.side_effect = mock_responses

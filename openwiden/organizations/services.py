@@ -5,7 +5,7 @@ from openwiden.organizations import models
 from openwiden.users import models as users_models
 
 
-def sync_github_organization_member(
+def sync_organization_member(
     *, organization: models.Organization, vcs_account: users_models.VCSAccount, is_admin: bool,
 ) -> Tuple[models.Member, bool]:
     return models.Member.objects.update_or_create(
@@ -23,6 +23,22 @@ def sync_github_organization(
             name=organization.login,
             description=organization.description,
             url=organization.html_url,
+            avatar_url=organization.avatar_url,
+            created_at=organization.created_at,
+        ),
+    )
+
+
+def sync_gitlab_organization(
+    *, organization: vcs_clients.gitlab.models.Organization,
+) -> Tuple[models.Organization, bool]:
+    return models.Organization.objects.update_or_create(
+        vcs=enums.VersionControlService.GITLAB,
+        remote_id=organization.organization_id,
+        defaults=dict(
+            name=organization.name,
+            description=organization.description,
+            url=organization.web_url,
             avatar_url=organization.avatar_url,
             created_at=organization.created_at,
         ),

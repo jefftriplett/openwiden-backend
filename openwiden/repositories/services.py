@@ -30,11 +30,11 @@ def _add_github_repository(*, repository: models.Repository, vcs_account: users_
         # Sync membership
         membership_type = github_client.check_organization_membership(organization_id=organization.remote_id,)
         if membership_type == vcs_clients.github.models.MembershipType.MEMBER:
-            organizations_services.sync_github_organization_member(
+            organizations_services.sync_organization_member(
                 organization=organization, vcs_account=vcs_account, is_admin=False,
             )
         elif membership_type == vcs_clients.github.models.MembershipType.ADMIN:
-            organizations_services.sync_github_organization_member(
+            organizations_services.sync_organization_member(
                 organization=organization, vcs_account=vcs_account, is_admin=True,
             )
         else:
@@ -57,11 +57,29 @@ def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_
     # Sync repository
     repository_data = gitlab_client.get_repository(repository_id=repository.remote_id)
     programming_languages = gitlab_client.get_repository_programming_languages(repository.remote_id)
-    sync_gitlab_repository(
+    repository, _ = sync_gitlab_repository(
         repository=repository_data,
         vcs_account=vcs_account,
         extra_defaults=dict(is_added=True, programming_languages=programming_languages),
     )
+
+    # Sync organization if owner is organization
+    if repository.organization:
+        organization_data = gitlab_client.get_organization(repository.organization.remote_id,)
+        organization, _ = organizations_services.sync_gitlab_organization(organization=organization_data,)
+
+        # Sync organization membership
+        membership_type = gitlab_client.check_organization_membership(organization_id=organization.remote_id,)
+        if membership_type == vcs_clients.gitlab.models.MembershipType.MEMBER:
+            organizations_services.sync_organization_member(
+                organization=organization, vcs_account=vcs_account, is_admin=False,
+            )
+        elif membership_type == vcs_clients.gitlab.models.MembershipType.ADMIN:
+            organizations_services.sync_organization_member(
+                organization=organization, vcs_account=vcs_account, is_admin=True,
+            )
+        else:
+            raise exceptions.ServiceException("you are not organization member")
 
     # Sync issues
     issues = gitlab_client.get_repository_issues(repository.remote_id)
