@@ -595,6 +595,95 @@ def github_webhook_create_json() -> dict:
 
 
 @pytest.fixture()
+def github_organization_json() -> dict:
+    return {
+        "login": "OpenWiden",
+        "id": 59751674,
+        "node_id": "MDEyOk9yZ2FuaXphdGlvbjU5NzUxNjc0",
+        "url": "https://api.github.com/orgs/OpenWiden",
+        "repos_url": "https://api.github.com/orgs/OpenWiden/repos",
+        "events_url": "https://api.github.com/orgs/OpenWiden/events",
+        "hooks_url": "https://api.github.com/orgs/OpenWiden/hooks",
+        "issues_url": "https://api.github.com/orgs/OpenWiden/issues",
+        "members_url": "https://api.github.com/orgs/OpenWiden/members{/member}",
+        "public_members_url": "https://api.github.com/orgs/OpenWiden/public_members{/member}",
+        "avatar_url": "https://avatars3.githubusercontent.com/u/59751674?v=4",
+        "description": None,
+        "name": None,
+        "company": None,
+        "blog": None,
+        "location": None,
+        "email": None,
+        "twitter_username": None,
+        "is_verified": False,
+        "has_organization_projects": True,
+        "has_repository_projects": True,
+        "public_repos": 5,
+        "public_gists": 0,
+        "followers": 0,
+        "following": 0,
+        "html_url": "https://github.com/OpenWiden",
+        "created_at": "2020-01-10T23:56:58Z",
+        "updated_at": "2020-04-13T10:19:45Z",
+        "type": "Organization",
+        "total_private_repos": 0,
+        "owned_private_repos": 0,
+        "private_gists": None,
+        "disk_usage": None,
+        "collaborators": None,
+        "billing_email": None,
+        "default_repository_permission": None,
+        "members_can_create_repositories": True,
+        "two_factor_requirement_enabled": None,
+        "plan": {"name": "free", "space": 976562499, "private_repos": 10000, "filled_seats": 3, "seats": 1},
+    }
+
+
+@pytest.fixture()
+def github_user_membership_for_organization_json() -> dict:
+    return {
+        "url": "https://api.github.com/orgs/OpenWiden/memberships/stefanitsky",
+        "state": "active",
+        "role": "admin",
+        "organization_url": "https://api.github.com/orgs/OpenWiden",
+        "user": {
+            "login": "stefanitsky",
+            "id": 22547214,
+            "node_id": "MDQ6VXNlcjIyNTQ3MjE0",
+            "avatar_url": "https://avatars3.githubusercontent.com/u/22547214?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/stefanitsky",
+            "html_url": "https://github.com/stefanitsky",
+            "followers_url": "https://api.github.com/users/stefanitsky/followers",
+            "following_url": "https://api.github.com/users/stefanitsky/following{/other_user}",
+            "gists_url": "https://api.github.com/users/stefanitsky/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/stefanitsky/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/stefanitsky/subscriptions",
+            "organizations_url": "https://api.github.com/users/stefanitsky/orgs",
+            "repos_url": "https://api.github.com/users/stefanitsky/repos",
+            "events_url": "https://api.github.com/users/stefanitsky/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/stefanitsky/received_events",
+            "type": "User",
+            "site_admin": False,
+        },
+        "organization": {
+            "login": "OpenWiden",
+            "id": 59751674,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjU5NzUxNjc0",
+            "url": "https://api.github.com/orgs/OpenWiden",
+            "repos_url": "https://api.github.com/orgs/OpenWiden/repos",
+            "events_url": "https://api.github.com/orgs/OpenWiden/events",
+            "hooks_url": "https://api.github.com/orgs/OpenWiden/hooks",
+            "issues_url": "https://api.github.com/orgs/OpenWiden/issues",
+            "members_url": "https://api.github.com/orgs/OpenWiden/members{/member}",
+            "public_members_url": "https://api.github.com/orgs/OpenWiden/public_members{/member}",
+            "avatar_url": "https://avatars3.githubusercontent.com/u/59751674?v=4",
+            "description": None,
+        },
+    }
+
+
+@pytest.fixture()
 def gitlab_token_json() -> dict:
     return {
         "access_token": "de6780bc506a0446309bd9362820ba8aed28aa506c71eedbe1c5c4f9dd350e54",

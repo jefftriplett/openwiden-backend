@@ -62,22 +62,25 @@ class GitHubClient(AbstractVCSClient):
         json = self._get(f"repositories/{repository_id}")
         return models.Repository.from_json(json)
 
-    def get_organization(self, organization_name: str) -> models.Organization:
-        json = self._get(url=f"orgs/{organization_name}")
+    def get_organization(self, organization_id: int) -> models.Organization:
+        json = self._get(url=f"organizations/{organization_id}")
         return models.Organization.from_json(json)
 
-    def check_organization_membership(self, organization_name: str) -> models.MembershipType:
-        url = f"/user/memberships/orgs/{organization_name}"
-        response = self._client.get(url, token=self.vcs_account.to_token())
-        json = response.json()
+    def check_organization_membership(self, organization_id: int) -> models.MembershipType:
+        response = self._get(
+            f"user/memberships/organizations/{organization_id}",
+            return_response=True,
+        )
+        response_json = response.json()
 
+        # Check response status code and role, if request is success
         if response.status_code == 200:
-            if json["role"] == models.MembershipType.ADMIN:
+            if response_json["role"] == models.MembershipType.ADMIN:
                 return models.MembershipType.ADMIN
-            elif json["role"] == models.MembershipType.MEMBER:
+            elif response_json["role"] == models.MembershipType.MEMBER:
                 return models.MembershipType.MEMBER
             else:
-                raise ValueError(f"unexpected role retrieved: {json['role']}")
+                raise ValueError(f"unexpected role retrieved: {response_json['role']}")
         elif response.status_code == 404:
             return models.MembershipType.NOT_A_MEMBER
         else:
@@ -85,5 +88,4 @@ class GitHubClient(AbstractVCSClient):
 
     def get_user_repositories(self) -> List[models.Repository]:
         json = self._get(url="user/repos?affiliation=owner,organization_member&visibility=public")
-
         return [models.Repository.from_json(data) for data in json]
