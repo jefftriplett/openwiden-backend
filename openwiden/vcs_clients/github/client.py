@@ -2,6 +2,7 @@ from typing import List
 
 from . import models
 from ..abstract import AbstractVCSClient
+from ...enums import OrganizationMembershipType
 
 
 def convert_lines_count_to_percentages(repository_languages: dict) -> dict:
@@ -62,28 +63,30 @@ class GitHubClient(AbstractVCSClient):
         json = self._get(f"repositories/{repository_id}")
         return models.Repository.from_json(json)
 
-    def get_organization(self, organization_name: str) -> models.Organization:
-        json = self._get(url=f"orgs/{organization_name}")
+    def get_organization(self, organization_id: int) -> models.Organization:
+        json = self._get(url=f"organizations/{organization_id}")
         return models.Organization.from_json(json)
 
-    def check_organization_membership(self, organization_name: str) -> models.MembershipType:
-        url = f"/user/memberships/orgs/{organization_name}"
-        response = self._client.get(url, token=self.vcs_account.to_token())
-        json = response.json()
+    def check_organization_membership(self, organization_id: int) -> OrganizationMembershipType:
+        response = self._get(
+            f"user/memberships/organizations/{organization_id}",
+            return_response=True,
+        )
+        response_json = response.json()
 
+        # Check response status code and role, if request is success
         if response.status_code == 200:
-            if json["role"] == models.MembershipType.ADMIN:
-                return models.MembershipType.ADMIN
-            elif json["role"] == models.MembershipType.MEMBER:
-                return models.MembershipType.MEMBER
+            if response_json["role"] == OrganizationMembershipType.ADMIN:
+                return OrganizationMembershipType.ADMIN
+            elif response_json["role"] == OrganizationMembershipType.MEMBER:
+                return OrganizationMembershipType.MEMBER
             else:
-                raise ValueError(f"unexpected role retrieved: {json['role']}")
+                raise ValueError(f"unexpected role retrieved: {response_json['role']}")
         elif response.status_code == 404:
-            return models.MembershipType.NOT_A_MEMBER
+            return OrganizationMembershipType.NOT_A_MEMBER
         else:
             raise ValueError("check organization membership failed, please, try again.")
 
     def get_user_repositories(self) -> List[models.Repository]:
         json = self._get(url="user/repos?affiliation=owner,organization_member&visibility=public")
-
         return [models.Repository.from_json(data) for data in json]

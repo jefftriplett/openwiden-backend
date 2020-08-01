@@ -1,5 +1,7 @@
 from typing import Union, List, Dict
 
+from requests import Response
+
 from openwiden.users import services, models
 
 JsonAbleType = Union[str, int, float, bool, None]
@@ -26,11 +28,14 @@ class AbstractVCSClient:
 
         return response.json()
 
-    def _get(self, url: str) -> JsonType:
+    def _get(self, url: str, return_response: bool = False) -> Union[JsonType, Response]:
         response = self._client.get(url, token=self._get_token())
 
-        if response.status_code != 200:
-            raise ValueError(f"request failed: {response.json()}")
+        if return_response:
+            return response
+        else:
+            if response.status_code != 200:
+                raise ValueError(f"request failed: {response.json()}")
 
         return response.json()
 

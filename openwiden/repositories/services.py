@@ -4,6 +4,7 @@ from openwiden import enums, exceptions, vcs_clients
 from openwiden.repositories import models, error_messages
 from openwiden.users import models as users_models, selectors as users_selectors
 from openwiden.organizations import models as organizations_models
+from openwiden.organizations import services as organizations_services
 from openwiden.vcs_clients.github.models import OwnerType
 from openwiden.vcs_clients.gitlab.models.repository import NamespaceKind
 from openwiden.webhooks import services as webhooks_services
@@ -15,11 +16,22 @@ def _add_github_repository(*, repository: models.Repository, vcs_account: users_
     # Sync repository
     repository_data = github_client.get_repository(repository.remote_id)
     programming_languages = github_client.get_repository_languages(repository.remote_id)
-    sync_github_repository(
+    repository, _ = sync_github_repository(
         repository=repository_data,
         vcs_account=vcs_account,
         extra_defaults=dict(is_added=True, programming_languages=programming_languages),
     )
+
+    # Sync organization if owner is organization
+    if repository.organization:
+        organization_data = github_client.get_organization(repository.organization.remote_id,)
+        organization, _ = organizations_services.sync_github_organization(organization=organization_data,)
+
+        # Sync membership
+        membership_type = github_client.check_organization_membership(organization_id=organization.remote_id,)
+        organizations_services.sync_organization_membership(
+            organization=organization, vcs_account=vcs_account, membership_type=membership_type,
+        )
 
     # Sync issues
     repository_issues = github_client.get_repository_issues(repository.remote_id)
@@ -38,11 +50,22 @@ def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_
     # Sync repository
     repository_data = gitlab_client.get_repository(repository_id=repository.remote_id)
     programming_languages = gitlab_client.get_repository_programming_languages(repository.remote_id)
-    sync_gitlab_repository(
+    repository, _ = sync_gitlab_repository(
         repository=repository_data,
         vcs_account=vcs_account,
         extra_defaults=dict(is_added=True, programming_languages=programming_languages),
     )
+
+    # Sync organization if owner is organization
+    if repository.organization:
+        organization_data = gitlab_client.get_organization(repository.organization.remote_id,)
+        organization, _ = organizations_services.sync_gitlab_organization(organization=organization_data,)
+
+        # Sync organization membership
+        membership_type = gitlab_client.check_organization_membership(organization_id=organization.remote_id,)
+        organizations_services.sync_organization_membership(
+            organization=organization, vcs_account=vcs_account, membership_type=membership_type,
+        )
 
     # Sync issues
     issues = gitlab_client.get_repository_issues(repository.remote_id)

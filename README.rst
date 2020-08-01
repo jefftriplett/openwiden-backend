@@ -27,7 +27,7 @@ Local Development
 
 Start server::
 
-    $docker-compose -f local.yml up
+    $ docker-compose -f local.yml up
 
 Or using a shortcut via [make]::
 
