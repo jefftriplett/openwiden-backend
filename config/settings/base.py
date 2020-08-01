@@ -312,7 +312,7 @@ Q_CLUSTER = {
 
 # GitHub webhooks
 DJANGO_GITHUB_WEBHOOKS = {
-    "ALLOWED_EVENTS": ("issues", "ping",),
+    "ALLOWED_EVENTS": ("issues", "ping", "repository"),
 }
 
 # Gilab webhooks

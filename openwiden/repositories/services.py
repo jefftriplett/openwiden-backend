@@ -174,8 +174,13 @@ def sync_github_repository(
 
 
 def sync_github_repository_issue(
-    *, issue: vcs_clients.github.models.Issue, repository: models.Repository,
+    *, issue: vcs_clients.github.models.Issue, repository: models.Repository = None,
 ) -> Tuple[models.Issue, bool]:
+    if not repository:
+        repository = models.Repository.objects.get(
+            vcs=enums.VersionControlService.GITHUB, remote_id=issue.repository_id,
+        )
+
     return models.Issue.objects.update_or_create(
         repository=repository,
         remote_id=issue.issue_id,
