@@ -1,7 +1,6 @@
 from typing import Tuple
 
 from openwiden import enums, exceptions, vcs_clients
-from openwiden.enums import OrganizationMembershipType
 from openwiden.repositories import models, error_messages
 from openwiden.users import models as users_models, selectors as users_selectors
 from openwiden.organizations import models as organizations_models
@@ -30,16 +29,9 @@ def _add_github_repository(*, repository: models.Repository, vcs_account: users_
 
         # Sync membership
         membership_type = github_client.check_organization_membership(organization_id=organization.remote_id,)
-        if membership_type == OrganizationMembershipType.MEMBER:
-            organizations_services.sync_organization_member(
-                organization=organization, vcs_account=vcs_account, is_admin=False,
-            )
-        elif membership_type == OrganizationMembershipType.ADMIN:
-            organizations_services.sync_organization_member(
-                organization=organization, vcs_account=vcs_account, is_admin=True,
-            )
-        else:
-            raise exceptions.ServiceException("you are not organization member")
+        organizations_services.sync_organization_membership(
+            organization=organization, vcs_account=vcs_account, membership_type=membership_type,
+        )
 
     # Sync issues
     repository_issues = github_client.get_repository_issues(repository.remote_id)
@@ -71,16 +63,9 @@ def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_
 
         # Sync organization membership
         membership_type = gitlab_client.check_organization_membership(organization_id=organization.remote_id,)
-        if membership_type == OrganizationMembershipType.MEMBER:
-            organizations_services.sync_organization_member(
-                organization=organization, vcs_account=vcs_account, is_admin=False,
-            )
-        elif membership_type == OrganizationMembershipType.ADMIN:
-            organizations_services.sync_organization_member(
-                organization=organization, vcs_account=vcs_account, is_admin=True,
-            )
-        else:
-            raise exceptions.ServiceException("you are not organization member")
+        organizations_services.sync_organization_membership(
+            organization=organization, vcs_account=vcs_account, membership_type=membership_type,
+        )
 
     # Sync issues
     issues = gitlab_client.get_repository_issues(repository.remote_id)
