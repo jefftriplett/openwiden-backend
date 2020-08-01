@@ -2,6 +2,7 @@ from typing import List
 
 from . import models
 from ..abstract import AbstractVCSClient
+from ...enums import OrganizationMembershipType
 
 
 def convert_lines_count_to_percentages(repository_languages: dict) -> dict:
@@ -66,7 +67,7 @@ class GitHubClient(AbstractVCSClient):
         json = self._get(url=f"organizations/{organization_id}")
         return models.Organization.from_json(json)
 
-    def check_organization_membership(self, organization_id: int) -> models.MembershipType:
+    def check_organization_membership(self, organization_id: int) -> OrganizationMembershipType:
         response = self._get(
             f"user/memberships/organizations/{organization_id}",
             return_response=True,
@@ -75,14 +76,14 @@ class GitHubClient(AbstractVCSClient):
 
         # Check response status code and role, if request is success
         if response.status_code == 200:
-            if response_json["role"] == models.MembershipType.ADMIN:
-                return models.MembershipType.ADMIN
-            elif response_json["role"] == models.MembershipType.MEMBER:
-                return models.MembershipType.MEMBER
+            if response_json["role"] == OrganizationMembershipType.ADMIN:
+                return OrganizationMembershipType.ADMIN
+            elif response_json["role"] == OrganizationMembershipType.MEMBER:
+                return OrganizationMembershipType.MEMBER
             else:
                 raise ValueError(f"unexpected role retrieved: {response_json['role']}")
         elif response.status_code == 404:
-            return models.MembershipType.NOT_A_MEMBER
+            return OrganizationMembershipType.NOT_A_MEMBER
         else:
             raise ValueError("check organization membership failed, please, try again.")
 

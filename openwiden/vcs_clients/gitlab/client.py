@@ -1,7 +1,8 @@
 from typing import List
 
-from .models import Repository, Issue, Webhook, Organization, MembershipType
+from .models import Repository, Issue, Webhook, Organization
 from ..abstract import AbstractVCSClient
+from ...enums import OrganizationMembershipType
 
 
 class GitlabClient(AbstractVCSClient):
@@ -24,7 +25,10 @@ class GitlabClient(AbstractVCSClient):
         data = self._get(f"groups/{organization_id}")
         return Organization.from_json(data)
 
-    def check_organization_membership(self, organization_id: int) -> MembershipType:
+    def check_organization_membership(
+        self,
+        organization_id: int,
+    ) -> OrganizationMembershipType:
         response = self._get(
             f"groups/{organization_id}/members/{self.vcs_account.remote_id}",
             return_response=True,
@@ -34,11 +38,11 @@ class GitlabClient(AbstractVCSClient):
         # Check membership
         if response.status_code == 200:
             if response_json["access_level"] >= 40:
-                return MembershipType.ADMIN
+                return OrganizationMembershipType.ADMIN
             else:
-                return MembershipType.MEMBER
+                return OrganizationMembershipType.MEMBER
         elif response.status_code == 404:
-            return MembershipType.NOT_A_MEMBER
+            return OrganizationMembershipType.NOT_A_MEMBER
         else:
             raise ValueError("unexpected status code for memebership check")
 
