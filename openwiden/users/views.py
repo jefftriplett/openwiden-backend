@@ -1,5 +1,6 @@
 from authlib.integrations.django_client import DjangoRemoteApp
-from drf_yasg.utils import swagger_auto_schema
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import no_body, swagger_auto_schema
 
 from rest_framework import views, permissions as drf_permissions, viewsets, mixins, status
 from rest_framework.request import Request
@@ -72,11 +73,15 @@ class OAuthCompleteView(views.APIView):
 oauth_complete_view = OAuthCompleteView.as_view()
 
 
+@method_decorator(name="list", decorator=swagger_auto_schema(operation_summary="Get users list"))
+@method_decorator(
+    name="retrieve", decorator=swagger_auto_schema(operation_summary="Get user by id"),
+)
+@method_decorator(name="update", decorator=swagger_auto_schema(operation_summary="Update user by id"))
+@method_decorator(name="partial_update", decorator=swagger_auto_schema(operation_summary="Partial update user by id"))
 class UserViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet,
 ):
-    """Users """
-
     serializer_class = serializers.UserSerializer
     lookup_field = "id"
     queryset = models.User.objects.all()
@@ -88,18 +93,21 @@ class UserViewSet(
         return super().get_serializer_class()
 
 
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(
+        operation_summary="Get current user",
+        request_body=no_body,
+        responses={status.HTTP_200_OK: serializers.UserWithVCSAccountsSerializer},
+    ),
+)
 class UserMeView(views.APIView):
-    """Get current user
-
-    Returns current user with VCS accounts data.
-    """
-
-    @swagger_auto_schema(
-        request_body=None, responses={status.HTTP_200_OK: serializers.UserWithVCSAccountsSerializer,},
-    )
     def get(self, request: Request) -> Response:
+        """
+        Returns current user with VCS accounts data.
+        """
         data = serializers.UserWithVCSAccountsSerializer(request.user).data
-        return Response(data)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 user_me_view = UserMeView.as_view()

@@ -6,6 +6,10 @@ CHANGELOG
 ------------------
 * Add github & gitlab webhooks handle for issues & repositories.
 
+2.1.1 (2020/08/02)
+------------------
+* Improve swagger docs.
+
 2.1.0 (2020/08/01)
 ------------------
 * Add gitlab & github organization & membership sync.
