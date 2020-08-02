@@ -64,6 +64,14 @@ def handle_github_repository_event(payload, **kwargs) -> None:
         log.info(f"skip repository {payload['action']} action")
 
 
+@receiver(github_signals.star)
+def handle_github_star_event(payload: dict, **kwargs) -> None:
+    log.info(f"received GitHub repository star event: {payload}")
+
+    repository = github_models.Repository.from_json(payload["repository"])
+    repositories_services.sync_github_repository(repository=repository)
+
+
 @receiver(gitlab_signals.issue)
 def handle_gitlab_issue_event(payload: dict, **kwargs) -> None:
     log.info("received Gitlab issue event: {payload}".format(payload=payload))
