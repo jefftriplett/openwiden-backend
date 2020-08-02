@@ -732,6 +732,8 @@ PUBLICIZED = {
   }
 }
 
+DELETED = {"action": "deleted", "repository": {"id": 1}}
+
 
 @pytest.mark.functional
 @pytest.mark.django_db
@@ -743,6 +745,7 @@ PUBLICIZED = {
     pytest.param(UNARCHIVED, GithubRepositoryAction.UNARCHIVED, id="unarchived"),
     pytest.param(PRIVATIZED, GithubRepositoryAction.PRIVATIZED, id="privatized"),
     pytest.param(PUBLICIZED, GithubRepositoryAction.PUBLICIZED, id="publicized"),
+    pytest.param(DELETED, GithubRepositoryAction.DELETED, id="deleted"),
 ])
 def test_run(
     mock_compare_signatures,
@@ -775,7 +778,10 @@ def test_run(
 
     # Test
     assert response.status_code == status.HTTP_200_OK
-    repository.refresh_from_db()
+
+    if event != GithubRepositoryAction.DELETED:
+        repository.refresh_from_db()
+
     if event == GithubRepositoryAction.RENAMED:
         assert repository.name == payload["repository"]["name"]
     elif event == GithubRepositoryAction.EDITED:
@@ -790,3 +796,7 @@ def test_run(
         GithubRepositoryAction.UNARCHIVED,
     ]:
         assert repository.is_added is True
+    elif event == GithubRepositoryAction.DELETED:
+        assert not repositories_models.Repository.objects.filter(
+            remote_id=payload["repository"]["id"]
+        ).exists()

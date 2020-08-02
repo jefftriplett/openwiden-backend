@@ -97,11 +97,15 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         _add_gitlab_repository(repository=repository, vcs_account=vcs_account)
 
 
-def delete_issue_by_remote_id(*, remote_id: str) -> None:
+def delete_issue_by_remote_id(*, vcs: str, remote_id: str) -> None:
     """
     Finds and deletes repository issue by id.
     """
-    models.Issue.objects.filter(remote_id=remote_id).delete()
+    models.Issue.objects.filter(repository__vcs=vcs, remote_id=remote_id).delete()
+
+
+def delete_repository_by_remote_id(*, vcs: str, remote_id: str) -> None:
+    models.Repository.objects.filter(vcs=vcs, remote_id=remote_id).delete()
 
 
 def remove_repository(*, repository: models.Repository, user: users_models.User,) -> None:

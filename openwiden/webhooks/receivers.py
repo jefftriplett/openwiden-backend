@@ -9,6 +9,7 @@ from openwiden.repositories import services as repositories_services
 from openwiden.vcs_clients.gitlab import models as gitlab_models
 from openwiden.vcs_clients.github import models as github_models
 from . import constants
+from ..enums import VersionControlService
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +29,9 @@ def handle_github_issue_event(payload, **kwargs):
         issue = github_models.Issue.from_json(payload["issue"])
         repositories_services.sync_github_repository_issue(issue=issue)
     elif payload["action"] == constants.IssueEventActions.DELETED:
-        repositories_services.delete_issue_by_remote_id(remote_id=payload["issue"]["id"])
+        repositories_services.delete_issue_by_remote_id(
+            vcs=VersionControlService.GITHUB, remote_id=payload["issue"]["id"]
+        )
     else:
         log.info(f"skip issue {payload['action']} action")
 
@@ -59,6 +62,10 @@ def handle_github_repository_event(payload, **kwargs) -> None:
         repository = github_models.Repository.from_json(payload["repository"])
         repositories_services.sync_github_repository(
             repository=repository, extra_defaults=dict(is_added=True),
+        )
+    elif action == constants.GithubRepositoryAction.DELETED:
+        repositories_services.delete_repository_by_remote_id(
+            vcs=VersionControlService.GITHUB, remote_id=payload["repository"]["id"],
         )
     else:
         log.info(f"skip repository {payload['action']} action")
