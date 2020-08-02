@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+2.2.0 (2020/08/??)
+------------------
+* Add github & gitlab webhooks handle for issues & repositories.
+
 2.1.0 (2020/08/01)
 ------------------
 * Add gitlab & github organization & membership sync.
