@@ -1,15 +1,17 @@
-from django.http import Http404
-from drf_yasg.utils import swagger_auto_schema
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from openwiden import exceptions
-
 from . import serializers, filters, services, selectors
 
 
+@method_decorator(
+    name="list", decorator=swagger_auto_schema(operation_summary="Get repositories list"),
+)
+@method_decorator(name="retrieve", decorator=swagger_auto_schema(operation_summary="Get repository by id"))
 class Repository(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Repository
     queryset = selectors.get_added_and_public_repositories()
@@ -18,20 +20,26 @@ class Repository(viewsets.ReadOnlyModelViewSet):
     lookup_field = "id"
 
 
+@method_decorator(name="list", decorator=swagger_auto_schema(operation_summary="Get repository issues list"))
+@method_decorator(name="retrieve", decorator=swagger_auto_schema(operation_summary="Get repository issue by id"))
 class Issue(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Issue
     permission_classes = (permissions.AllowAny,)
     lookup_field = "id"
 
     def get_queryset(self):
-        try:
-            repository = selectors.get_repository(id=self.kwargs["repository_id"])
-        except exceptions.ServiceException as e:
-            raise Http404(e.description)
-        else:
-            return repository.issues.all()
+        repository = selectors.get_repository(id=self.kwargs["repository_id"])
+        return repository.issues.all()
 
 
+@method_decorator(name="list", decorator=swagger_auto_schema(operation_summary="Get user repositories list"))
+@method_decorator(name="retrieve", decorator=swagger_auto_schema(operation_summary="Get user repository by id"))
+@method_decorator(
+    name="add", decorator=swagger_auto_schema(operation_summary="Add user repository", request_body=no_body,)
+)
+@method_decorator(
+    name="remove", decorator=swagger_auto_schema(operation_summary="Remove user repository"),
+)
 class UserRepositories(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.UserRepository
     lookup_field = "id"
@@ -40,7 +48,6 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return selectors.get_user_repositories(user=self.request.user)
 
-    @swagger_auto_schema(request_body=None)
     @action(detail=True, methods=["POST"])
     def add(self, request: Request, **kwargs) -> Response:
         repository = self.get_object()
