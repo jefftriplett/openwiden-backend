@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 class IssueEventActions:
     OPENED = "opened"
     EDITED = "edited"
@@ -15,3 +18,15 @@ class IssueEventActions:
     TRANSFERRED = "transferred"
     MILESTONED = "milestoned"
     DEMILESTONED = "demilestoned"
+
+
+class GithubRepositoryAction(str, Enum):
+    CREATED = "created"
+    DELETED = "deleted"
+    ARCHIVED = "archived"
+    UNARCHIVED = "unarchived"
+    EDITED = "edited"
+    RENAMED = "renamed"
+    TRANSFERRED = "transferred"
+    PUBLICIZED = "publicized"
+    PRIVATIZED = "privatized"

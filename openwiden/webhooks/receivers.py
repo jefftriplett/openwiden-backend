@@ -33,6 +33,37 @@ def handle_github_issue_event(payload, **kwargs):
         log.info(f"skip issue {payload['action']} action")
 
 
+@receiver(github_signals.repository)
+def handle_github_repository_event(payload, **kwargs) -> None:
+    log.info(f"repository payload event received: {payload}")
+    action = payload["action"]
+
+    if action in [
+        constants.GithubRepositoryAction.EDITED,
+        constants.GithubRepositoryAction.RENAMED,
+    ]:
+        repository = github_models.Repository.from_json(payload["repository"])
+        repositories_services.sync_github_repository(repository=repository)
+    elif action in [
+        constants.GithubRepositoryAction.PRIVATIZED,
+        constants.GithubRepositoryAction.ARCHIVED,
+    ]:
+        repository = github_models.Repository.from_json(payload["repository"])
+        repositories_services.sync_github_repository(
+            repository=repository, extra_defaults=dict(is_added=False),
+        )
+    elif action in [
+        constants.GithubRepositoryAction.PUBLICIZED,
+        constants.GithubRepositoryAction.UNARCHIVED,
+    ]:
+        repository = github_models.Repository.from_json(payload["repository"])
+        repositories_services.sync_github_repository(
+            repository=repository, extra_defaults=dict(is_added=True),
+        )
+    else:
+        log.info(f"skip repository {payload['action']} action")
+
+
 @receiver(gitlab_signals.issue)
 def handle_gitlab_issue_event(payload: dict, **kwargs) -> None:
     log.info("received Gitlab issue event: {payload}".format(payload=payload))
@@ -41,7 +72,8 @@ def handle_gitlab_issue_event(payload: dict, **kwargs) -> None:
     data["web_url"] = data.pop("url")
     data["project_id"] = payload["project"]["id"]
 
-    # Format datetime strings to datetime
+    # Format datetime strings to datetime, because webhook datetime fields
+    # is not similar as API requests
     for dt_key in ("created_at", "updated_at", "closed_at"):
         if dt_key in data and data.get(dt_key) is not None:
             data[dt_key] = datetime.strptime(data[dt_key], "%Y-%m-%d %H:%M:%S %Z")

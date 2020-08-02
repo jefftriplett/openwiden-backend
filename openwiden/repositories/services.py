@@ -97,7 +97,7 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         _add_gitlab_repository(repository=repository, vcs_account=vcs_account)
 
 
-def delete_issue_by_remote_id(*, remote_id: str):
+def delete_issue_by_remote_id(*, remote_id: str) -> None:
     """
     Finds and deletes repository issue by id.
     """
@@ -136,7 +136,7 @@ def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:
 def sync_github_repository(
     *,
     repository: vcs_clients.github.models.Repository,
-    vcs_account: users_models.VCSAccount,
+    vcs_account: users_models.VCSAccount = None,
     extra_defaults: dict = None,
 ) -> Tuple[models.Repository, bool]:
     defaults = dict(
@@ -154,17 +154,18 @@ def sync_github_repository(
     if extra_defaults:
         defaults.update(extra_defaults)
 
-    if repository.owner.owner_type == OwnerType.ORGANIZATION:
-        defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
-            vcs=enums.VersionControlService.GITHUB,
-            remote_id=repository.owner.owner_id,
-            defaults=dict(name=repository.owner.login),
-        )
-        organizations_models.Member.objects.get_or_create(
-            organization=defaults["organization"], vcs_account=vcs_account,
-        )
-    else:
-        defaults["owner"] = vcs_account
+    if vcs_account:
+        if repository.owner.owner_type == OwnerType.ORGANIZATION:
+            defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
+                vcs=enums.VersionControlService.GITHUB,
+                remote_id=repository.owner.owner_id,
+                defaults=dict(name=repository.owner.login),
+            )
+            organizations_models.Member.objects.get_or_create(
+                organization=defaults["organization"], vcs_account=vcs_account,
+            )
+        else:
+            defaults["owner"] = vcs_account
 
     repository_obj, created = models.Repository.objects.update_or_create(
         remote_id=repository.repository_id, vcs=enums.VersionControlService.GITHUB, defaults=defaults,
