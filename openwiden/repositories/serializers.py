@@ -67,7 +67,7 @@ class Repository(serializers.ModelSerializer):
         else:
             raise ValueError(f"repository with id {obj.id} has no owner!")
 
-        return OwnerSerializer(data=data).data
+        return data
 
 
 class Issue(serializers.ModelSerializer):
