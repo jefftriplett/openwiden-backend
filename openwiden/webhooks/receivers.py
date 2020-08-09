@@ -50,20 +50,8 @@ def handle_github_repository_event(payload, **kwargs) -> None:
     elif action in [
         constants.GithubRepositoryAction.PRIVATIZED,
         constants.GithubRepositoryAction.ARCHIVED,
+        constants.GithubRepositoryAction.DELETED,
     ]:
-        repository = github_models.Repository.from_json(payload["repository"])
-        repositories_services.sync_github_repository(
-            repository=repository, extra_defaults=dict(is_added=False),
-        )
-    elif action in [
-        constants.GithubRepositoryAction.PUBLICIZED,
-        constants.GithubRepositoryAction.UNARCHIVED,
-    ]:
-        repository = github_models.Repository.from_json(payload["repository"])
-        repositories_services.sync_github_repository(
-            repository=repository, extra_defaults=dict(is_added=True),
-        )
-    elif action == constants.GithubRepositoryAction.DELETED:
         repositories_services.delete_repository_by_remote_id(
             vcs=VersionControlService.GITHUB, remote_id=payload["repository"]["id"],
         )

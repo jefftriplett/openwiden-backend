@@ -6,6 +6,7 @@ from rest_framework import status
 
 from openwiden.enums import VersionControlService
 from openwiden.repositories import models as repositories_models
+from openwiden.repositories.enums import RepositoryState
 from openwiden.webhooks.constants import GithubRepositoryAction
 
 
@@ -779,24 +780,17 @@ def test_run(
     # Test
     assert response.status_code == status.HTTP_200_OK
 
-    if event != GithubRepositoryAction.DELETED:
-        repository.refresh_from_db()
-
     if event == GithubRepositoryAction.RENAMED:
+        repository.refresh_from_db()
         assert repository.name == payload["repository"]["name"]
     elif event == GithubRepositoryAction.EDITED:
+        repository.refresh_from_db()
         assert repository.description == payload["repository"]["description"]
     elif event in [
         GithubRepositoryAction.PRIVATIZED,
         GithubRepositoryAction.ARCHIVED,
+        GithubRepositoryAction.DELETED,
     ]:
-        assert repository.is_added is False
-    elif event in [
-        GithubRepositoryAction.PUBLICIZED,
-        GithubRepositoryAction.UNARCHIVED,
-    ]:
-        assert repository.is_added is True
-    elif event == GithubRepositoryAction.DELETED:
         assert not repositories_models.Repository.objects.filter(
             remote_id=payload["repository"]["id"]
         ).exists()
