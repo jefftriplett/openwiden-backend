@@ -47,4 +47,4 @@ class TestIssueSerializer:
 class TestUserRepositorySerializer:
     def test_meat(self):
         assert issubclass(serializers.UserRepository, serializers.Repository) is True
-        assert serializers.UserRepository.Meta.fields == serializers.Repository.Meta.fields + ("visibility", "is_added")
+        assert serializers.UserRepository.Meta.fields == serializers.Repository.Meta.fields + ("state",)

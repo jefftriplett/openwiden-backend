@@ -14,7 +14,7 @@ from . import serializers, filters, services, selectors
 @method_decorator(name="retrieve", decorator=swagger_auto_schema(operation_summary="Get repository by id"))
 class Repository(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.Repository
-    queryset = selectors.get_added_and_public_repositories()
+    queryset = selectors.get_added_repositories()
     filterset_class = filters.Repository
     permission_classes = (permissions.AllowAny,)
     lookup_field = "id"

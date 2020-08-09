@@ -2,4 +2,6 @@ from django.utils.translation import gettext_lazy as _
 
 REPOSITORY_DOES_NOT_EXIST = _("Repository with id {id} does not exist.")
 REPOSITORY_ALREADY_ADDED = _("Repository already added.")
-REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED = _("Repository is private and cannot be added.")
+REPOSITORY_CANNOT_BE_ADDED_DUE_TO_STATE = _("Repository cannot be added due to {state} state.")
+REPOSITORY_ALREADY_REMOVED = _("Repository already removed.")
+NOT_ADDED_REPOSITORY_CANNOT_BE_REMOVED = _("Not added repository cannot be removed.")

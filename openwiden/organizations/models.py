@@ -17,14 +17,6 @@ class Organization(UUIDModel):
 
     created_at = models.DateTimeField(_("created at"), blank=True, null=True)
 
-    visibility = models.CharField(
-        max_length=8,
-        blank=True,
-        choices=enums.VisibilityLevel.choices,
-        default=enums.VisibilityLevel.public,
-        verbose_name=_("visibility"),
-    )
-
     class Meta:
         ordering = ("name",)
         verbose_name = _("organization")
