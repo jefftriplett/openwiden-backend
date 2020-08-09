@@ -89,4 +89,4 @@ class GitHubClient(AbstractVCSClient):
 
     def get_user_repositories(self) -> List[models.Repository]:
         json = self._get(url="user/repos?affiliation=owner,organization_member&visibility=public")
-        return [models.Repository.from_json(data) for data in json]
+        return [models.Repository.from_json(data) for data in json if not data["archived"]]
