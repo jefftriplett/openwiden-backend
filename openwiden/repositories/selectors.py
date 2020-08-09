@@ -1,14 +1,13 @@
 from django.db.models import QuerySet, Q
 
-from openwiden import enums, exceptions
+from openwiden import exceptions
 from openwiden.users.models import User
 
-from . import models, error_messages
+from . import models, error_messages, enums
 
 
-def get_added_and_public_repositories() -> "QuerySet[models.Repository]":
-    query = Q(is_added=True, visibility=enums.VisibilityLevel.public)
-    return models.Repository.objects.filter(query)
+def get_added_repositories() -> "QuerySet[models.Repository]":
+    return models.Repository.objects.filter(state=enums.RepositoryState.ADDED)
 
 
 def get_repository(*, id: str) -> models.Repository:

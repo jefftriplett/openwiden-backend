@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from openwiden import enums, exceptions, vcs_clients
-from openwiden.repositories import models, error_messages
+from openwiden.repositories import models, error_messages, enums as repository_enums
 from openwiden.users import models as users_models, selectors as users_selectors
 from openwiden.organizations import models as organizations_models
 from openwiden.organizations import services as organizations_services
@@ -19,7 +19,7 @@ def _add_github_repository(*, repository: models.Repository, vcs_account: users_
     repository, _ = sync_github_repository(
         repository=repository_data,
         vcs_account=vcs_account,
-        extra_defaults=dict(is_added=True, programming_languages=programming_languages),
+        extra_defaults=dict(programming_languages=programming_languages),
     )
 
     # Sync organization if owner is organization
@@ -43,6 +43,9 @@ def _add_github_repository(*, repository: models.Repository, vcs_account: users_
         repository=repository, vcs_account=vcs_account,
     )
 
+    # Update repository state
+    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDED)
+
 
 def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_models.VCSAccount,) -> None:
     gitlab_client = vcs_clients.GitlabClient(vcs_account)
@@ -53,7 +56,7 @@ def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_
     repository, _ = sync_gitlab_repository(
         repository=repository_data,
         vcs_account=vcs_account,
-        extra_defaults=dict(is_added=True, programming_languages=programming_languages),
+        extra_defaults=dict(programming_languages=programming_languages),
     )
 
     # Sync organization if owner is organization
@@ -77,19 +80,27 @@ def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_
         repository=repository, vcs_account=vcs_account,
     )
 
+    # Update repository state
+    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDED)
+
 
 def add_repository(*, repository: models.Repository, user: users_models.User) -> None:
     """
-    Adds existed repository by sync related objects (issues, for example) and changes
-    status to "is_added".
+    Adds existed repository by sync related objects (issues, for example).
     """
-    vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
-
-    # Check if repository is already added and raise an error if yes
-    if repository.is_added:
+    if repository.state == repository_enums.RepositoryState.ADDED:
         raise exceptions.ServiceException(error_messages.REPOSITORY_ALREADY_ADDED)
-    elif repository.visibility == enums.VisibilityLevel.private:
-        raise exceptions.ServiceException(error_messages.REPOSITORY_IS_PRIVATE_AND_CANNOT_BE_ADDED)
+    elif repository.state not in [
+        repository_enums.RepositoryState.INITIAL,
+        repository_enums.RepositoryState.REMOVED,
+        repository_enums.RepositoryState.ADD_FAILED,
+    ]:
+        raise exceptions.ServiceException(
+            error_messages.REPOSITORY_CANNOT_BE_ADDED_DUE_TO_STATE.format(state=repository.state)
+        )
+
+    vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
+    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDING)
 
     if vcs_account.vcs == enums.VersionControlService.GITHUB:
         _add_github_repository(repository=repository, vcs_account=vcs_account)
@@ -104,18 +115,26 @@ def delete_issue_by_remote_id(*, remote_id: str):
     models.Issue.objects.filter(remote_id=remote_id).delete()
 
 
+def _update_repository_state(*, repository: models.Repository, state: repository_enums.RepositoryState,) -> None:
+    repository.state = state
+    repository.save(update_fields=("state",))
+
+
 def remove_repository(*, repository: models.Repository, user: users_models.User,) -> None:
     vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
 
-    if repository.is_added is False:
-        raise exceptions.ServiceException("repository already removed.")
+    if repository.state == repository_enums.RepositoryState.REMOVED:
+        raise exceptions.ServiceException(error_messages.REPOSITORY_ALREADY_REMOVED)
+    elif repository.state != repository_enums.RepositoryState.ADDED:
+        raise exceptions.ServiceException(error_messages.NOT_ADDED_REPOSITORY_CANNOT_BE_REMOVED)
+
+    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVING)
 
     webhooks_services.delete_repository_webhook(
         repository=repository, vcs_account=vcs_account,
     )
 
-    repository.is_added = False
-    repository.save(update_fields=("is_added",))
+    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVED)
 
 
 def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:
@@ -148,7 +167,6 @@ def sync_github_repository(
         forks_count=repository.forks_count,
         created_at=repository.created_at,
         updated_at=repository.updated_at,
-        visibility=(enums.VisibilityLevel.public if not repository.private else enums.VisibilityLevel.private),
     )
 
     if extra_defaults:
@@ -207,7 +225,6 @@ def sync_gitlab_repository(
         forks_count=repository.forks_count,
         created_at=repository.created_at,
         updated_at=repository.last_activity_at,
-        visibility=repository.visibility,
     )
 
     if extra_defaults:

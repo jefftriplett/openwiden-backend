@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 
 from openwiden.enums import VersionControlService
+from openwiden.repositories.enums import RepositoryState
 from openwiden.webhooks import models as webhook_models
 
 
@@ -24,7 +25,7 @@ def test_run(
 ):
     vcs_account = create_vcs_account(vcs=vcs)
     api_client = create_api_client(user=vcs_account.user)
-    repository = create_repository(vcs=vcs, is_added=True, owner=vcs_account, organization=None)
+    repository = create_repository(vcs=vcs, state=RepositoryState.ADDED, owner=vcs_account, organization=None)
     create_repo_webhook(repository=repository)
 
     # Mock request
@@ -39,5 +40,5 @@ def test_run(
     assert response.status_code == status.HTTP_204_NO_CONTENT, print(response.data)
 
     # Test repository
-    assert repository.is_added is False
+    assert repository.state == RepositoryState.REMOVED
     assert not webhook_models.RepositoryWebhook.objects.filter(repository=repository).exists()
