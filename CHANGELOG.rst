@@ -2,6 +2,20 @@
 CHANGELOG
 =========
 
+2.2.0 (2020/08/09)
+------------------
+* Drop private repositories & orgagnizations support.
+* Drop archived repositories support.
+* Add repository state instead of is_added flag.
+
+Available states:
+- initial
+- adding
+- added
+- removing
+- removed
+- add_failed
+
 2.1.1 (2020/08/02)
 ------------------
 * Improve swagger docs.

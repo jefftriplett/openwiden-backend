@@ -19,8 +19,6 @@ class Organization(factory.DjangoModelFactory):
 
     created_at = factory.Faker("date_time", tzinfo=get_current_timezone())
 
-    visibility = fuzzy.FuzzyChoice(enums.VisibilityLevel.values)
-
     class Meta:
         model = models.Organization
         django_get_or_create = ("vcs", "remote_id")

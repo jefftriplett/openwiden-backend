@@ -6,7 +6,8 @@ from django.utils import timezone
 from rest_framework import status
 
 from openwiden import vcs_clients
-from openwiden.enums import OwnerType, VersionControlService, VisibilityLevel
+from openwiden.enums import OwnerType, VersionControlService
+from openwiden.repositories.enums import RepositoryState
 
 DEFAULT_DATE_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
@@ -82,8 +83,7 @@ def test_github(
         assert user_repository_data["stars_count"] == raw_repository_data["stargazers_count"]
         assert user_repository_data["open_issues_count"] == raw_repository_data["open_issues_count"]
         assert user_repository_data["forks_count"] == raw_repository_data["forks_count"]
-        assert user_repository_data["visibility"] == VisibilityLevel.public
-        assert user_repository_data["is_added"] is False
+        assert user_repository_data["state"] == RepositoryState.INITIAL
         assert user_repository_data["vcs"] == VersionControlService.GITHUB
         assert compare_dt_strings(user_repository_data["updated_at"], raw_repository_data["updated_at"])
         assert compare_dt_strings(user_repository_data["created_at"], raw_repository_data["created_at"])
@@ -151,8 +151,7 @@ def test_gitlab(
         assert user_repository_data["stars_count"] == raw_repository_data["star_count"]
         assert user_repository_data["open_issues_count"] == raw_repository_data["open_issues_count"]
         assert user_repository_data["forks_count"] == raw_repository_data["forks_count"]
-        assert user_repository_data["visibility"] == VisibilityLevel.public
-        assert user_repository_data["is_added"] is False
+        assert user_repository_data["state"] == RepositoryState.INITIAL
         assert user_repository_data["vcs"] == VersionControlService.GITLAB
 
         # Compare date time fields
