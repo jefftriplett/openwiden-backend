@@ -9,22 +9,6 @@ from openwiden.repositories import models
 log = logging.getLogger(__name__)
 
 
-class SyncIssueSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Issue
-        fields = (
-            "remote_id",
-            "title",
-            "description",
-            "state",
-            "labels",
-            "url",
-            "created_at",
-            "updated_at",
-            "closed_at",
-        )
-
-
 class OwnerSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=OwnerType.choices)
     id = serializers.UUIDField()
@@ -88,4 +72,4 @@ class Issue(serializers.ModelSerializer):
 
 class UserRepository(Repository):
     class Meta(Repository.Meta):
-        fields = Repository.Meta.fields + ("visibility", "is_added")
+        fields = Repository.Meta.fields + ("state",)
