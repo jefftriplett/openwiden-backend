@@ -93,13 +93,3 @@ def handle_gitlab_issue_event(payload: dict, **kwargs) -> None:
 
     # TODO: issue delete on delete event
     # https://gitlab.com/gitlab-org/gitlab/-/issues/17769
-
-
-@receiver(gitlab_signals.push)
-def handle_gitlab_push_event(payload: dict, **kwargs) -> None:
-    log.info("received Gitlab push event: {payload}".format(payload=payload))
-
-
-@receiver(gitlab_signals.tag_push)
-def handle_tag_push_event(payload: dict, **kwargs) -> None:
-    log.info("received Gitlab tag push event: {payload}".format(payload=payload))

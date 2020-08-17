@@ -317,5 +317,5 @@ DJANGO_GITHUB_WEBHOOKS = {
 
 # Gilab webhooks
 DJANGO_GITLAB_WEBHOOKS = {
-    "ALLOWED_EVENTS": ("Issue Hook", "Push Hook", "Tag Push Hook"),
+    "ALLOWED_EVENTS": ("Issue Hook",),
 }
