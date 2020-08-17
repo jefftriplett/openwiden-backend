@@ -5,11 +5,11 @@ from django.dispatch import receiver
 from github_webhooks import signals as github_signals
 from gitlab_webhooks import signals as gitlab_signals
 
+from openwiden.enums import VersionControlService
 from openwiden.repositories import services as repositories_services
 from openwiden.vcs_clients.gitlab import models as gitlab_models
 from openwiden.vcs_clients.github import models as github_models
 from . import constants
-from ..enums import VersionControlService
 
 log = logging.getLogger(__name__)
 
@@ -72,14 +72,34 @@ def handle_gitlab_issue_event(payload: dict, **kwargs) -> None:
     log.info("received Gitlab issue event: {payload}".format(payload=payload))
 
     data = payload["object_attributes"]
-    data["web_url"] = data.pop("url")
     data["project_id"] = payload["project"]["id"]
+    # Rename key here, because webhook data and API data is not similar
+    data["web_url"] = data.pop("url")
 
-    # Format datetime strings to datetime, because webhook datetime fields
-    # is not similar as API requests
-    for dt_key in ("created_at", "updated_at", "closed_at"):
-        if dt_key in data and data.get(dt_key) is not None:
-            data[dt_key] = datetime.strptime(data[dt_key], "%Y-%m-%d %H:%M:%S %Z")
+    if data["action"] in [
+        constants.GitlabIssueAction.OPEN,
+        constants.GitlabIssueAction.CLOSE,
+        constants.GitlabIssueAction.REOPEN,
+        constants.GitlabIssueAction.UPDATE,
+    ]:
+        # Format datetime strings to datetime, because webhook datetime fields
+        # is not similar as API requests
+        for dt_key in ("created_at", "updated_at", "closed_at"):
+            if dt_key in data and data.get(dt_key) is not None:
+                data[dt_key] = datetime.strptime(data[dt_key], "%Y-%m-%d %H:%M:%S %Z")
 
-    issue = gitlab_models.Issue.from_json(data)
-    repositories_services.sync_gitlab_repository_issue(issue=issue)
+        issue = gitlab_models.Issue.from_json(data)
+        repositories_services.sync_gitlab_repository_issue(issue=issue)
+
+    # TODO: issue delete on delete event
+    # https://gitlab.com/gitlab-org/gitlab/-/issues/17769
+
+
+@receiver(gitlab_signals.push)
+def handle_gitlab_push_event(payload: dict, **kwargs) -> None:
+    log.info("received Gitlab push event: {payload}".format(payload=payload))
+
+
+@receiver(gitlab_signals.tag_push)
+def handle_tag_push_event(payload: dict, **kwargs) -> None:
+    log.info("received Gitlab tag push event: {payload}".format(payload=payload))

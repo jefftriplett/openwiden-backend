@@ -264,10 +264,6 @@ def sync_gitlab_repository(
 def sync_gitlab_repository_issue(
     *, issue: vcs_clients.gitlab.models.Issue, repository: models.Repository = None
 ) -> None:
-    state = issue.state
-    if state == "opened":
-        state = "open"
-
     if repository is None:
         repository = models.Repository.objects.get(vcs=enums.VersionControlService.GITLAB, remote_id=issue.project_id,)
 
@@ -277,7 +273,7 @@ def sync_gitlab_repository_issue(
         defaults=dict(
             title=issue.title,
             description=issue.description,
-            state=state,
+            state=issue.state,
             labels=issue.labels,
             url=issue.web_url,
             created_at=issue.created_at,

@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 from django.urls import reverse
+from github_webhooks.constants import Events
 from rest_framework import status
 
 from openwiden.enums import VersionControlService
@@ -1317,16 +1318,11 @@ def test_run(
 
     # Make webhook event request
     url = reverse("v1:webhooks:github", kwargs={"id": str(repository_webhook.id)})
-    response = api_client.post(
-        url,
-        data=payload,
-        format="json",
-        # Headers
-        **{
-            "HTTP_X_GITHUB_EVENT": "issues",
-            "HTTP_X_HUB_SIGNATURE": "sha1=12345",
-        },
-    )
+    headers = {
+        "HTTP_X_GITHUB_EVENT": Events.ISSUES,
+        "HTTP_X_HUB_SIGNATURE": "sha1=12345",
+    }
+    response = api_client.post(url, data=payload, format="json", **headers)
 
     # Test
     assert response.status_code == status.HTTP_200_OK

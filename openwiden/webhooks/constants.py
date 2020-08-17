@@ -30,3 +30,10 @@ class GithubRepositoryAction(str, Enum):
     TRANSFERRED = "transferred"
     PUBLICIZED = "publicized"
     PRIVATIZED = "privatized"
+
+
+class GitlabIssueAction(str, Enum):
+    OPEN = "open"
+    CLOSE = "close"
+    REOPEN = "reopen"
+    UPDATE = "update"
