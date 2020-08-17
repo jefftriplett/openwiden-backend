@@ -1,7 +1,7 @@
 from rest_framework_nested import routers
 from django.urls import path, include
 
-from openwiden.repositories import views as repository_views
+from openwiden.repositories import views as repository_views, urls as repository_urls
 from openwiden.users import views as users_views
 from openwiden.webhooks import urls as webhook_urls
 
@@ -27,6 +27,7 @@ auth_urlpatterns = [
 
 urlpatterns = [
     path("webhooks/", include(webhook_urls, namespace="webhooks")),
+    path("repositories/", include(repository_urls, namespace="repositories")),
 ]
 
 urlpatterns += auth_urlpatterns
