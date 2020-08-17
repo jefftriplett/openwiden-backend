@@ -2,7 +2,7 @@
 CHANGELOG
 =========
 
-2.3.0 (2020/08/??)
+2.3.0 (2020/08/17)
 ------------------
 * Add github & gitlab webhooks handle for issues & repositories.
 
