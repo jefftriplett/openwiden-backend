@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class IssueEventActions:
+class IssueEventActions(str, Enum):
     OPENED = "opened"
     EDITED = "edited"
     DELETED = "deleted"
