@@ -6,6 +6,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 
 from .base import *  # noqa
 from .base import env
+from openwiden import __version__
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -130,7 +131,9 @@ SENTRY_LOG_LEVEL = env.int("DJANGO_SENTRY_LOG_LEVEL", logging.INFO)
 sentry_logging = LoggingIntegration(
     level=SENTRY_LOG_LEVEL, event_level=logging.ERROR,  # Capture info and above as breadcrumbs  # Send errors as events
 )
-sentry_sdk.init(dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()])
+sentry_sdk.init(
+    dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()], release=__version__, send_default_pii=True,
+)
 
 # DRF
 REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = ("rest_framework.renderers.JSONRenderer",)  # noqa F405

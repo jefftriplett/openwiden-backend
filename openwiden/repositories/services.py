@@ -108,11 +108,15 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         _add_gitlab_repository(repository=repository, vcs_account=vcs_account)
 
 
-def delete_issue_by_remote_id(*, remote_id: str):
+def delete_issue_by_remote_id(*, vcs: str, remote_id: str) -> None:
     """
     Finds and deletes repository issue by id.
     """
-    models.Issue.objects.filter(remote_id=remote_id).delete()
+    models.Issue.objects.filter(repository__vcs=vcs, remote_id=remote_id).delete()
+
+
+def delete_repository_by_remote_id(*, vcs: str, remote_id: str) -> None:
+    models.Repository.objects.filter(vcs=vcs, remote_id=remote_id).delete()
 
 
 def _update_repository_state(*, repository: models.Repository, state: repository_enums.RepositoryState,) -> None:
@@ -155,7 +159,7 @@ def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:
 def sync_github_repository(
     *,
     repository: vcs_clients.github.models.Repository,
-    vcs_account: users_models.VCSAccount,
+    vcs_account: users_models.VCSAccount = None,
     extra_defaults: dict = None,
 ) -> Tuple[models.Repository, bool]:
     defaults = dict(
@@ -172,17 +176,18 @@ def sync_github_repository(
     if extra_defaults:
         defaults.update(extra_defaults)
 
-    if repository.owner.owner_type == OwnerType.ORGANIZATION:
-        defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
-            vcs=enums.VersionControlService.GITHUB,
-            remote_id=repository.owner.owner_id,
-            defaults=dict(name=repository.owner.login),
-        )
-        organizations_models.Member.objects.get_or_create(
-            organization=defaults["organization"], vcs_account=vcs_account,
-        )
-    else:
-        defaults["owner"] = vcs_account
+    if vcs_account:
+        if repository.owner.owner_type == OwnerType.ORGANIZATION:
+            defaults["organization"], _ = organizations_models.Organization.objects.get_or_create(
+                vcs=enums.VersionControlService.GITHUB,
+                remote_id=repository.owner.owner_id,
+                defaults=dict(name=repository.owner.login),
+            )
+            organizations_models.Member.objects.get_or_create(
+                organization=defaults["organization"], vcs_account=vcs_account,
+            )
+        else:
+            defaults["owner"] = vcs_account
 
     repository_obj, created = models.Repository.objects.update_or_create(
         remote_id=repository.repository_id, vcs=enums.VersionControlService.GITHUB, defaults=defaults,
@@ -192,8 +197,13 @@ def sync_github_repository(
 
 
 def sync_github_repository_issue(
-    *, issue: vcs_clients.github.models.Issue, repository: models.Repository,
+    *, issue: vcs_clients.github.models.Issue, repository: models.Repository = None,
 ) -> Tuple[models.Issue, bool]:
+    if not repository:
+        repository = models.Repository.objects.get(
+            vcs=enums.VersionControlService.GITHUB, remote_id=issue.repository_id,
+        )
+
     return models.Issue.objects.update_or_create(
         repository=repository,
         remote_id=issue.issue_id,
@@ -254,10 +264,6 @@ def sync_gitlab_repository(
 def sync_gitlab_repository_issue(
     *, issue: vcs_clients.gitlab.models.Issue, repository: models.Repository = None
 ) -> None:
-    state = issue.state
-    if state == "opened":
-        state = "open"
-
     if repository is None:
         repository = models.Repository.objects.get(vcs=enums.VersionControlService.GITLAB, remote_id=issue.project_id,)
 
@@ -267,7 +273,7 @@ def sync_gitlab_repository_issue(
         defaults=dict(
             title=issue.title,
             description=issue.description,
-            state=state,
+            state=issue.state,
             labels=issue.labels,
             url=issue.web_url,
             created_at=issue.created_at,

@@ -13,6 +13,7 @@ class Issue:
         created_at: str,
         updated_at: str,
         closed_at: str,
+        repository_id: int = None,
         **kwargs,
     ) -> None:
         self.issue_id = issue_id
@@ -24,6 +25,7 @@ class Issue:
         self.created_at = created_at
         self.updated_at = updated_at
         self.closed_at = closed_at
+        self.repository_id = repository_id
 
     @classmethod
     def from_json(cls, json: dict) -> "Issue":

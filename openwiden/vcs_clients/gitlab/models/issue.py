@@ -16,6 +16,9 @@ class Issue:
         closed_at: str,
         **kwargs,
     ) -> None:
+        if state == "opened":
+            state = "open"
+
         self.project_id = project_id
         self.issue_id = issue_id
         self.title = title
@@ -30,4 +33,5 @@ class Issue:
     @classmethod
     def from_json(cls, data: dict) -> "Issue":
         data["issue_id"] = data.pop("id")
+        data["labels"] = [label["title"] for label in data.pop("labels")]
         return Issue(**data)
