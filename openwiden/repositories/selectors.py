@@ -1,9 +1,15 @@
-from django.db.models import QuerySet, Q
+from typing import Set
+
+from django.db.models import Func, QuerySet, Q
 
 from openwiden import exceptions
 from openwiden.users.models import User
 
 from . import models, error_messages, enums
+
+
+class HStoreSetKeys(Func):
+    function = "skeys"
 
 
 def get_added_repositories() -> "QuerySet[models.Repository]":
@@ -24,3 +30,16 @@ def get_user_repositories(*, user: User) -> "QuerySet[models.Repository]":
     """
     query = Q(owner__user=user) | Q(organization__member__vcs_account__user=user)
     return models.Repository.objects.filter(query)
+
+
+def get_programming_languages() -> Set[str]:
+    """
+    Returns set of the unique programming languages names from the all added repositories.
+    """
+    return (
+        models.Repository.objects.filter(state=enums.RepositoryState.ADDED)
+        .annotate(names=HStoreSetKeys("programming_languages"))
+        .order_by("names")
+        .distinct()
+        .values_list("names", flat=True)
+    )

@@ -1,9 +1,12 @@
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from . import serializers, filters, services, selectors
 
@@ -59,3 +62,27 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
         repository = self.get_object()
         services.remove_repository(repository=repository, user=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@method_decorator(name="get", decorator=cache_page(60))
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(
+        operation_summary="Get a list of all programming languages from the added repositories",
+        responses={
+            status.HTTP_200_OK: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_STRING, example="Python"),
+                example=["Python", "Vue"],
+            ),
+        },
+    ),
+)
+class ProgrammingLanguagesView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request: Request) -> Response:
+        return Response(selectors.get_programming_languages())
+
+
+programming_languages_view = ProgrammingLanguagesView.as_view()

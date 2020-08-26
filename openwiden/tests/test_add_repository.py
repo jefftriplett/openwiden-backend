@@ -58,7 +58,7 @@ def test_github(
     mock_request.side_effect = mock_responses
 
     # Make add request
-    response = api_client.post(reverse("api-v1:user-repositories-add", kwargs={"id": str(repository.id)}))
+    response = api_client.post(reverse("api-v1:user-repository-add", kwargs={"id": str(repository.id)}))
 
     # Test response
     assert response.status_code == status.HTTP_200_OK
@@ -116,7 +116,7 @@ def test_gitlab(
     mock_request.side_effect = mock_responses
 
     # Make add request
-    response = api_client.post(reverse("v1:user-repositories-add", kwargs={"id": str(repository.id)}))
+    response = api_client.post(reverse("v1:user-repository-add", kwargs={"id": str(repository.id)}))
 
     # Test response
     assert response.status_code == status.HTTP_200_OK

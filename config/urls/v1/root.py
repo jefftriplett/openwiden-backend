@@ -10,10 +10,10 @@ app_name = "v1"
 router = routers.DefaultRouter()
 
 # Repositories
-router.register("repositories", repository_views.Repository, basename="repo")
+router.register("repositories", repository_views.Repository, basename="repository")
 repository_router = routers.NestedSimpleRouter(router, "repositories", lookup="repository")
-repository_router.register("issues", repository_views.Issue, basename="repo-issue")
-router.register("user/repositories", repository_views.UserRepositories, basename="user-repositories")
+repository_router.register("issues", repository_views.Issue, basename="repository-issue")
+router.register("user/repositories", repository_views.UserRepositories, basename="user-repository")
 
 # Users
 router.register("users", users_views.UserViewSet, basename="user")
@@ -27,6 +27,7 @@ auth_urlpatterns = [
 
 urlpatterns = [
     path("webhooks/", include(webhook_urls, namespace="webhooks")),
+    path("programming_languages/", repository_views.programming_languages_view, name="programming_languages"),
 ]
 
 urlpatterns += auth_urlpatterns

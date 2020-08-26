@@ -70,7 +70,7 @@ def test_github(
     api_client = create_api_client(access_token=auth_complete_response.data["access"])
 
     # Make request to get user repositories
-    user_repositories_response = api_client.get(reverse("api-v1:user-repositories-list"))
+    user_repositories_response = api_client.get(reverse("api-v1:user-repository-list"))
 
     # Test synced user repositories data
     assert user_repositories_response.data["count"] == len(github_user_repositories_json)
@@ -137,7 +137,7 @@ def test_gitlab(
     api_client = create_api_client(access_token=auth_complete_response.data["access"])
 
     # Make request to get user repositories
-    user_repositories_response = api_client.get(reverse("api-v1:user-repositories-list"))
+    user_repositories_response = api_client.get(reverse("api-v1:user-repository-list"))
 
     # Test synced user repositories data
     assert user_repositories_response.data["count"] == len(gitlab_user_repositories_json)
