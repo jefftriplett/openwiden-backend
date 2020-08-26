@@ -34,11 +34,12 @@ def get_user_repositories(*, user: User) -> "QuerySet[models.Repository]":
 
 def get_programming_languages() -> Set[str]:
     """
-    Returns set of the unique programming languages names from the all repositories.
+    Returns set of the unique programming languages names from the all added repositories.
     """
     return (
-        models.Repository.objects.annotate(names=HStoreSetKeys("programming_languages"))
-        .values_list("names", flat=True)
+        models.Repository.objects.filter(state=enums.RepositoryState.ADDED)
+        .annotate(names=HStoreSetKeys("programming_languages"))
         .order_by("names")
         .distinct()
+        .values_list("names", flat=True)
     )
