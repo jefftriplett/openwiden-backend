@@ -32,7 +32,7 @@ def test_run(
     mock_request.return_value = create_mock_response(status_code=204)
 
     # Make remove repository request
-    url = reverse("api-v1:user-repositories-remove", kwargs={"id": str(repository.id)})
+    url = reverse("api-v1:user-repository-remove", kwargs={"id": str(repository.id)})
     response = api_client.delete(url)
     repository.refresh_from_db()
 
