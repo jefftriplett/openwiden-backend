@@ -1,5 +1,6 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -64,6 +65,19 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
 
 
 @method_decorator(name="get", decorator=cache_page(60))
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(
+        operation_summary="Get a list of all programming languages from the added repositories",
+        responses={
+            status.HTTP_200_OK: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_STRING, example="Python"),
+                example=["Python", "Vue"],
+            ),
+        },
+    ),
+)
 class ProgrammingLanguagesView(APIView):
     permission_classes = (permissions.AllowAny,)
 
