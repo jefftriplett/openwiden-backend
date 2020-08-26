@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+2.3.1 (2020/08/26)
+------------------
+* Add programming languages list view (/api/v1/programming_languages/)
+* Add repositories programming languages filter.
+
 2.3.0 (2020/08/17)
 ------------------
 * Add github & gitlab webhooks handle for issues & repositories.
