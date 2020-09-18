@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from openwiden import exceptions
-from openwiden.users import models, selectors, error_messages
+from openwiden.users import models, selectors, messages
 
 pytestmark = pytest.mark.django_db
 
@@ -26,4 +26,4 @@ def test_find_raises_service_exception(patched_objects_get, mock_user):
     with pytest.raises(exceptions.ServiceException) as e:
         selectors.find_vcs_account(mock_user, "test")
 
-        assert e.value == error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs="test")
+        assert e.value == messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs="test")

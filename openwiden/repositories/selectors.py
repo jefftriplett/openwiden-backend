@@ -2,10 +2,9 @@ from typing import Set
 
 from django.db.models import Func, QuerySet, Q
 
-from openwiden import exceptions
 from openwiden.users.models import User
 
-from . import models, error_messages, enums
+from . import models, enums, exceptions
 
 
 class HStoreSetKeys(Func):
@@ -20,8 +19,7 @@ def get_repository(*, id: str) -> models.Repository:
     try:
         return models.Repository.objects.get(id=id)
     except models.Repository.DoesNotExist:
-        error = error_messages.REPOSITORY_DOES_NOT_EXIST.format(id=id)
-        raise exceptions.ServiceException(error)
+        raise exceptions.RepositoryDoesNotExist(id=id)
 
 
 def get_user_repositories(*, user: User) -> "QuerySet[models.Repository]":
