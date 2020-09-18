@@ -2,14 +2,13 @@ import asyncio
 import os
 
 import pytest
-from asgiref.compatibility import guarantee_single_callable
 from asgiref.sync import sync_to_async
 from asgiref.testing import ApplicationCommunicator
 from django_redis import get_redis_connection
 from rest_framework_simplejwt.tokens import RefreshToken
 from websockets.protocol import State
 
-from config.websocket import websocket_application
+from config.websocket import WebsocketApplication
 
 
 pytestmark = [pytest.mark.functional, pytest.mark.django_db, pytest.mark.asyncio]
@@ -50,16 +49,13 @@ def create_websocket_app():
 
         class WebsocketApp(ApplicationCommunicator):
             def __init__(self, application, scope):
-                self.application = guarantee_single_callable(application)
                 self.scope = scope
                 self.input_queue = Queue()
                 self.output_queue = Queue()
-                self.future = asyncio.ensure_future(
-                    self.application(scope, self.input_queue.get, self.output_queue.put)
-                )
+                self.future = asyncio.ensure_future(application(scope, self.input_queue.get, self.output_queue.put))
 
         websocket_app = WebsocketApp(
-            websocket_application, {"type": "websocket", "query_string": query_string.encode()},
+            WebsocketApplication, {"type": "websocket", "query_string": query_string.encode()},
         )
         return websocket_app
 
@@ -98,23 +94,6 @@ async def test_parse_access_token_from_query_string(create_websocket_app, query_
     websocket_app = create_websocket_app(query_string)
     await websocket_app.send_input({"type": "websocket.connect"})
     assert await websocket_app.receive_output() == {"type": "websocket.close"}
-
-
-# async def test_token_contained_no_recognizable_user_identification(
-#     create_websocket_app,
-#     create_user,
-#     create_access_token,
-# ):
-#     user = await create_user()
-#     access_token = await create_access_token(user)
-#     websocket_app = create_websocket_app(f"access_token={access_token}")
-#
-#     patched_access_token = mock.patch("rest_framework_simplejwt.tokens.AccessToken")
-#     patched_access_token.side_effect = {}
-#
-#     await websocket_app.send_input({"type": "websocket.connect"})
-#
-#     assert await websocket_app.receive_output() == {'type': 'websocket.close'}
 
 
 async def test_user_not_found(create_websocket_app, create_user, create_access_token):
