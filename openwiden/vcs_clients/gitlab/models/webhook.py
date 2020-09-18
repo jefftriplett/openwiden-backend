@@ -18,6 +18,7 @@ class Webhook:
         wiki_page_events: bool,
         enable_ssl_verification: bool,
         created_at: str,
+        **kwargs,
     ) -> None:
         self.webhook_id = webhook_id
         self.url = url
