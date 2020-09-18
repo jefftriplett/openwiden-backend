@@ -1,3 +1,4 @@
+from logging import getLogger
 from typing import Union
 from uuid import uuid4
 
@@ -7,14 +8,15 @@ from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django_q.tasks import async_task
+from django_redis import get_redis_connection
 from rest_framework.request import Request
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils.translation import gettext_lazy as _
 
-from openwiden import exceptions
 from openwiden.repositories import services as repositories_services
 
-from . import models, serializers
+from . import models, serializers, exceptions
+
+log = getLogger(__name__)
 
 
 class Token:
@@ -87,7 +89,7 @@ def get_client(*, vcs: str) -> DjangoRemoteApp:
     """
     client = oauth_client.create_client(vcs)
     if client is None:
-        raise exceptions.ServiceException(_("{vcs} is not found.").format(vcs=vcs))
+        raise exceptions.VCSProviderNotFound(vcs=vcs)
     return client
 
 
@@ -97,7 +99,7 @@ def get_user_profile(*, vcs: str, request: Request) -> Profile:
     try:
         token = client.authorize_access_token(request)
     except AuthlibBaseError as e:
-        raise exceptions.ServiceException(e.description)
+        raise exceptions.AuthlibError(error_description=e.description)
 
     try:
         profile_data = client.get("user", token=token).json()
@@ -109,7 +111,7 @@ def get_user_profile(*, vcs: str, request: Request) -> Profile:
             profile_data["email"] = emails[0]["email"]
 
     except AuthlibBaseError as e:
-        raise exceptions.ServiceException(e.description)
+        raise exceptions.AuthlibError(error_description=e.description)
     else:
         return Profile.from_json(vcs=vcs, data=profile_data, token=token)
 
@@ -225,4 +227,17 @@ def create_vcs_account(
         async_task(repositories_services.sync_user_repositories, vcs_account=vcs_account)
         return vcs_account
     else:
-        raise exceptions.ServiceException(str(serializer.errors))
+        raise exceptions.InvalidVCSAccount(serializer_errors=serializer.errors)
+
+
+def send_notification(*, user: models.User, message: str) -> None:
+    if not isinstance(message, str):
+        raise ValueError(
+            f"send_notification received message '{message}' of type {type(message)} "
+            f"instead of expected string type"
+        )
+
+    log.info(f"[Service] sending notification for user {user} with a message '{message}'")
+
+    redis = get_redis_connection()
+    redis.publish(str(user.id), message)

@@ -1,7 +1,7 @@
 import typing as t
 
 from openwiden import exceptions
-from rest_framework import permissions, status
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 from drf_yasg.views import get_schema_view
@@ -24,6 +24,6 @@ def exception_handler(exception, context) -> t.Optional[Response]:
     Custom exception handler.
     """
     if isinstance(exception, exceptions.ServiceException):
-        return Response(data=exception.description, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data=exception.detail, status=exception.status_code)
     else:
         return drf_exception_handler(exception, context)

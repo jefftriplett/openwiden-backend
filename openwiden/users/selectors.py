@@ -1,6 +1,4 @@
-from openwiden import exceptions
-
-from . import models, error_messages
+from . import models, exceptions
 
 
 def find_vcs_account(user: models.User, vcs: str) -> models.VCSAccount:
@@ -10,7 +8,6 @@ def find_vcs_account(user: models.User, vcs: str) -> models.VCSAccount:
     try:
         vcs_account = models.VCSAccount.objects.get(user=user, vcs=vcs)
     except models.VCSAccount.DoesNotExist:
-        error = error_messages.VCS_ACCOUNT_DOES_NOT_EXIST.format(vcs=vcs)
-        raise exceptions.ServiceException(error)
+        raise exceptions.VCSAccountDoesNotExist(vcs=vcs)
     else:
         return vcs_account

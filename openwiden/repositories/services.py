@@ -1,7 +1,7 @@
 from typing import Tuple
 
-from openwiden import enums, exceptions, vcs_clients
-from openwiden.repositories import models, error_messages, enums as repository_enums
+from openwiden import enums, vcs_clients
+from openwiden.repositories import models, enums as repository_enums, exceptions
 from openwiden.users import models as users_models, selectors as users_selectors
 from openwiden.organizations import models as organizations_models
 from openwiden.organizations import services as organizations_services
@@ -89,15 +89,13 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
     Adds existed repository by sync related objects (issues, for example).
     """
     if repository.state == repository_enums.RepositoryState.ADDED:
-        raise exceptions.ServiceException(error_messages.REPOSITORY_ALREADY_ADDED)
+        raise exceptions.RepositoryAlreadyAdded()
     elif repository.state not in [
         repository_enums.RepositoryState.INITIAL,
         repository_enums.RepositoryState.REMOVED,
         repository_enums.RepositoryState.ADD_FAILED,
     ]:
-        raise exceptions.ServiceException(
-            error_messages.REPOSITORY_CANNOT_BE_ADDED_DUE_TO_STATE.format(state=repository.state)
-        )
+        raise exceptions.RepositoryCannotBeAddedDueToState(state=repository.state)
 
     vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
     _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDING)
@@ -128,9 +126,9 @@ def remove_repository(*, repository: models.Repository, user: users_models.User,
     vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
 
     if repository.state == repository_enums.RepositoryState.REMOVED:
-        raise exceptions.ServiceException(error_messages.REPOSITORY_ALREADY_REMOVED)
+        raise exceptions.RepositoryAlreadyRemoved()
     elif repository.state != repository_enums.RepositoryState.ADDED:
-        raise exceptions.ServiceException(error_messages.NOT_ADDED_REPOSITORY_CANNOT_BE_REMOVED)
+        raise exceptions.NotAddedRepositoryCannotBeRemoved()
 
     _update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVING)
 
@@ -153,7 +151,7 @@ def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:
         for repository in repositories:
             sync_gitlab_repository(repository=repository, vcs_account=vcs_account)
     else:
-        raise exceptions.ServiceException(f"vcs {vcs_account.vcs} is not supported yet!")
+        raise ValueError(f"vcs {vcs_account.vcs} is not implemented!")
 
 
 def sync_github_repository(

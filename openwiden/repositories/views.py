@@ -1,5 +1,6 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django_q.tasks import async_task
 from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import viewsets, permissions, status
@@ -8,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import serializers, filters, services, selectors
+from . import serializers, filters, selectors, tasks
 
 
 @method_decorator(
@@ -38,7 +39,7 @@ class Issue(viewsets.ReadOnlyModelViewSet):
 @method_decorator(name="list", decorator=swagger_auto_schema(operation_summary="Get user repositories list"))
 @method_decorator(name="retrieve", decorator=swagger_auto_schema(operation_summary="Get user repository by id"))
 @method_decorator(
-    name="add", decorator=swagger_auto_schema(operation_summary="Add user repository", request_body=no_body,)
+    name="add", decorator=swagger_auto_schema(operation_summary="Add user repository", request_body=no_body,),
 )
 @method_decorator(
     name="remove", decorator=swagger_auto_schema(operation_summary="Remove user repository"),
@@ -53,14 +54,26 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["POST"])
     def add(self, request: Request, **kwargs) -> Response:
+        """
+        Possible error codes:
+        01001 - Repository already added.
+        01002 - Repository cannot be added due to {state} state.
+        01005 - Repository with id {id} does not exist.
+        """
         repository = self.get_object()
-        services.add_repository(repository=repository, user=request.user)
+        async_task(tasks.add_repository, repository=repository, user=request.user)
         return Response({"detail": "ok"})
 
     @action(detail=True, methods=["DELETE"])
     def remove(self, request: Request, **kwargs) -> Response:
+        """
+        Possible error codes:
+        01003 - Repository already removed.
+        01004 - Not added repository cannot be removed.
+        01005 - Repository with id {id} does not exist.
+        """
         repository = self.get_object()
-        services.remove_repository(repository=repository, user=request.user)
+        async_task(tasks.remove_repository, repository=repository, user=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
