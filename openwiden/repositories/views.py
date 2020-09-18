@@ -1,5 +1,6 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django_q.tasks import async_task
 from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import viewsets, permissions, status
@@ -8,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import serializers, filters, services, selectors
+from . import serializers, filters, selectors, tasks
 
 
 @method_decorator(
@@ -54,13 +55,13 @@ class UserRepositories(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["POST"])
     def add(self, request: Request, **kwargs) -> Response:
         repository = self.get_object()
-        services.add_repository(repository=repository, user=request.user)
+        async_task(tasks.add_repository, repository=repository, user=request.user)
         return Response({"detail": "ok"})
 
     @action(detail=True, methods=["DELETE"])
     def remove(self, request: Request, **kwargs) -> Response:
         repository = self.get_object()
-        services.remove_repository(repository=repository, user=request.user)
+        async_task(tasks.remove_repository, repository=repository, user=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

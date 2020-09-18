@@ -1,3 +1,4 @@
+from logging import getLogger
 from typing import Union
 from uuid import uuid4
 
@@ -7,12 +8,15 @@ from authlib.integrations.django_client import OAuth, DjangoRemoteApp
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django_q.tasks import async_task
+from django_redis import get_redis_connection
 from rest_framework.request import Request
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from openwiden.repositories import services as repositories_services
 
 from . import models, serializers, exceptions
+
+log = getLogger(__name__)
 
 
 class Token:
@@ -224,3 +228,16 @@ def create_vcs_account(
         return vcs_account
     else:
         raise exceptions.InvalidVCSAccount(serializer_errors=serializer.errors)
+
+
+def send_notification(*, user: models.User, message: str) -> None:
+    if not isinstance(message, str):
+        raise ValueError(
+            f"send_notification received message '{message}' of type {type(message)} "
+            f"instead of expected string type"
+        )
+
+    log.info(f"[Service] sending notification for user {user} with a message '{message}'")
+
+    redis = get_redis_connection()
+    redis.publish(str(user.id), message)
