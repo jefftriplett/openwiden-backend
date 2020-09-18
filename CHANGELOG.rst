@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+2.3.2 (2020/09/18)
+------------------
+* Add websocket events to handle tasks events and send async messages to the user.
+* Rework service exceptions into the custom format.
+
 2.3.1 (2020/08/26)
 ------------------
 * Add programming languages list view (/api/v1/programming_languages/)
