@@ -1,32 +1,32 @@
 from openwiden.exceptions import ServiceException
 
-from . import messages
+from . import messages, apps
 
 
-class RepositoryServiceException(ServiceException):
-    app_id = 2
+class RepositoryException(ServiceException):
+    app_id = apps.RepositoriesConfig.unique_id
 
 
-class RepositoryAlreadyAdded(RepositoryServiceException):
+class RepositoryAlreadyAdded(RepositoryException):
     error_message = messages.REPOSITORY_ALREADY_ADDED
     error_code = 1
 
 
-class RepositoryCannotBeAddedDueToState(RepositoryServiceException):
+class RepositoryCannotBeAddedDueToState(RepositoryException):
     error_message = messages.REPOSITORY_CANNOT_BE_ADDED_DUE_TO_STATE
     error_code = 2
 
 
-class RepositoryAlreadyRemoved(RepositoryServiceException):
+class RepositoryAlreadyRemoved(RepositoryException):
     error_message = messages.REPOSITORY_ALREADY_REMOVED
     error_code = 3
 
 
-class NotAddedRepositoryCannotBeRemoved(RepositoryServiceException):
+class NotAddedRepositoryCannotBeRemoved(RepositoryException):
     error_message = messages.NOT_ADDED_REPOSITORY_CANNOT_BE_REMOVED
     error_code = 4
 
 
-class RepositoryDoesNotExist(RepositoryServiceException):
+class RepositoryDoesNotExist(RepositoryException):
     error_message = messages.REPOSITORY_DOES_NOT_EXIST
     error_code = 5

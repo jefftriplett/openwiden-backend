@@ -1,7 +1,7 @@
 from typing import Tuple
 
-from openwiden import enums, exceptions, vcs_clients
-from openwiden.organizations import models
+from openwiden import enums, vcs_clients
+from openwiden.organizations import models, exceptions
 from openwiden.users import models as users_models
 
 
@@ -48,7 +48,7 @@ def sync_organization_membership(
     elif membership_type == enums.OrganizationMembershipType.ADMIN:
         is_admin = True
     else:
-        raise exceptions.ServiceException("you are not organization member")
+        raise exceptions.UserIsNotOrganizationMember()
 
     return models.Member.objects.update_or_create(
         organization=organization, vcs_account=vcs_account, defaults=dict(is_admin=is_admin),

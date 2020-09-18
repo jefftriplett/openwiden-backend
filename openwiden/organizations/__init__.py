@@ -1,1 +1,1 @@
-default_app_config = "openwiden.organizations.app.OrganizationsAppConfig"
+default_app_config = "openwiden.organizations.apps.OrganizationsAppConfig"

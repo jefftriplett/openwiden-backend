@@ -3,11 +3,9 @@ from uuid import uuid4
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
-from openwiden import exceptions
 from openwiden.enums import VersionControlService
-from openwiden.webhooks import models
+from openwiden.webhooks import models, exceptions
 from openwiden.repositories import models as repo_models
 from openwiden.users import models as users_models
 from openwiden import vcs_clients
@@ -15,7 +13,7 @@ from openwiden import vcs_clients
 
 def _create_repository_webhook(*, repository: repo_models.Repository) -> models.RepositoryWebhook:
     if models.RepositoryWebhook.objects.filter(repository=repository).exists():
-        raise exceptions.ServiceException(_("repository webhook already exist."))
+        raise exceptions.RepositoryWebhookAlreadyExists()
 
     return models.RepositoryWebhook.objects.create(
         repository=repository, secret=uuid4().hex, is_active=False, issue_events_enabled=True,

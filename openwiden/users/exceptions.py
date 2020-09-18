@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from openwiden.exceptions import ServiceException
 
-from . import messages
+from . import messages, apps
 
 
 class GitLabOAuthMissedRedirectURI(APIException):
@@ -13,25 +13,25 @@ class GitLabOAuthMissedRedirectURI(APIException):
     default_code = "invalid"
 
 
-class UsersException(ServiceException):
-    app_id = 1
+class UserException(ServiceException):
+    app_id = apps.UsersConfig.unique_id
 
 
-class VCSProviderNotFound(UsersException):
+class VCSProviderNotFound(UserException):
     error_code = 1
     error_message = messages.VCS_PROVIDER_NOT_FOUND
 
 
-class AuthlibError(UsersException):
+class AuthlibError(UserException):
     error_code = 2
     error_message = messages.AUTHLIB_ERROR
 
 
-class InvalidVCSAccount(UsersException):
+class InvalidVCSAccount(UserException):
     error_code = 3
     error_message = messages.INVALID_VCS_ACCOUNT
 
 
-class VCSAccountDoesNotExist(UsersException):
+class VCSAccountDoesNotExist(UserException):
     error_code = 4
     error_message = messages.VCS_ACCOUNT_DOES_NOT_EXIST
