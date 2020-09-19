@@ -19,6 +19,9 @@ OpenWiden - An Open Source Project Search Platform.
     :target: https://codecov.io/gh/OpenWiden/openwiden-backend
     :alt: Codecov
 
+.. image:: https://pyup.io/repos/github/OpenWiden/openwiden-backend/shield.svg?t=1600509476425
+    :target: https://pyup.io/repos/github/OpenWiden/openwiden-backend/
+    :alt: PyUp
 
 :License: GPLv3
 
