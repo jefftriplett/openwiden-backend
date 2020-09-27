@@ -12,7 +12,7 @@ class HStoreSetKeys(Func):
 
 
 def get_added_repositories() -> "QuerySet[models.Repository]":
-    return models.Repository.objects.filter(state=enums.RepositoryState.ADDED)
+    return models.Repository.objects.filter(state=enums.RepositoryState.ADDED).select_related("owner", "organization")
 
 
 def get_repository(*, id: str) -> models.Repository:
@@ -27,7 +27,7 @@ def get_user_repositories(*, user: User) -> "QuerySet[models.Repository]":
     Returns user's repos filters by owner or organization membership.
     """
     query = Q(owner__user=user) | Q(organization__member__vcs_account__user=user)
-    return models.Repository.objects.filter(query)
+    return models.Repository.objects.filter(query).select_related("owner", "organization")
 
 
 def get_programming_languages() -> Set[str]:
