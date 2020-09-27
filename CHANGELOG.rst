@@ -2,6 +2,13 @@
 CHANGELOG
 =========
 
+2.3.3 (2020/09/27)
+------------------
+* Add new repository state REMOVE_FAILED.
+* Add programming languages and state fields for repositories.
+* Optimization for repositories.
+* Add repository status update on failed task (add failed / remove failed).
+
 2.3.2 (2020/09/18)
 ------------------
 * Add websocket events to handle tasks events and send async messages to the user.
