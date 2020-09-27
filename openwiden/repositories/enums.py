@@ -14,3 +14,4 @@ class RepositoryState(models.TextChoices):
     REMOVING = "removing", _("removing")
     REMOVED = "removed", _("removed")
     ADD_FAILED = "add_failed", _("add failed")
+    REMOVE_FAILED = "remove_failed", _("remove failed")
