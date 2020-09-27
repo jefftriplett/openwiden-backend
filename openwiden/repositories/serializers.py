@@ -26,12 +26,14 @@ class Repository(serializers.ModelSerializer):
             "name",
             "description",
             "url",
+            "owner",
             "stars_count",
             "open_issues_count",
             "forks_count",
             "created_at",
             "updated_at",
-            "owner",
+            "programming_languages",
+            "state",
         )
 
     @swagger_serializer_method(OwnerSerializer)

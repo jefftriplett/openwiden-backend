@@ -9,11 +9,8 @@ repos:
       - id: black
         language: python
         language_version: python3.8
-  - repo: local
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.3
     hooks:
       - id: flake8
-        name: flake8
-        entry: flake8
-        language: python
-        types: [python]
         args: ['--config=setup.cfg']

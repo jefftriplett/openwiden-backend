@@ -14,12 +14,14 @@ class TestRepositorySerializer:
             "name",
             "description",
             "url",
+            "owner",
             "stars_count",
             "open_issues_count",
             "forks_count",
             "created_at",
             "updated_at",
-            "owner",
+            "programming_languages",
+            "state",
         )
 
     def test_to_representation(self, repository):

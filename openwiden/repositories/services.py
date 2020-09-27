@@ -44,7 +44,7 @@ def _add_github_repository(*, repository: models.Repository, vcs_account: users_
     )
 
     # Update repository state
-    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDED)
+    update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDED)
 
 
 def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_models.VCSAccount,) -> None:
@@ -81,7 +81,7 @@ def _add_gitlab_repository(*, repository: models.Repository, vcs_account: users_
     )
 
     # Update repository state
-    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDED)
+    update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDED)
 
 
 def add_repository(*, repository: models.Repository, user: users_models.User) -> None:
@@ -98,7 +98,7 @@ def add_repository(*, repository: models.Repository, user: users_models.User) ->
         raise exceptions.RepositoryCannotBeAddedDueToState(state=repository.state)
 
     vcs_account = users_selectors.find_vcs_account(user, repository.vcs)
-    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDING)
+    update_repository_state(repository=repository, state=repository_enums.RepositoryState.ADDING)
 
     if vcs_account.vcs == enums.VersionControlService.GITHUB:
         _add_github_repository(repository=repository, vcs_account=vcs_account)
@@ -117,7 +117,7 @@ def delete_repository_by_remote_id(*, vcs: str, remote_id: str) -> None:
     models.Repository.objects.filter(vcs=vcs, remote_id=remote_id).delete()
 
 
-def _update_repository_state(*, repository: models.Repository, state: repository_enums.RepositoryState,) -> None:
+def update_repository_state(*, repository: models.Repository, state: repository_enums.RepositoryState,) -> None:
     repository.state = state
     repository.save(update_fields=("state",))
 
@@ -130,13 +130,13 @@ def remove_repository(*, repository: models.Repository, user: users_models.User,
     elif repository.state != repository_enums.RepositoryState.ADDED:
         raise exceptions.NotAddedRepositoryCannotBeRemoved()
 
-    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVING)
+    update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVING)
 
     webhooks_services.delete_repository_webhook(
         repository=repository, vcs_account=vcs_account,
     )
 
-    _update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVED)
+    update_repository_state(repository=repository, state=repository_enums.RepositoryState.REMOVED)
 
 
 def sync_user_repositories(*, vcs_account: users_models.VCSAccount) -> None:

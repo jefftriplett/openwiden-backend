@@ -39,7 +39,7 @@ class Repository(UUIDModel):
     programming_languages = HStoreField(verbose_name=_("programming languages"), blank=True, null=True)
 
     state = models.CharField(
-        max_length=10,
+        max_length=13,
         choices=repo_enums.RepositoryState.choices,
         default=repo_enums.RepositoryState.INITIAL,
         verbose_name=_("state"),
